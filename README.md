@@ -47,6 +47,23 @@ section by section:
 side is a stable id that never changes, so renaming a hero never breaks
 anything pointing at them.
 
+## Talent trees
+
+Every hero runs three of the eleven trees. Click one of the three slots at the
+bottom of a card and the **talent wheel** opens: three colour-coded branches
+radiating from the hero, laid out the way the game draws them.
+
+Set the three branches once, then click nodes to take them. Everything leading
+to a node comes with it, and clicking it again drops whatever was only
+reachable through it — so a build is a few clicks rather than fourteen.
+
+The three tabs are three situations. Tag one Arena, one Rally, and the card
+slot lights up when you filter to that mode. *Copy from…* starts a build from
+one you already mapped.
+
+Stored as `TREE_SET` (a hero's three branches) and an `alloc` of node numbers
+inside each entry in `BUILDS`.
+
 ## Visitors keep their own version
 
 Anyone using the site can move heroes around, set skill orders, resize

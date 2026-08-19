@@ -6,7 +6,9 @@
 <title>Hero Hub — tier board + radar</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><text y=%2226%22 font-size=%2226%22>&#9670;</text></svg>">
 <style>
-  .viz-root{
+  /* the modal and the hover preview live outside .viz-root, so the theme
+     variables have to reach the document root too or they render unstyled */
+  :root, .viz-root{
     color-scheme: light;
     /* portrait size, per view — set from Icon size */
     --av-board:42px;
@@ -31,7 +33,7 @@
     --accent:#2a78d6;
   }
   @media (prefers-color-scheme: dark){
-    :root:where(:not([data-theme="light"])) .viz-root{ color-scheme: dark;
+    :root:where(:not([data-theme="light"])), :root:where(:not([data-theme="light"])) .viz-root{ color-scheme: dark;
       --plane:#0d0d0d; --surface-1:#1a1a19; --surface-2:#242422;
       --text-primary:#ffffff; --text-secondary:#c3c2b7; --muted:#898781;
       --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
@@ -41,7 +43,7 @@
       --accent:#3987e5;
     }
   }
-  :root[data-theme="dark"] .viz-root{ color-scheme: dark;
+  :root[data-theme="dark"], :root[data-theme="dark"] .viz-root{ color-scheme: dark;
     --plane:#0d0d0d; --surface-1:#1a1a19; --surface-2:#242422;
     --text-primary:#ffffff; --text-secondary:#c3c2b7; --muted:#898781;
     --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
@@ -380,11 +382,37 @@
   .rskills .ultflag{font-size:10px;font-weight:800;color:var(--muted)}
   .rskills .ultflag.open{color:var(--series-3)}
 
+  /* talent wheel */
+  .wheelwrap{background:#0d2c28;border-radius:14px;padding:6px;position:relative}
+  .wheel{display:block;border-radius:10px}
+  .wnode{pointer-events:none}
+  .wnode.live{pointer-events:auto;cursor:pointer}
+  .wnode.live:hover circle:nth-of-type(1){stroke:#fff;stroke-width:2.5}
+  .armpick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+  .armpick .ap{border:1px solid var(--border);border-radius:10px;padding:8px 10px;background:var(--plane)}
+  .armpick .ap label{display:flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+  .armpick .ap .swatch{width:9px;height:9px;border-radius:3px;flex:none}
+  .armpick .ap select{width:100%;font:inherit;font-size:12.5px;background:var(--surface-1);
+    color:var(--text-primary);border:1px solid var(--border);border-radius:8px;padding:5px 7px}
+  .bmgrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+  .btabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+  .btab{font:inherit;font-size:12.5px;padding:6px 12px;border-radius:999px;cursor:pointer;
+    border:1px solid var(--border);background:var(--surface-1);color:var(--text-secondary)}
+  .btab:hover{border-color:var(--axis)}
+  .btab.on{background:var(--text-primary);color:var(--plane);border-color:var(--text-primary);font-weight:650}
+  .btab .cnt{opacity:.65;font-size:11px;margin-left:4px}
+  .wheelbar{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+  .wheelbar .msg{margin-left:auto}
+
   /* build editor */
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(3px);z-index:70;display:flex;align-items:center;justify-content:center;padding:24px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(3px);z-index:70;
+    display:flex;align-items:center;justify-content:center;padding:24px;
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text-primary)}
   .modal.hidden{display:none}
   .sheet{background:var(--surface-1);border:1px solid var(--border);border-radius:16px;padding:18px;
     width:min(940px,100%);max-height:88vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  #buildModal .sheet{width:min(1240px,100%)}
   .sheethead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
   .sheethead b{font-size:16px}
   .brow{border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;
@@ -1041,14 +1069,10 @@
   <div class="sheet">
     <div class="sheethead">
       <b id="bmTitle">Talent trees</b>
-      <span class="msg">up to three per hero · a build can mix two trees</span>
+      <span class="msg">three branches per hero · one wheel per situation</span>
       <button class="btn" id="bmClose" style="margin-left:auto">Done</button>
     </div>
     <div id="bmBody"></div>
-    <p class="msg" style="margin:10px 2px 0">
-      Paste a screenshot straight into a build (click it, then Ctrl+V), or use Choose image.
-      Images are scaled down and stored with your data.
-    </p>
   </div>
 </div>
 
@@ -1145,7 +1169,189 @@ const TREES = [
   {id:"gath",  name:"Gathering",   icon:""}
 ];
 const treeById = id => TREES.find(t=>t.id===id);
+
 const treeShort = t => (t ? t.name.slice(0,2).toUpperCase() : "??");
+
+/* ============================================================
+   TALENT WHEEL
+   Three branches radiating from the hero, the way the game draws
+   them: one up, one to the upper left, one to the upper right.
+   The node layout is a single shared lattice — every tree uses
+   the same shape, so a build reads as a pattern of lit nodes
+   rather than something you have to screenshot.
+   ============================================================ */
+const WHEEL = {
+  w: 980, h: 640, cx: 490, cy: 540,
+  hub: 76, unit: 66,
+  /* where each of the hero's three branches points, in degrees */
+  arms: [
+    {a:-90,  key:"a", colour:"#e34b46", dim:"#5a2523", label:"top"},
+    {a:-166, key:"b", colour:"#e0a52c", dim:"#5a4315", label:"left"},
+    {a:-14,  key:"c", colour:"#3390e6", dim:"#1d3f60", label:"right"}
+  ],
+  /* lat = sideways offset, rad = distance out, big = a skill node,
+     up  = which nodes must already be taken to reach this one     */
+  nodes: [
+    {lat: 0.00, rad:1.00, big:0, up:[]     },
+    {lat:-0.62, rad:1.58, big:0, up:[0]    },
+    {lat: 0.62, rad:1.58, big:0, up:[0]    },
+    {lat: 0.00, rad:2.10, big:0, up:[1,2]  },
+    {lat:-0.98, rad:2.62, big:1, up:[3]    },
+    {lat: 0.98, rad:2.62, big:1, up:[3]    },
+    {lat:-1.24, rad:3.24, big:1, up:[4]    },
+    {lat: 1.24, rad:3.24, big:1, up:[5]    },
+    {lat: 0.00, rad:3.44, big:0, up:[6,7]  },
+    {lat:-0.98, rad:4.02, big:1, up:[8]    },
+    {lat: 0.98, rad:4.02, big:1, up:[8]    },
+    {lat:-0.56, rad:4.58, big:0, up:[9]    },
+    {lat: 0.56, rad:4.58, big:0, up:[10]   },
+    {lat: 0.00, rad:5.08, big:1, up:[11,12]}
+  ]
+};
+const WHEEL_MAX = WHEEL.nodes.length;
+
+/* where a node sits, in svg coordinates */
+function wheelXY(armIndex, nodeIndex){
+  const arm = WHEEL.arms[armIndex], n = WHEEL.nodes[nodeIndex];
+  const t  = arm.a * Math.PI / 180;
+  const ux = Math.cos(t),  uy = Math.sin(t);      // outward
+  const vx = -Math.sin(t), vy = Math.cos(t);      // sideways
+  return [
+    WHEEL.cx + ux * n.rad * WHEEL.unit + vx * n.lat * WHEEL.unit,
+    WHEEL.cy + uy * n.rad * WHEEL.unit + vy * n.lat * WHEEL.unit
+  ];
+}
+/* the trees this hero runs — three of the eleven */
+function heroTrees(h){
+  const set = (h.treeSet || []).filter(Boolean);
+  if(set.length) return set.slice(0,3);
+  // nothing set yet: fall back to whatever their builds already mention
+  const seen = [];
+  (h.builds||[]).forEach(b=>(b.trees||[]).forEach(id=>{ if(id && !seen.includes(id)) seen.push(id); }));
+  return seen.slice(0,3);
+}
+/* a build's lit nodes, per arm: {a:[0,1,3], b:[], c:[0]} */
+function allocOf(b){
+  if(!b.alloc) b.alloc = {};
+  WHEEL.arms.forEach(arm=>{ if(!Array.isArray(b.alloc[arm.key])) b.alloc[arm.key] = []; });
+  return b.alloc;
+}
+const allocCount = b => WHEEL.arms.reduce((n,arm)=> n + (allocOf(b)[arm.key]||[]).length, 0);
+const hasAlloc   = b => allocCount(b) > 0;
+
+/* taking a node takes everything leading to it; dropping one drops
+   whatever was only reachable through it */
+function toggleNode(b, armKey, idx){
+  const lit = new Set(allocOf(b)[armKey]);
+  if(lit.has(idx)){
+    lit.delete(idx);
+    let changed = true;
+    while(changed){                       // drop anything now cut off
+      changed = false;
+      [...lit].forEach(i=>{
+        const up = WHEEL.nodes[i].up;
+        if(up.length && !up.some(p=>lit.has(p))){ lit.delete(i); changed = true; }
+      });
+    }
+  }else{
+    const take = i => {
+      if(lit.has(i)) return;
+      lit.add(i);
+      const up = WHEEL.nodes[i].up;
+      if(up.length && !up.some(p=>lit.has(p))) take(up[0]);   // cheapest way back
+    };
+    take(idx);
+  }
+  b.alloc[armKey] = [...lit].sort((x,y)=>x-y);
+}
+
+/* the drawing itself. live = clickable, otherwise it's just a picture */
+function wheelSVG(h, b, opts){
+  opts = opts || {};
+  const live  = !!opts.live;
+  const trees = heroTrees(h);
+  const alloc = allocOf(b);
+  const scale = opts.scale || 1;
+  const parts = [];
+
+  parts.push(`<defs>
+    <radialGradient id="wgGlow"><stop offset="0%" stop-color="#2f6f63" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="#12403a" stop-opacity="0"/></radialGradient>
+  </defs>`);
+  parts.push(`<rect width="${WHEEL.w}" height="${WHEEL.h}" fill="#0d2c28" rx="14"/>`);
+  parts.push(`<circle cx="${WHEEL.cx}" cy="${WHEEL.cy}" r="${WHEEL.hub*3.1}" fill="url(#wgGlow)"/>`);
+
+  WHEEL.arms.forEach((arm, ai)=>{
+    const tree = trees[ai] ? treeById(trees[ai]) : null;
+    const lit  = new Set(alloc[arm.key] || []);
+    const on   = !!tree;
+
+    // the coloured wedge at the hub, so an empty branch still reads as a slot
+    const t = arm.a * Math.PI/180, spread = 0.30;
+    const p1 = [WHEEL.cx + Math.cos(t-spread)*WHEEL.hub*1.9, WHEEL.cy + Math.sin(t-spread)*WHEEL.hub*1.9];
+    const p2 = [WHEEL.cx + Math.cos(t+spread)*WHEEL.hub*1.9, WHEEL.cy + Math.sin(t+spread)*WHEEL.hub*1.9];
+    parts.push(`<path d="M${WHEEL.cx} ${WHEEL.cy} L${p1[0].toFixed(1)} ${p1[1].toFixed(1)} L${p2[0].toFixed(1)} ${p2[1].toFixed(1)} Z"
+      fill="${on?arm.colour:"#20443f"}" opacity="${on?.55:.3}"/>`);
+
+    // links first so nodes sit on top
+    WHEEL.nodes.forEach((n,i)=>{
+      n.up.forEach(pi=>{
+        const [x1,y1] = wheelXY(ai,pi), [x2,y2] = wheelXY(ai,i);
+        const hot = lit.has(i) && lit.has(pi);
+        parts.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
+          stroke="${hot?arm.colour:"#1d4842"}" stroke-width="${hot?5:2}" stroke-linecap="round"
+          opacity="${hot?.85:.5}"${hot?' filter="url(#none)"':""}/>`);
+      });
+    });
+    // nodes
+    WHEEL.nodes.forEach((n,i)=>{
+      const [x,y] = wheelXY(ai,i);
+      const r  = n.big ? 19 : 12;
+      const is = lit.has(i);
+      const cls = live && on ? "wnode live" : "wnode";
+      parts.push(`<g class="${cls}"${live&&on?` data-wn="${arm.key}:${i}"`:""}>
+        ${is?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r+6}" fill="${arm.colour}" opacity=".22"/>`:""}
+        <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}"
+          fill="${is?arm.colour:(on?"#16403a":"#123430")}"
+          stroke="${is?"#ffffff":(on?arm.dim:"#1b4039")}" stroke-width="${is?2:1.5}"
+          opacity="${on?1:.45}"/>
+        ${n.big&&!is?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r-7}" fill="${on?arm.dim:"#17403a"}" opacity=".8"/>`:""}
+      </g>`);
+    });
+
+    // branch name, out past the last node
+    const [lx,ly] = wheelXY(ai, WHEEL_MAX-1);
+    const t2 = arm.a*Math.PI/180;
+    const nx = lx + Math.cos(t2)*74, ny = ly + Math.sin(t2)*74 + 5;
+    const halo = `paint-order="stroke" stroke="#0d2c28" stroke-width="6" stroke-linejoin="round"`;
+    parts.push(`<text x="${nx.toFixed(1)}" y="${ny.toFixed(1)}" text-anchor="middle" ${halo}
+      font-size="16" font-weight="700" fill="${on?arm.colour:"#3c6b64"}"
+      font-family="ui-sans-serif,system-ui,sans-serif">${
+        tree ? tree.name : "pick a tree"}</text>`);
+    const taken = lit.size;
+    if(on) parts.push(`<text x="${nx.toFixed(1)}" y="${(ny+17).toFixed(1)}" text-anchor="middle" ${halo}
+      font-size="12" fill="#9dc0ba" font-family="ui-sans-serif,system-ui,sans-serif">${taken} of ${WHEEL_MAX}</text>`);
+  });
+
+  // hub
+  const por = portraitOf(h);
+  parts.push(`<circle cx="${WHEEL.cx}" cy="${WHEEL.cy}" r="${WHEEL.hub}" fill="#0a2320" stroke="#c8a24e" stroke-width="3"/>`);
+  parts.push(`<circle cx="${WHEEL.cx}" cy="${WHEEL.cy}" r="${WHEEL.hub-9}" fill="#123a34" stroke="#2b5f56" stroke-width="1.5"/>`);
+  if(por){
+    parts.push(`<defs><clipPath id="wgHub"><circle cx="${WHEEL.cx}" cy="${WHEEL.cy}" r="${WHEEL.hub-16}"/></clipPath></defs>
+      <image href="${por}" x="${WHEEL.cx-(WHEEL.hub-16)}" y="${WHEEL.cy-(WHEEL.hub-16)}"
+        width="${(WHEEL.hub-16)*2}" height="${(WHEEL.hub-16)*2}" clip-path="url(#wgHub)" preserveAspectRatio="xMidYMid slice"/>`);
+  }else{
+    parts.push(`<text x="${WHEEL.cx}" y="${WHEEL.cy+8}" text-anchor="middle" font-size="26" font-weight="800"
+      fill="#7fa39d" font-family="ui-sans-serif,system-ui,sans-serif">${h.n[0]}</text>`);
+  }
+
+  const w = Math.round(WHEEL.w*scale), ht = Math.round(WHEEL.h*scale);
+  return `<svg class="wheel" viewBox="0 0 ${WHEEL.w} ${WHEEL.h}" width="${w}" height="${ht}"
+    style="width:100%;height:auto;max-width:${WHEEL.w}px" role="img"
+    aria-label="${h.n} talent wheel">${parts.join("")}</svg>`;
+}
+
 
 /* Per-hero builds: up to 3. Written by the app, or by hand:
    BUILDS: { "Arthur": [ {tree:"cav", modes:["Rally","PvP"], note:"", img:""} ] }  */
@@ -1217,6 +1423,9 @@ function drawSizeControls(){
     inp.addEventListener("change", markDirty);
   });
 }
+/* The three talent trees a hero runs, e.g. TREE_SET: { "Arthur": ["axe","hunt","def"] }.
+   Ids come from TREES above. Order is top branch, left branch, right branch. */
+const TREE_SET = {};
 const SKILL_DATA = {};
 const SKILL_MAX = 5;
 const SKILL_NAMES = ["main special", "2nd skill", "3rd skill", "4th skill"];
@@ -1547,7 +1756,7 @@ function hashOf(x){
    is stored as the difference against it, not as a whole copy. That way
    when a newer hero-data.js is published your own edits still apply on
    top of it instead of being thrown away. */
-const MAP_SECTIONS = ["RENAMES","TIERS","TROOPS","SKINS","OBTAIN","SKILLS","SIZES",
+const MAP_SECTIONS = ["RENAMES","TIERS","TROOPS","SKINS","OBTAIN","SKILLS","SIZES","TREE_SET",
                       "BUILDS","BUILD_IMAGES","PAIR_LINKS","MODE_INFO","TROOP_ICONS","PORTRAITS"];
 const WHOLE_SECTIONS = ["ROSTER","OBTAIN_TYPES","PAIRINGS","PHASES","COPIES","PLAN_START"];
 const sameVal = (a,b)=> JSON.stringify(a===undefined?null:a) === JSON.stringify(b===undefined?null:b);
@@ -1579,7 +1788,7 @@ function overlayEmpty(ov){
 function overlayCounts(ov){
   const out = [];
   const LABEL = {TIERS:"tier", RENAMES:"name", TROOPS:"troop type", SKINS:"skin", OBTAIN:"obtain",
-                 SKILLS:"skill order", SIZES:"icon size", BUILDS:"talent build", PORTRAITS:"portrait",
+                 SKILLS:"skill order", SIZES:"icon size", BUILDS:"talent build", TREE_SET:"talent tree set", PORTRAITS:"portrait",
                  BUILD_IMAGES:"build screenshot", PAIR_LINKS:"pairing link", MODE_INFO:"mode note",
                  TROOP_ICONS:"troop icon"};
   Object.entries((ov&&ov.set)||{}).forEach(([k,v])=>{
@@ -1710,6 +1919,7 @@ const writeBackup = (data)=> saveOverlay(data);
   if(Array.isArray(D.OBTAIN_TYPES)) D.OBTAIN_TYPES.forEach(o=>addObtainType(o));
   if(D.OBTAIN)     Object.assign(OBTAIN_DATA, D.OBTAIN);
   if(D.SKILLS)     Object.assign(SKILL_DATA, D.SKILLS);
+  if(D.TREE_SET)   Object.assign(TREE_SET, D.TREE_SET);
   if(D.SIZES)      Object.assign(SIZES, D.SIZES);
   if(D.BUILDS)     Object.assign(BUILD_DATA, D.BUILDS);
   if(D.BUILD_IMAGES) Object.assign(BUILD_IMAGES, D.BUILD_IMAGES);
@@ -1740,10 +1950,12 @@ HEROES.forEach(h=>{
   h.skin = SKIN_DATA[h.key] || SKIN_DATA[h.n] || "";     // "" unknown · "yes" · "no"
   h.obtain = OBTAIN_DATA[h.key] || OBTAIN_DATA[h.n] || "";  // "" unknown, else an OBTAIN id
   h.skills = normSkills(SKILL_DATA[h.key] || SKILL_DATA[h.n]);   // [s1,s2,s3,s4] levels 0-5
+  h.treeSet = (TREE_SET[h.key] || TREE_SET[h.n] || []).slice(0,3);
   const bd = BUILD_DATA[h.key] || BUILD_DATA[h.n] || [];
   h.builds = bd.slice(0,3).map(b=>({
     trees: (b.trees || (b.tree ? [b.tree] : [])).slice(0,2),   // one tree, or a split of two
-    modes: [...(b.modes||[])], note: b.note || "", img: b.img || ""
+    modes: [...(b.modes||[])], note: b.note || "", img: b.img || "",
+    alloc: b.alloc ? JSON.parse(JSON.stringify(b.alloc)) : {}  // lit nodes per branch
   }));
 });
 const ORIGINAL = HEROES.map(h=>({key:h.key, t:h.t}));
@@ -1792,26 +2004,36 @@ function drawKey(){
 }
 /* situations a build covers — its own tags, or the hero's modes if you left it alone */
 function buildModes(h, b){ return b.modes.length ? b.modes : h.tags; }
-function buildLabel(b){
+function buildLabel(b, h){
   const names = (b.trees||[]).map(id=>treeById(id)?.name).filter(Boolean);
-  return names.length ? names.join(" + ") : "empty";
+  if(names.length) return names.join(" + ");
+  if(h && hasAlloc(b)){
+    const used = WHEEL.arms.map((a,ai)=> (b.alloc[a.key]||[]).length ? treeById(heroTrees(h)[ai])?.name : null).filter(Boolean);
+    if(used.length) return used.join(" + ");
+  }
+  return "empty";
 }
 function buildRowHTML(h){
   const active = mode !== "ALL" ? mode : null;
   return [0,1,2].map(i=>{
     const b = h.builds[i];
-    if(!b || !b.trees.length){
-      return `<button class="bslot empty" data-editbuild="${h.key}:${i}" title="Add a talent tree">+</button>`;
+    if(!b || (!b.trees.length && !hasAlloc(b))){
+      return `<button class="bslot empty" data-editbuild="${h.key}:${i}" title="Map a talent build">+</button>`;
     }
     const on = active && buildModes(h, b).includes(active);
-    const icons = b.trees.map(id=>{
+    /* no focus set but nodes are mapped — show whichever branches were used */
+    const shown = b.trees.length ? b.trees
+      : WHEEL.arms.map((a,ai)=>({id:heroTrees(h)[ai], n:(b.alloc && b.alloc[a.key] || []).length}))
+                  .filter(x=>x.id && x.n).sort((x,y)=>y.n-x.n).slice(0,2).map(x=>x.id);
+    const icons = shown.map(id=>{
       const t = treeById(id);
       return t && t.icon ? `<img src="${t.icon}" alt="${t.name}">` : `<span class="bs">${treeShort(t)}</span>`;
     }).join("");
-    return `<button class="bslot ${on?"on":""} ${b.trees.length>1?"split":""}" data-editbuild="${h.key}:${i}"
-        data-preview="${h.key}:${i}" title="${buildLabel(b)} — ${buildModes(h,b).join(", ") || "no modes on this hero yet"}${
+    return `<button class="bslot ${on?"on":""} ${shown.length>1?"split":""}" data-editbuild="${h.key}:${i}"
+        data-preview="${h.key}:${i}" title="${buildLabel(b, h)} — ${buildModes(h,b).join(", ") || "no modes on this hero yet"}${
           b.note ? ` · ${b.note}` : ""}">
-      ${icons}${buildImage(h,b) ? `<span class="hasimg" title="has a screenshot">•</span>` : ""}
+      ${icons}${hasAlloc(b) ? `<span class="hasimg" title="${allocCount(b)} nodes mapped">◆</span>`
+        : (buildImage(h,b) ? `<span class="hasimg" title="has a screenshot">•</span>` : "")}
     </button>`;
   }).join("");
 }
@@ -2595,6 +2817,7 @@ function mergeHeroes(loserKey, keeperKey){
   if(!K.tags.length && L.tags.length){ K.tags = [...L.tags]; moved.push("modes"); }
   if(!K.troop && L.troop){ K.troop = L.troop; moved.push("troop"); }
   L.lt.forEach(id=>{ if(id !== K.troop && !K.lt.includes(id)) K.lt.push(id); });
+  if(!(K.treeSet||[]).length && (L.treeSet||[]).length){ K.treeSet = [...L.treeSet]; moved.push("talent trees"); }
   if(!skillsSet(K) && skillsSet(L)){ K.skills = [...L.skills]; moved.push("skill order"); }
   if(!K.obtain && L.obtain){ K.obtain = L.obtain; moved.push("obtain"); }
   if(!K.a && L.a){ K.a = L.a; moved.push("alias"); }
@@ -2784,17 +3007,15 @@ function drawRoster(){
 /* ============================================================
    TALENT TREES — editor + hover preview
    ============================================================ */
-let bmHero = null, bmFocus = null;
+let bmHero = null, bmFocus = null, bmBuild = 0;
 function openBuilds(key, idx){
   const h = byKey(key); if(!h) return;
   bmHero = key;
+  bmBuild = Math.min(2, Math.max(0, idx === undefined ? 0 : +idx));
   document.getElementById("bmTitle").textContent = `${h.n} — talent trees`;
   drawBuildEditor();
   document.getElementById("buildModal").classList.remove("hidden");
-  if(idx !== undefined){
-    const el = document.querySelector(`.brow[data-bi="${idx}"]`);
-    if(el) el.scrollIntoView({block:"center"});
-  }
+
 }
 function closeBuilds(){
   document.getElementById("buildModal").classList.add("hidden");
@@ -2803,70 +3024,133 @@ function closeBuilds(){
 }
 function drawBuildEditor(){
   const h = byKey(bmHero); if(!h) return;
-  while(h.builds.length < 3) h.builds.push({trees:[], modes:[], note:"", img:""});
-  document.getElementById("bmBody").innerHTML = h.builds.slice(0,3).map((b,i)=>`
-    <div class="brow ${b.trees.length?"on":""}" data-bi="${i}">
+  while(h.builds.length < 3) h.builds.push({trees:[], modes:[], note:"", img:"", alloc:{}});
+  h.builds.forEach(allocOf);
+  if(!(h.treeSet||[]).length) h.treeSet = heroTrees(h);
+  while(h.treeSet.length < 3) h.treeSet.push(null);
+  const bi = Math.min(2, Math.max(0, bmBuild|0));
+  const b  = h.builds[bi];
+  const trees = heroTrees(h);
+
+  document.getElementById("bmBody").innerHTML = `
+    <div class="armpick">
+      ${WHEEL.arms.map((arm,ai)=>`
+        <div class="ap">
+          <label><span class="swatch" style="background:${arm.colour}"></span>${arm.label} branch</label>
+          <select data-arm="${ai}">
+            <option value="">— not set —</option>
+            ${TREES.map(t=>`<option value="${t.id}" ${h.treeSet[ai]===t.id?"selected":""}>${t.name}</option>`).join("")}
+          </select>
+        </div>`).join("")}
+    </div>
+
+    <div class="bmgrid">
+      <div>
+        <div class="btabs">
+          ${h.builds.slice(0,3).map((x,i)=>`
+            <button class="btab ${i===bi?"on":""}" data-btab="${i}">${
+              (x.modes.length ? x.modes.join(" · ") : `Build ${i+1}`)
+            }<span class="cnt">${allocCount(x)||""}</span></button>`).join("")}
+        </div>
+        <div class="wheelwrap" id="bmWheel">${wheelSVG(h, b, {live:true})}</div>
+        <div class="wheelbar">
+          <button class="btn" id="bmClear">Clear this build</button>
+          <button class="btn" id="bmCopy" title="Start from another build on this hero">Copy from…</button>
+          <span class="msg">${trees.filter(Boolean).length
+            ? "click a node to take it — everything leading to it comes with it, and clicking again drops it"
+            : "set at least one branch above to start"}</span>
+        </div>
+      </div>
+
       <div>
         <div class="bfield">
-          <label>Tree ${i+1}${b.trees.length>1?" — a mix of two":""}</label>
-          <select data-btree="${i}:0">
+          <label>What this build is for</label>
+          <div class="modechecks">
+            ${MODES.map(m=>`<label class="${b.modes.includes(m)?"on":""}">
+              <input type="checkbox" data-bmode="${bi}:${m}" ${b.modes.includes(m)?"checked":""}> ${m}</label>`).join("")}
+          </div>
+          <div class="msg" style="font-size:11px;margin-top:5px">${
+            b.modes.length ? `only lights up for ${b.modes.join(", ")}`
+              : `left alone — counts for everything ${h.n} does${h.tags.length?` (${h.tags.join(", ")})`:""}`}</div>
+        </div>
+        <div class="bfield">
+          <label>Focus — what the card shows</label>
+          <select data-btree="${bi}:0">
             <option value="">— none —</option>
             ${TREES.map(t=>`<option value="${t.id}" ${b.trees[0]===t.id?"selected":""}>${t.name}</option>`).join("")}
           </select>
-          <select data-btree="${i}:1" title="Optional second tree if the build is split">
+          <select data-btree="${bi}:1" title="Optional second tree if the build is split">
             <option value="">— no second tree —</option>
             ${TREES.map(t=>`<option value="${t.id}" ${b.trees[1]===t.id?"selected":""}>+ ${t.name}</option>`).join("")}
           </select>
         </div>
         <div class="bfield">
-          <label>Note — what it's for, the split, anything</label>
-          <input type="text" data-bnote="${i}" value="${(b.note||"").replace(/"/g,"&quot;")}"
-                 placeholder="e.g. Jotun and boss events · Cavalry to 40, rest into Skill">
+          <label>Note</label>
+          <input type="text" data-bnote="${bi}" value="${(b.note||"").replace(/"/g,"&quot;")}"
+                 placeholder="e.g. Jotun and boss events">
         </div>
         <div class="bfield">
-          <label>Narrow it down — optional</label>
-          <div class="modechecks">
-            ${MODES.map(m=>`<label class="${b.modes.includes(m)?"on":""}">
-              <input type="checkbox" data-bmode="${i}:${m}" ${b.modes.includes(m)?"checked":""}> ${m}</label>`).join("")}
+          <label>Screenshot — optional now</label>
+          <div class="bimg" data-bimg="${bi}" tabindex="0" title="Click to choose an image file">
+            ${(()=>{ const pic = buildImage(h, b);
+              return pic ? `<img src="${pic.url}" alt="">`
+                         : `<span class="ph">the wheel replaces this —<br>add one only if you want the real thing too</span>`; })()}
+            <input type="file" accept="image/*" data-bfile="${bi}" style="display:none">
           </div>
-          <div class="msg" style="font-size:11px;margin-top:5px">${
-            b.modes.length
-              ? `only lights up for ${b.modes.join(", ")}`
-              : `left alone — counts for everything ${h.n} does${h.tags.length?` (${h.tags.join(", ")})`:""}`}</div>
+          <div class="bimgbtns">
+            <button class="btn" data-bpaste="${bi}">Paste</button>
+            ${b.img ? `<button class="btn" data-bclear="${bi}">Remove</button>` : ""}
+          </div>
+          <div class="msg" data-bmsg="${bi}" style="font-size:11px;margin-top:4px">${
+            (()=>{ const pic = buildImage(h,b);
+                   return pic && pic.from !== "pasted in" ? `shared image from <b>${pic.from}</b>` : ""; })()}</div>
         </div>
       </div>
-      <div>
-        <label style="display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Screenshot</label>
-        <div class="bimg" data-bimg="${i}" tabindex="0" title="Click to choose an image file">
-          ${(()=>{ const pic = buildImage(h, b);
-            return pic ? `<img src="${pic.url}" alt="">`
-                       : `<span class="ph">click to choose a file<br>or use Paste below</span>`; })()}
-          <input type="file" accept="image/*" data-bfile="${i}" style="display:none">
-        </div>
-        <div class="bimgbtns">
-          <button class="btn" data-bpaste="${i}">Paste</button>
-          ${b.img ? `<button class="btn" data-bclear="${i}">Remove</button>` : ""}
-        </div>
-        <div class="msg" data-bmsg="${i}" style="font-size:11px;margin-top:4px">${
-          (()=>{ const pic = buildImage(h,b);
-                 return pic && pic.from !== "pasted in" ? `shared image from <b>${pic.from}</b> — paste one here to override it` : ""; })()}</div>
-      </div>
-    </div>`).join("");
+    </div>`;
 
   const h2 = h;
+
+  document.querySelectorAll("#bmBody [data-arm]").forEach(sel=>
+    sel.addEventListener("change", ()=>{
+      const ai = +sel.dataset.arm;
+      h2.treeSet[ai] = sel.value || null;
+      if(!sel.value) h2.builds.forEach(x=>{ allocOf(x)[WHEEL.arms[ai].key] = []; });
+      drawBuildEditor();
+    }));
+  document.querySelectorAll("#bmBody [data-btab]").forEach(btn=>
+    btn.addEventListener("click", ()=>{ bmBuild = +btn.dataset.btab; drawBuildEditor(); }));
+  document.querySelectorAll("#bmWheel [data-wn]").forEach(g=>
+    g.addEventListener("click", ()=>{
+      const [k, i] = g.dataset.wn.split(":");
+      toggleNode(h2.builds[bi], k, +i);
+      drawBuildEditor();
+    }));
+  document.getElementById("bmClear").addEventListener("click", ()=>{
+    WHEEL.arms.forEach(a=> h2.builds[bi].alloc[a.key] = []);
+    drawBuildEditor();
+  });
+  document.getElementById("bmCopy").addEventListener("click", ()=>{
+    const others = h2.builds.map((x,i)=>({x,i})).filter(o=>o.i!==bi && hasAlloc(o.x));
+    if(!others.length){ alert("Nothing to copy — the other builds are empty."); return; }
+    const from = others.length === 1 ? others[0]
+      : others.find(o=>confirm(`Copy from ${o.x.modes.join(", ") || "Build "+(o.i+1)}?`));
+    if(!from) return;
+    h2.builds[bi].alloc = JSON.parse(JSON.stringify(from.x.alloc));
+    drawBuildEditor();
+  });
   document.querySelectorAll("#bmBody [data-btree]").forEach(sel=>
     sel.addEventListener("change", ()=>{
       const [i,slot] = sel.dataset.btree.split(":").map(Number);
-      const b = h2.builds[i];
-      b.trees[slot] = sel.value || null;
-      b.trees = b.trees.filter(Boolean);
+      const b2 = h2.builds[i];
+      b2.trees[slot] = sel.value || null;
+      b2.trees = b2.trees.filter(Boolean);
       drawBuildEditor();
     }));
   document.querySelectorAll("#bmBody [data-bmode]").forEach(cb=>
     cb.addEventListener("change", ()=>{
       const [i,m] = cb.dataset.bmode.split(":");
-      const b = h2.builds[+i];
-      b.modes = cb.checked ? [...new Set([...b.modes, m])] : b.modes.filter(x=>x!==m);
+      const b2 = h2.builds[+i];
+      b2.modes = cb.checked ? [...new Set([...b2.modes, m])] : b2.modes.filter(x=>x!==m);
       drawBuildEditor();
     }));
   document.querySelectorAll("#bmBody [data-bnote]").forEach(inp=>
@@ -2879,21 +3163,21 @@ function drawBuildEditor(){
       shrinkImage(f, url=>{ h2.builds[+inp.dataset.bfile].img = url; drawBuildEditor(); });
       ev.target.value = "";
     }));
-  document.querySelectorAll("#bmBody .bimg").forEach(box=>{
-    box.addEventListener("click", e=>{
+  document.querySelectorAll("#bmBody [data-bimg]").forEach(box=>{
+    box.addEventListener("click", ()=>{
+      bmFocus = +box.dataset.bimg;
       document.querySelectorAll("#bmBody .bimg").forEach(x=>x.classList.remove("focus"));
-      box.classList.add("focus"); bmFocus = +box.dataset.bimg;
-      if(!e.target.closest("input")) box.querySelector("input[type=file]").click();   // open the picker
+      box.classList.add("focus");
+      const inp = box.querySelector("[data-bfile]"); if(inp) inp.click();
     });
+    box.addEventListener("focus", ()=>{ bmFocus = +box.dataset.bimg; });
   });
   document.querySelectorAll("#bmBody [data-bpaste]").forEach(btn=>
     btn.addEventListener("click", async ()=>{
       const i = +btn.dataset.bpaste;
-      const msg = document.querySelector(`[data-bmsg="${i}"]`);
       bmFocus = i;
-      document.querySelectorAll("#bmBody .bimg").forEach(x=>x.classList.remove("focus"));
-      document.querySelector(`.bimg[data-bimg="${i}"]`)?.classList.add("focus");
-      if(msg) msg.textContent = "checking the clipboard…";
+      const msg = document.querySelector(`#bmBody [data-bmsg="${i}"]`);
+      if(msg) msg.textContent = "Reading the clipboard…";
       try{
         const items = await Promise.race([
           navigator.clipboard.read(),
@@ -2942,14 +3226,16 @@ document.addEventListener("paste", e=>{
 /* hover preview */
 const treeTip = document.getElementById("treeTip");
 function showTree(e, h, b){
-  const t = buildLabel(b);
+  const t = buildLabel(b, h);
   const pic = buildImage(h, b);
   treeTip.innerHTML =
     `<div class="tt">${h.n} — ${t}</div>
      <div class="tm">${b.modes.length ? "for " + b.modes.join(", ")
         : (h.tags.length ? "for " + h.tags.join(", ") + " (all of this hero's modes)" : "no modes set on this hero")}${
         pic && pic.from !== "pasted in" ? ` · shared image (${pic.from})` : ""}</div>
-     ${pic ? `<img src="${pic.url}" alt="">` : `<div class="tm">no screenshot yet — click to add one</div>`}
+     ${hasAlloc(b) ? `<div class="wheelwrap" style="max-width:430px">${wheelSVG(h, b, {scale:.49})}</div>` : ""}
+     ${pic ? `<img src="${pic.url}" alt="">`
+           : (hasAlloc(b) ? "" : `<div class="tm">nothing mapped yet — click to build it</div>`)}
      ${b.note ? `<div class="tn">${b.note}</div>` : ""}`;
   treeTip.style.opacity = 1;
   document.getElementById("treeScrim").classList.add("on");
@@ -3903,8 +4189,9 @@ function buildDataObject(){
   });
   const builds = {};
   HEROES.forEach(h=>{
-    const kept = (h.builds||[]).filter(b=>b.trees.length || b.img || b.note);
-    if(kept.length) builds[h.key] = kept.map(b=>({trees:[...b.trees], modes:[...b.modes], note:b.note, img:b.img}));
+    const kept = (h.builds||[]).filter(b=>b.trees.length || b.img || b.note || hasAlloc(b));
+    if(kept.length) builds[h.key] = kept.map(b=>({trees:[...b.trees], modes:[...b.modes],
+      note:b.note, img:b.img, alloc: hasAlloc(b) ? JSON.parse(JSON.stringify(b.alloc)) : undefined}));
   });
   const sharedImgs = {};
   Object.entries(BUILD_IMAGES).forEach(([k,v])=>{ sharedImgs[k] = v; });
@@ -3915,6 +4202,8 @@ function buildDataObject(){
   const obtainTypes = OBTAIN.map(o=>({id:o.id, short:o.short, name:o.name, desc:o.desc}));
   const skills = {};
   HEROES.forEach(h=>{ if(skillsSet(h)) skills[h.key] = [...h.skills]; });
+  const treeSet = {};
+  HEROES.forEach(h=>{ if((h.treeSet||[]).some(Boolean)) treeSet[h.key] = h.treeSet.slice(0,3); });
   const sizes = {...SIZES};
   const modeInfo = {};
   MODES.forEach(m=>{ modeInfo[m] = {desc:MODE_INFO[m].desc, includes:[...MODE_INFO[m].includes]}; });
@@ -3922,7 +4211,7 @@ function buildDataObject(){
   TROOPS.forEach(t=>{ if(t.icon) troopIcons[t.id] = t.icon; });
   const data = {
     RENAMES: ren, TIERS: tiers, ROSTER: roster, TROOPS: troops, SKINS: skins,
-    OBTAIN: obtained, OBTAIN_TYPES: obtainTypes, SKILLS: skills, SIZES: sizes,
+    OBTAIN: obtained, OBTAIN_TYPES: obtainTypes, SKILLS: skills, SIZES: sizes, TREE_SET: treeSet,
     BUILDS: builds, BUILD_IMAGES: sharedImgs,
     PAIR_LINKS: LINKS, MODE_INFO: modeInfo, TROOP_ICONS: troopIcons,
     PORTRAITS: PORTRAITS,
