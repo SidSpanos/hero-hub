@@ -1,74 +1,109 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 rem ---------------------------------------------------------------
-rem  Hero Hub - one-time setup
+rem  Hero Hub - setup / retry
 rem
-rem  Run this ONCE, after you've created an EMPTY repo on GitHub:
-rem
-rem    1. github.com/new
-rem    2. Name it exactly:  hero-hub
-rem    3. Public
-rem    4. Do NOT tick "Add a README", ".gitignore" or "licence"
-rem    5. Create repository
-rem    6. Double-click this file
-rem
-rem  After this, publishing an update is just publish.cmd.
+rem  Safe to run as many times as you like. It works out how far it
+rem  got last time and carries on from there.
 rem ---------------------------------------------------------------
 
 cd /d "%~dp0"
 
 set REPO=https://github.com/SidSpanos/hero-hub.git
+set PAGES=https://sidspanos.github.io/hero-hub/
 
 git --version >nul 2>&1
 if errorlevel 1 (
   echo Git isn't installed. Get it from https://git-scm.com/download/win
-  pause
-  exit /b 1
+  echo Tick "Git Credential Manager" during the install - that's what
+  echo signs you in to GitHub.
+  goto done
 )
 
+rem ---- 1. repository ---------------------------------------------
 if exist ".git" (
-  echo This folder is already set up. Use publish.cmd from now on.
-  pause
-  exit /b 0
+  echo [1/4] Repository already here.
+) else (
+  echo [1/4] Creating the repository...
+  git init -b main >nul 2>&1 || git init >nul 2>&1
+  git branch -M main >nul 2>&1
 )
 
-echo Setting up...
-git init -b main
-if errorlevel 1 git init
+rem ---- 2. commit -------------------------------------------------
+git add -A >nul 2>&1
+git diff --cached --quiet >nul 2>&1
+if errorlevel 1 (
+  echo [2/4] Committing your files...
+  git -c user.name="Isidoros" -c user.email="sidspanos@gmail.com" commit -q -m "Hero Hub"
+) else (
+  git rev-parse HEAD >nul 2>&1
+  if errorlevel 1 (
+    echo Nothing to commit and no commits yet - is this folder empty?
+    goto done
+  )
+  echo [2/4] Already committed.
+)
 
-git add -A
-git -c user.name="Isidoros" -c user.email="sidspanos@gmail.com" commit -m "Hero Hub"
-if errorlevel 1 goto fail
+rem ---- 3. remote -------------------------------------------------
+git remote get-url origin >nul 2>&1
+if errorlevel 1 (
+  echo [3/4] Pointing at %REPO%
+  git remote add origin %REPO%
+) else (
+  git remote set-url origin %REPO%
+  echo [3/4] Already pointed at %REPO%
+)
 
-git branch -M main
-git remote add origin %REPO%
-
+rem ---- 4. push ---------------------------------------------------
+echo [4/4] Pushing...
 echo.
-echo Pushing to %REPO%
-echo A browser or sign-in box may pop up - that's GitHub asking who you are.
+echo    If a sign-in window opens, that's GitHub asking who you are.
+echo    Sign in as SidSpanos and let it finish.
 echo.
 git push -u origin main
-if errorlevel 1 goto fail
+if errorlevel 1 goto pushfail
 
 echo.
 echo ================================================================
-echo  Pushed. Now turn the site on:
+echo  Pushed. One last thing - turn the site on:
 echo.
-echo    1. Go to  https://github.com/SidSpanos/hero-hub/settings/pages
-echo    2. Under "Build and deployment", Source = Deploy from a branch
-echo    3. Branch = main,  folder = / (root),  Save
+echo    1. https://github.com/SidSpanos/hero-hub/settings/pages
+echo    2. Source          = Deploy from a branch
+echo    3. Branch          = main      Folder = / (root)
+echo    4. Save
 echo.
 echo  A minute later it's live at:
-echo    https://sidspanos.github.io/hero-hub/
+echo    %PAGES%
 echo ================================================================
 echo.
-pause
-exit /b 0
+echo  From now on just use publish.cmd - you never need this file again.
+goto done
 
-:fail
+:pushfail
 echo.
-echo Something went wrong above. Nothing was pushed.
-echo If it says the repo doesn't exist, create it first at github.com/new
-echo and make sure it's named exactly: hero-hub
+echo ================================================================
+echo  The push didn't go through. Read the red text above - it's
+echo  almost always one of these two:
+echo.
+echo  "Authentication failed" / "could not read Username"
+echo      Git doesn't know who you are yet. Either:
+echo        - reinstall Git for Windows and tick
+echo          "Git Credential Manager", then run this file again, or
+echo        - make a token at
+echo          https://github.com/settings/tokens/new
+echo          tick "repo", copy it, run this file again, and paste the
+echo          token when it asks for your PASSWORD
+echo          (username is SidSpanos)
+echo.
+echo  "Repository not found"
+echo      Sign in as SidSpanos in the sign-in window - a different
+echo      GitHub account can't push to your repo.
+echo.
+echo  Nothing was lost. Your commit is safe here; just run this file
+echo  again once the above is sorted.
+echo ================================================================
+
+:done
+echo.
 pause
-exit /b 1
+endlocal
