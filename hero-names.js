@@ -20,32 +20,33 @@ Asuka       -> Aska
 Balder      -> Baldur
 Carl        -> Karl
 Elfwine     -> Aelfwine
-Elina       -> Elina
+Elina       -> Elena
 Farad       -> Farhad
 Freya       -> Freyja
 Hana        -> Hana
 Held        -> Helda
-Ilia        -> Ilia
+Ilia        -> Elia
 Irin        -> Erin
 Iris        -> Iris
 Joan        -> Joan
 Kaira       -> Kaira
-Kus         -> Kalthas (Kalas)
+Kus         -> Kalthas 
 Linda       -> Linda
 Morgan Lefe -> Morgan Lefe
 Odaunaga    -> Oda Nobunaga
 Petra       -> Petra
 Reald       -> Reid
 Reinhardt   -> Reinhardt
+Reynald     -> Reynald
 Rex         -> Rex
 Rot         -> Roro
 Sara        -> Sara
-Scarnet     -> Scarnet
+Scarnet     -> Skerne
 Selena      -> Selena
-Shan        -> Shan
-Shisunin    -> Shisunin
+Shan        -> Joan
+Shisunin    -> Yi Sun-sin (YSS)
 Sigrid      -> Sigrid
-Silvin      -> Silvin
+Silvin      -> Sylvan
 Vista       -> Vista
 Wukong      -> Wukon
 Yi Sun-sin  -> Yi Sun-sin

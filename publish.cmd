@@ -4,7 +4,8 @@ rem ---------------------------------------------------------------
 rem  Hero Hub - publish the live site
 rem
 rem  Copies your working files out of ..\HeroHub, commits, and pushes.
-rem  GitHub Pages redeploys within about a minute.
+rem  Cloudflare Pages redeploys within about a minute; GitHub Pages
+rem  keeps working from the same repo if you still want it.
 rem
 rem  Just double-click this file.
 rem ---------------------------------------------------------------
@@ -12,7 +13,8 @@ rem ---------------------------------------------------------------
 cd /d "%~dp0"
 
 set SRC=..\HeroHub
-set PAGES=https://sidspanos.github.io/hero-hub/
+set CF=https://hero-hub.pages.dev/
+set GH=https://sidspanos.github.io/hero-hub/
 
 if not exist "%SRC%\hero-hub.html" (
   echo Could not find %SRC%\hero-hub.html
@@ -36,6 +38,9 @@ echo Copying from %SRC% ...
 copy /y "%SRC%\hero-hub.html"  "index.html"     >nul
 copy /y "%SRC%\hero-data.js"   "hero-data.js"   >nul
 copy /y "%SRC%\hero-names.js"  "hero-names.js"  >nul
+copy /y "%SRC%\hero-sheet.js"  "hero-sheet.js"  >nul
+copy /y "%SRC%\skill-seq.js"   "skill-seq.js"   >nul
+rem  hero-mine.js is NOT copied - that one is yours. See .gitignore.
 
 git add -A
 if errorlevel 1 (
@@ -65,10 +70,11 @@ if errorlevel 1 goto fail
 echo.
 echo ================================================================
 echo  Published. Live in about a minute:
-echo    %PAGES%
+echo    %CF%
+echo    %GH%
 echo.
-echo  Press Ctrl+F5 when you open it - a normal refresh will show
-echo  you the old cached version and look like nothing happened.
+echo  Cloudflare is told not to cache, so a normal refresh is enough.
+echo  On GitHub Pages you may still need Ctrl+F5.
 echo ================================================================
 goto done
 

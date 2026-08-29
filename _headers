@@ -1,0 +1,12 @@
+# Cloudflare Pages reads this file; it is never served.
+#
+# Everything here is a hand-edited file that changes when you publish, and the
+# whole site is five files, so there is nothing worth caching hard. no-cache
+# does NOT mean "download every time" — the browser still asks, and gets a
+# cheap 304 back when nothing changed. What it buys you is never again seeing
+# a stale build and wondering whether the publish worked.
+
+/*
+  Cache-Control: no-cache, must-revalidate
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
