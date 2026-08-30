@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 rem ---------------------------------------------------------------
 rem  Hero Hub - publish the live site
 rem
@@ -49,9 +49,20 @@ if errorlevel 1 (
   goto done
 )
 
+git fetch --quiet origin 2>nul
+
 git diff --cached --quiet
 if not errorlevel 1 (
-  echo Nothing changed since the last publish.
+  echo Nothing new to commit.
+  set AHEAD=0
+  for /f %%c in ('git rev-list --count origin/main..HEAD 2^>nul') do set AHEAD=%%c
+  if not "!AHEAD!"=="0" (
+    echo But !AHEAD! commit^(s^) here are not on GitHub yet - pushing those.
+    git push
+    if errorlevel 1 goto fail
+    goto published
+  )
+  echo Everything is already live.
   goto done
 )
 
@@ -67,6 +78,7 @@ if errorlevel 1 goto fail
 git push
 if errorlevel 1 goto fail
 
+:published
 echo.
 echo ================================================================
 echo  Published. Live in about a minute:
