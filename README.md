@@ -4,7 +4,7 @@ A hero planner for **Fate War** — ranks, ratings, arena counters and talent
 builds — in **one HTML file**. No build step, no backend, no dependencies. Open
 it from a folder or from a URL; it behaves the same either way.
 
-**Live:** https://sidspanos.github.io/hero-hub/
+**Live:** https://hero-hub.sidspanos.workers.dev/
 
 ![The tier board](docs/01-tier-board.png)
 
