@@ -1,34 +1,143 @@
-/* core-skills.js — every hero's five skill slots, read off the game itself.
+/* core-skills.js — THE hero authority.
 
-   THIS FILE IS FACTS FROM THE GAME. Nothing in here is an opinion, a rating
-   or a tier. It is what the skill tooltip says, transcribed.
+   Everything the app knows about a hero that is a FACT rather than an opinion
+   lives here, in one file, in two halves.
 
-   Keyed by the internal hero id — the LEFT-hand side of hero-names.js — so
-   renaming a hero on screen never breaks the link. Within a hero, skills are
-   keyed by slot: "1".."4" are the four normal slots in the order the game
-   draws them, "U" is the awakened slot.
+   ---------------------------------------------------------------------------
+   HALF ONE — the sheet. One line per hero, hand-edited, exactly the format
+   hero-sheet.js used, because these are the columns you maintain by hand:
 
-   Each skill carries:
-     name       what the game calls it
-     type       Burst | Passive | Awakened
-     rageCost   for Bursts
-     notes      the conditions and wording that aren't a number
-     effects[]  one entry per numbered line of the Upgrade Preview:
-                  what    the label the game uses
-                  unit    "%" or "s" where the game shows one, else absent
-                  values  the five skill levels, low to high.
-                          null means that level wasn't visible in the capture.
-                  note    anything that qualifies the values
+     troop   the troop they march
+     trees   their three talent trees, read LEFT TO RIGHT — the 10 o'clock,
+             12 o'clock and 2 o'clock branches, in that order. THE ORDER IS
+             NOT RECOVERABLE FROM A SCREENSHOT: the character panel does not
+             draw them in wheel order. It is yours, read off the wheel, and
+             nothing in the other half is allowed to rearrange it.
+             "vers" (Versatile) carries bonuses under any commander, which is
+             what makes a hero good in the lieutenant seat. They still march
+             their own troop. Versatile and Balanced ("bal") are DIFFERENT
+             trees and a hero can have both.
+     skin    yes / no
+     obtain  how you get them
 
-   The awakened slot ("U") is deliberately left half-empty. It records the
-   skill's name and which normal skill it buffs, plus whatever Before/After
-   Awakening numbers were on screen. "toFill": true marks the ones still
-   waiting on the account to awaken that hero. Fill them in as you go — the
-   Hero Score card has room for them.
+   Spelling is forgiving: Cavalry, BZ, seige, cheif and p2w all land correctly.
+   Lines starting with # are ignored, a # anywhere starts a comment, and a
+   blank or "-" means "not recorded". A line the app can't read is skipped and
+   named on the Roster tab — one bad row never blanks the rest.
 
-   Written from 93 game screenshots. 'source' on each hero says which.
+   ---------------------------------------------------------------------------
+   HALF TWO — the skills. Five slots per hero, read off the game or off the
+   guide mirror, keyed by the same internal hero id as the sheet above, so the
+   two halves join on that id and can never drift apart into two opinions.
+
+     "1".."4"   the four normal slots, in the order the game draws them
+     "U"        the awakened slot
+
+   Each skill carries its name, type, rage cost, the conditions in words, and
+   one effects[] entry per numbered line of the Upgrade Preview — five levels,
+   low to high, null where a level was not visible. Every skill is read AT MAX
+   in the app: the level-5 figure is the one that counts, because what a hero
+   is worth is what they are worth fully trained.
+
+   The awakened slot is deliberately half-empty. "toFill": true marks the ones
+   still waiting on the account to awaken that hero. Fill them as you go.
+
+   ---------------------------------------------------------------------------
+   WHY ONE FILE. The two used to be separate and both claimed to know a hero's
+   talents, which is how they came to disagree on 31 of 35 rows without anyone
+   noticing. Now the trees have exactly one home — the table below — and the
+   skills half carries no competing copy. This file is loaded AFTER
+   hero-sheet.js, so if that older file is still on disk its rows are read
+   first and then replaced by these. It can be deleted.
+
+   Your own edits in the browser still sit on top of all of it and still win.
 */
 
+/* ---- HALF ONE: the sheet -------------------------------------------------
+   troop   axe   bers   cav   beast
+   trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr
+           siege  hunt  gath  skill
+   obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any                  */
+window.HERO_SHEET = `
+# troop   axe   bers   cav   beast
+# trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
+#         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
+# obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
+# hero         | troop | trees             | skin | obtain
+# ---- S+ ----
+Arthur       | bers  | siege bal def     | yes  | chief
+Farad        | cav   | axe skill vers    | yes  | wheel   # Farhad
+Freya        | axe   | beast siege def   | yes  | p2p   # Freyja
+Irin         | beast | cav skill hunt    | yes  | wheel   # Erin
+Odaunaga     | axe   | cav vers atk      | yes  | chief   # Oda Nobunaga
+Shan         | cav   | vers bal skill    | yes  | chief   # Joan
+Shisunin     | bers  | bal garr def      | yes  | wheel   # Yi Sun-sin
+
+# troop   axe   bers   cav   beast
+# trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
+#         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
+# obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
+# hero         | troop | trees             | skin | obtain
+# ---- S ----
+Amaterasu    | axe   | siege skill bal   | yes  | wheel
+Asuka        | cav   | cav vers field    | yes  | boxes   # Aska
+Rot          | beast | axe vers field    | yes  | wheel   # Roro
+Wukong       | bers  | cav skill vers    | yes  | p2p   # Wukon
+
+# troop   axe   bers   cav   beast
+# trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
+#         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
+# obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
+# hero         | troop | trees             | skin | obtain
+# ---- A ----
+Carl         | cav   | bers vers def     | no   | wheel   # Karl
+Held         | beast | axe siege skill   | no   | shift   # Helda
+Morgan Lefe  | axe   | axe hunt atk      | no   | p2p
+Petra        | bers  | bers def vers     | no   | boxes
+Reald        | cav   | bers garr def     | no   | shift   # Reid
+Reinhardt    | axe   | cav hunt field    | no   | shift
+Silvin       | beast | vers skill bal    | no   | f2p   # Sylvan
+
+# troop   axe   bers   cav   beast
+# trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
+#         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
+# obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
+# hero         | troop | trees             | skin | obtain
+# ---- B ----
+Balder       | bers  | bers hunt def     | no   | f2p   # Baldur
+Elfwine      | cav   | hunt supp bal     | no   | f2p   # Aelfwine
+Iris         | axe   | beast garr supp   | no   | f2p
+Kaira        | axe   | vers axe field    | no   | boxes
+Kiana        | cav   | beast vers supp   | no   | vip
+Kus          | bers  | axe hunt atk      | no   | any   # Kalthas
+Reynald      | axe   | cav hunt field    | no   | f2p
+Sara         | beast | hunt supp bal     | no   | f2p
+Selena       | cav   | cav hunt field    | no   | f2p
+Voll         | bers  | hunt bers skill   | no   | f2p
+
+# troop   axe   bers   cav   beast
+# trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
+#         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
+# obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
+# hero         | troop | trees             | skin | obtain
+# ---- C ----
+Linda        | axe   | cav vers skill    | no   | f2p
+Rex          | cav   | bers garr def     | no   | f2p
+Vista        | beast | vers bal supp     | no   | f2p
+
+# troop   axe   bers   cav   beast
+# trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
+#         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
+# obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
+# hero         | troop | trees             | skin | obtain
+# ---- D ----
+Elina        | axe   | gath bal supp     | no   | any   # Elena
+Ilia         | cav   | axe hunt supp     | no   | any   # Elia
+Scarnet      | bers  | gath bal supp     | no   | any   # Skerne
+Sigrid       | beast | gath bal supp     | no   | any
+`;
+
+/* ---- HALF TWO: the skills ---------------------------------------------- */
 window.CORE_SKILLS = {
 
   "Amaterasu": {
@@ -90,7 +199,6 @@ window.CORE_SKILLS = {
     name: "Arthur",
     warband: "Eternal King",
     rarity: "S",
-    talents: ["Balanced","Sieging","Defense"],
     sourceKind: "game",
     level: 60,
     power: 340810,
@@ -160,7 +268,6 @@ window.CORE_SKILLS = {
     name: "Aska",
     warband: "Blade of Judgment",
     rarity: "S",
-    talents: ["Cavalry","Versatile","Field Combat"],
     sourceKind: "game",
     level: 60,
     power: 340810,
@@ -229,7 +336,6 @@ window.CORE_SKILLS = {
     name: "Baldur",
     warband: "Ironshield",
     rarityNote: "not asserted - Baldur starts blue and progresses to gold, so rarity is a per-account fact, not a hero fact",
-    talents: ["Berserker","Hunter","Defense"],
     sourceKind: "game",
     level: 60,
     power: 677530,
@@ -284,7 +390,6 @@ window.CORE_SKILLS = {
     name: "Karl",
     warband: "Eternal Flame",
     rarity: "S",
-    talents: ["Berserker","Versatile","Defense"],
     sourceKind: "game",
     level: 53,
     power: 284540,
@@ -352,7 +457,6 @@ window.CORE_SKILLS = {
     name: "Aelfwine",
     warband: "Peace Ambassador",
     rarity: "S",
-    talents: ["Balanced","Hunter","Support"],
     sourceKind: "game",
     level: 60,
     power: 352810,
@@ -472,7 +576,6 @@ window.CORE_SKILLS = {
     name: "Farhad",
     warband: "Whirling Thunder",
     rarity: "S",
-    talents: ["Axe Thrower","Versatile","Skill"],
     sourceKind: "game",
     level: 60,
     power: 335630,
@@ -538,7 +641,6 @@ window.CORE_SKILLS = {
     name: "Freyja",
     warband: "War Song Siren",
     rarity: "S",
-    talents: ["Beast Rider","Sieging","Defense"],
     sourceKind: "game",
     owned: false,
     note: "unowned - level 1 and slot levels are display defaults, not training levels",
@@ -870,7 +972,6 @@ window.CORE_SKILLS = {
     name: "Kiana",
     warband: "Frost Speaker",
     rarity: "S",
-    talents: ["Beast Rider","Versatile","Support"],
     sourceKind: "game",
     level: 60,
     power: 323410,
@@ -1047,7 +1148,6 @@ window.CORE_SKILLS = {
     name: "Morgan le Fay",
     warband: "Evernight Witch",
     rarity: "S",
-    talents: ["Axe Thrower","Hunter","Attack"],
     sourceKind: "game",
     owned: false,
     note: "unowned - level 1 and slot levels are display defaults, not training levels. In-game spelling is 'Morgan le Fay'.",
@@ -1109,7 +1209,6 @@ window.CORE_SKILLS = {
     name: "Oda Nobunaga",
     warband: "Demon King of the Sixth Heaven",
     rarity: "S",
-    talents: ["Cavalry","Versatile","Attack"],
     sourceKind: "game",
     owned: false,
     note: "unowned - level 1 and slot levels are display defaults, not training levels",
@@ -1171,7 +1270,6 @@ window.CORE_SKILLS = {
     name: "Petra",
     warband: "Crystalline Guardian",
     rarity: "S",
-    talents: ["Berserker","Versatile","Defense"],
     sourceKind: "game",
     owned: false,
     note: "unowned - level 1 and slot levels are display defaults, not training levels",
@@ -1291,7 +1389,6 @@ window.CORE_SKILLS = {
     name: "Reinhardt",
     warband: "Blade of Justice",
     rarity: "S",
-    talents: ["Cavalry","Hunter","Field Combat"],
     sourceKind: "game",
     level: 39,
     power: 99440,
@@ -1699,7 +1796,6 @@ window.CORE_SKILLS = {
     name: "Joan",
     warband: "The Blessed Maiden",
     rarity: "S",
-    talents: ["Balanced","Versatile","Skill"],
     sourceKind: "game",
     level: 60,
     power: 457810,
@@ -1876,7 +1972,6 @@ window.CORE_SKILLS = {
     name: "Sylvan",
     warband: "Forest Guardian",
     rarity: "S",
-    talents: ["Balanced","Versatile","Skill"],
     sourceKind: "game",
     owned: false,
     note: "unowned - level 1 and slot levels are display defaults, not training levels",
@@ -2052,7 +2147,6 @@ window.CORE_SKILLS = {
     name: "Wukong",
     warband: "Monkey King",
     rarity: "S",
-    talents: ["Cavalry","Versatile","Skill"],
     sourceKind: "game",
     owned: false,
     note: "unowned - level 1 and slot levels are display defaults, not training levels",

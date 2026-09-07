@@ -8,7 +8,8 @@ requirement.
 index.html      the app
 hero-data.js    the saved layout, exported from the app
 hero-names.js   the name list
-hero-sheet.js   troop, talents, skin, obtain — one line per hero
+core-skills.js  troop, talent trees, skin, obtain — one line per hero —
+                plus every hero's five skills. The hero authority.
 skill-seq.js    the order each hero's skills get trained
 _headers        cache rules (Cloudflare reads it; it is never served)
 ```

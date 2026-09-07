@@ -1,25 +1,25 @@
 <!DOCTYPE html>
 <!-- ===========================================================
-     2026-09-07 17:02 — core-skills.js now covers ALL 35 heroes.
-     15 read off the game itself (93 screenshots). 20 more from the
-     fatewarguide.com mirror, recovered from <hero>/amp/index.html —
-     HTTrack left the top-level index.html as a 0-byte stub for ten
-     of them, which an earlier pass mistook for a gap in the scrape.
-     THE GUIDE'S SLOT ORDER IS NOT RELIABLE. Against the four heroes
-     held both ways — Kiana, Karl, Aelfwine, Reinhardt — slot 1 and
-     the awakened slot always agree and slots 2-4 are shuffled every
-     single time. So the guide may never place a skill in slots 2-4
-     of a hero the game already covers; it may only fill a slot the
-     game left empty, and then only by elimination on the name. That
-     is how Kiana slot 3 became Succor of Frost. Guide-only heroes
-     carry their slots 2-4 as given, badged "slot order unverified".
-     EVERY SKILL IS READ AT MAX: the level-5 figure leads, in bold.
-     No empty boxes — an untouched line is a sentence, with a small
-     "score" button to open the boxes for that one line. Nothing from
-     core-skills.js scores, counts as filled, or is saved to your data.
-     Baldur is still NOT taken from the guide: that page is his blue
-     form (DMG Factor 735) against gold (10,500) in your screenshots,
-     so his slots 1-4 stay blank rather than take the wrong rarity.
+     2026-09-07 17:55 — hero-sheet.js and core-skills.js are now ONE file.
+     core-skills.js is the hero authority and carries both halves:
+     the hand-edited sheet table (troop, the three talent trees in
+     wheel order, skin, obtain) and every hero's five skill slots,
+     joined on the same internal id. hero-sheet.js is no longer
+     loaded and has been archived — the two used to both claim to
+     know a hero's talents, which is how they came to disagree on
+     31 of 35 rows without anyone noticing. One file, one answer.
+     The talents field inside the skills half was dropped for the
+     same reason: the tree table is now the single home, because
+     tree ORDER is the 10/12/2 o'clock wheel reading and no
+     screenshot can supply it.
+     Coverage: 35 of 35 heroes have skills, trees, troop, skin and
+     obtain. Warband on the 15 read off the game; the guide pages
+     do not carry it. Every skill is read AT MAX. Nothing from this
+     file scores, counts as filled, or is written to your saved
+     data — your browser edits still sit on top and still win.
+     Still open: Baldur slots 1-4 (his guide page is the blue form),
+     and tree POSITIONS for the nine heroes whose source had no tree
+     in common with the sheet.
      ========================================================== -->
 <html lang="en">
 <head>
@@ -1599,7 +1599,7 @@
         The app only ever reads the first four — nothing it does can overwrite what you typed.</p>
       <table class="ftable">
         <tr><td><code>hero-names.js</code></td><td>display names and aliases</td><td class="fw">shared</td></tr>
-        <tr><td><code>hero-sheet.js</code></td><td>troop, talent trees, skin, how you get them</td><td class="fw">shared</td></tr>
+        <tr><td><code>core-skills.js</code></td><td>troop, talent trees, skin, how you get them &middot; and every hero's five skills</td><td class="fw">shared</td></tr>
         <tr><td><code>skill-seq.js</code></td><td>the order to train each hero's skills</td><td class="fw">shared</td></tr>
         <tr><td><code>hero-mine.js</code></td><td>which heroes and skins <b>you</b> own</td><td class="fm">yours — not published</td></tr>
         <tr><td><code>hero-data.js</code></td><td>tiers, pairings, arena teams, boards, portraits</td><td class="fw">written by the app</td></tr>
@@ -1615,7 +1615,7 @@
     <h2 style="margin-top:20px">Troop types
       <label class="btn" style="float:right;font-weight:400">Load troop icons<input type="file" id="troopFiles" accept="image/*" multiple style="display:none"></label>
     </h2>
-    <p class="note"><span id="troopProgress"></span> Set each hero's primary troop on its card, or fill the troop column in <code>hero-sheet.js</code>. Icons you load here preview for this session only — send me the image files and I'll embed them permanently.</p>
+    <p class="note"><span id="troopProgress"></span> Set each hero's primary troop on its card, or fill the troop column in <code>core-skills.js</code>. Icons you load here preview for this session only — send me the image files and I'll embed them permanently.</p>
     <div class="sheetwarn hidden" id="sheetWarn"></div>
     <div class="troopkey" id="troopkey"></div>
 
@@ -1851,8 +1851,9 @@ The middle word is loose — skill, skillicon, skiicon, icon, or nothing.
     <h2>New hero</h2>
     <p class="note">Everything the app needs about a hero, in one place. Fill what you know —
       nothing here is required to save, and the checklist tells you what's still open.
-      When you're done you get the exact lines to paste into <code>hero-sheet.js</code> and
-      <code>hero-mine.js</code>, because those files stay the source of truth.</p>
+      When you're done you get the exact lines to paste into <code>core-skills.js</code> —
+      into the sheet table at the top of it — and into <code>hero-mine.js</code>,
+      because those files stay the source of truth.</p>
     <div id="newBody"></div>
   </section>
 
@@ -2005,10 +2006,6 @@ The middle word is loose — skill, skillicon, skiicon, icon, or nothing.
 <!-- Plain-text name list, auto-loaded. Edit hero-names.js, refresh, done. -->
 <script src="hero-names.js"></script>
 
-<!-- Shared facts: one line per hero — troop, trees, skin, how you get them.
-     Yours to edit; the app only ever reads it. Published with the site. -->
-<script src="hero-sheet.js"></script>
-
 <!-- Your account: which heroes you own and how far you've trained them.
      NOT published — it's in .gitignore, so visitors start with their own.
      Missing file = harmless 404; everyone just starts owning everything. -->
@@ -2020,10 +2017,14 @@ The middle word is loose — skill, skillicon, skiicon, icon, or nothing.
 
 <!-- Optional sidecar. If hero-data.js sits next to this file, its values win.
      Missing file = harmless 404 in the console; the built-in defaults are used. -->
-<!-- core-skills.js — what each hero's five skills ARE, read off the game.
-     Facts, not opinions. It sits UNDER your edits: a name or an effect you
-     have never touched is read from here, and the moment you change one,
-     yours wins and only yours is saved. Missing file = blank rows, as before. -->
+<!-- core-skills.js — THE hero authority, in two halves.
+     Half one is the sheet: one line per hero — troop, the three talent trees
+     in wheel order, skin, how you get them. Hand-edited; the app only reads it.
+     Half two is the skills: five slots per hero with their names, conditions
+     and five-level curves, joined to the sheet on the same internal id.
+     They used to be two files and both claimed to know a hero's talents,
+     which is how they came to disagree on 31 of 35 rows. One file, one answer.
+     It sits UNDER your browser edits: anything you change wins and is saved. -->
 <script src="core-skills.js"></script>
 <script src="hero-data.js"></script>
 
@@ -2123,7 +2124,7 @@ const TREES = [
 ];
 const treeById = id => TREES.find(t=>t.id===id);
 /* The tree that isn't tied to a single troop. Checked in the game: it is
-   BALANCED, not Versatile. The evidence in hero-sheet.js agrees — a hero has
+   BALANCED, not Versatile. The evidence in core-skills.js agrees — a hero has
    a troop tree (Axe / Berserker / Cavalry / Beast) or they have Balanced,
    never both, 34 of 35 rows. Balanced sits in the slot a troop tree would
    take, so its bonuses aren't tied to a troop and the hero can run any of
@@ -2737,7 +2738,7 @@ function fitTreeWeights(){
   });
   return out;
 }
-/* A tree set here rather than in hero-sheet.js — for heroes whose trees you
+/* A tree set here rather than in core-skills.js — for heroes whose trees you
    haven't recorded yet, or got wrong. The sheet still wins for everyone you
    haven't touched, so this stays an exception rather than a second truth. */
 const TREE_OVERRIDE = {};
@@ -3466,7 +3467,7 @@ function clearBackup(){
 const writeBackup = (data)=> saveOverlay(data);
 
 /* ---- pull one hero's fact back off the browser layer ----
-   The published files (hero-data.js + hero-sheet.js) are the baseline; your
+   The published files (hero-data.js + core-skills.js) are the baseline; your
    browser layer sits on top and wins. When you say "this hero is mine, read
    their trees from my sheet", the layer entry for that hero has to actually
    go — not just be overwritten — otherwise the sheet is pinned to whatever
@@ -3520,8 +3521,8 @@ function dropOverlaySection(k){
   }
   return true;
 }
-/* What hero-sheet.js says this hero's trees are — null when it says nothing.
-   Trees live ONLY in hero-sheet.js; hero-data.js carries none. So if the sheet
+/* What core-skills.js says this hero's trees are — null when it says nothing.
+   Trees live ONLY in core-skills.js; hero-data.js carries none. So if the sheet
    isn't sitting next to the page, this is null for everybody, and nothing here
    is allowed to treat that as "the answer is: no trees". */
 function publishedTrees(h){
@@ -3536,7 +3537,7 @@ function treesLayered(h){
   if(!base) return false;                 // nothing to compare against
   return JSON.stringify(base) !== JSON.stringify((h.treeSet || []).slice(0,3));
 }
-/* their three trees exactly as hero-sheet.js has them, layer dropped.
+/* their three trees exactly as core-skills.js has them, layer dropped.
    Returns null and changes NOTHING when the sheet has nothing for them —
    a pull must never be able to empty a hero. */
 function pullTrees(h){
@@ -3568,14 +3569,14 @@ let SHEET_DATA = null;
 
   /* Two column files, same format, read in order.
 
-       hero-sheet.js   the shared facts — troop, trees, skin, obtain.
+       core-skills.js   the shared facts — troop, trees, skin, obtain.
                        Published with the site; everyone gets it.
        hero-mine.js    your account — which heroes you own and how far you've
                        trained them. NOT published: it's in .gitignore, so a
                        visitor never inherits your roster as their default.
 
      Both are yours to write and neither is ever written back by the app.
-     hero-mine.js wins over hero-sheet.js field by field, hero-data.js wins
+     hero-mine.js wins over core-skills.js field by field, hero-data.js wins
      over both, and your own edits in the browser win over everything.
 
        hero | troop | trees | skin | obtain | skills | own
@@ -3685,7 +3686,7 @@ let SHEET_DATA = null;
              Arthur  yes  skin  5 1 3 2
            "skin" means you own that hero's skin. Its absence means you don't —
            whether a skin EXISTS at all is a game fact and lives in
-           hero-sheet.js, not here. */
+           core-skills.js, not here. */
         while(w.length > 1 && ["skin","noskin"].includes(flat(w[w.length-1])))
           col.hasSkin = flat(w.pop()) === "skin" ? "yes" : "no";
         if(w.length > 1 && (YES.has(flat(w[w.length-1])) || NO.has(flat(w[w.length-1]))))
@@ -3746,7 +3747,7 @@ let SHEET_DATA = null;
   }
 
   let sawColumns = false;
-  [["hero-sheet.js", window.HERO_SHEET], ["hero-mine.js", window.HERO_MINE]].forEach(([name, text])=>{
+  [["core-skills.js", window.HERO_SHEET], ["hero-mine.js", window.HERO_MINE]].forEach(([name, text])=>{
     if(typeof text !== "string") return;      // hero-mine.js is optional by design
     sawColumns = true;
     readColumns(name, text);
@@ -3899,7 +3900,7 @@ HEROES.forEach(h=>{
      and you can drop the flag. */
   h.versatile = h.treeSet.includes(VERSATILE_TREE) || a.versatile === true;
   h.own = (OWNED_DATA[h.key] !== false && OWNED_DATA[h.n] !== false);   // yours unless said otherwise
-  /* h.skin  = does a skin EXIST for them (shared fact, hero-sheet.js)
+  /* h.skin  = does a skin EXIST for them (shared fact, core-skills.js)
      h.mySkin = do YOU have it (hero-mine.js). Default false — you own none
      until you say so, unlike heroes, which default to yours. */
   h.mySkin = (SKIN_OWNED_DATA[h.key] === true || SKIN_OWNED_DATA[h.n] === true);
@@ -4082,24 +4083,24 @@ function drawBuildImgKey(){
         : `<span class="todo">drop files in icons/builds/</span>`}</div></div>`;
 }
 function drawTroopKey(){
-  /* anything hero-sheet.js couldn't read, said out loud — a hand-edited file
+  /* anything core-skills.js couldn't read, said out loud — a hand-edited file
      that fails silently is worse than one that fails loudly */
   const skipped = window.__SHEET_SKIPPED || [];
   const noSheet = !sheetHasTrees();
   const sw = document.getElementById("sheetWarn");
   if(sw){
     sw.classList.toggle("hidden", !skipped.length && !noSheet);
-    /* No trees at all means hero-sheet.js never loaded — trees live only in
+    /* No trees at all means core-skills.js never loaded — trees live only in
        that file, hero-data.js carries none. Worth shouting about, because
        every tree on the page would then be coming out of this browser. */
     sw.innerHTML = (noSheet
-      ? `<b>hero-sheet.js isn't loaded</b>`
+      ? `<b>core-skills.js isn't loaded</b>`
         + `<ul><li>Talent trees, troop types, skins and obtain all come from that file.</li>`
-        + `<li>Put <code>hero-sheet.js</code> in the same folder as this page and refresh.</li></ul>`
+        + `<li>Put <code>core-skills.js</code> in the same folder as this page and refresh.</li></ul>`
         + `<span class="sn">Anything you can see right now is coming from this browser, not the file.</span>`
       : "")
       + (skipped.length
-      ? `<b>${skipped.length} line${skipped.length>1?"s":""} in hero-sheet.js couldn't be read</b>`
+      ? `<b>${skipped.length} line${skipped.length>1?"s":""} in core-skills.js couldn't be read</b>`
         + `<ul>${skipped.map(x=>`<li>${x}</li>`).join("")}</ul>`
         + `<span class="sn">Everything else on those lines was still applied. Fix and refresh.</span>`
       : "");
@@ -4302,7 +4303,7 @@ function wireTrayToBoard(){
 }
 
 /* Ticking "own" means the same thing wherever you do it: the hero is yours,
-   their talents get re-read from hero-sheet.js, and the focus order is redone
+   their talents get re-read from core-skills.js, and the focus order is redone
    because a hero you don't have can't be worth levelling. */
 function setOwn(key, on){
   const h = byKey(key); if(!h) return null;
@@ -5003,7 +5004,7 @@ const HELP = {
        f:()=>[document.getElementById("rvCards"), document.getElementById("rvTable")]},
 
       {k:"do", t:"Tick what you own",
-       b:"The same tick as the tier board, Arena and Hero Score — tick it here and it shows everywhere. Ticking it also re-reads that hero's talents out of <em>hero-sheet.js</em>.",
+       b:"The same tick as the tier board, Arena and Hero Score — tick it here and it shows everywhere. Ticking it also re-reads that hero's talents out of <em>core-skills.js</em>.",
        f:()=>document.querySelector("#rosterWrap .owntick, #rosterWrap .ownck")},
 
       {k:"do", t:"Or do all 35 at once",
@@ -5031,7 +5032,7 @@ const HELP = {
        f:()=>document.querySelector("#rosterWrap .skqrow, #rosterWrap .rskillinp")},
 
       {k:"do", t:"Troop, skin, obtain",
-       b:"Three facts per hero. Troop is what drives the any-troop score; skin and obtain feed the tags on the board. Set them here or in <em>hero-sheet.js</em> — the file wins on reload.",
+       b:"Three facts per hero. Troop is what drives the any-troop score; skin and obtain feed the tags on the board. Set them here or in <em>core-skills.js</em> — the file wins on reload.",
        f:()=>{ const c = document.querySelector("#rosterWrap .rcard");
                const box = c && [...c.querySelectorAll(".troopbox, .skinbox, .obtbox")];
                return (box && box.length) ? box : document.querySelector("#rosterWrap .rtroops"); }},
@@ -5058,7 +5059,7 @@ const HELP = {
     sub: "Everything the app scores on, in one form — and the two file lines that make them real for everyone.",
     steps: [
       {k:"do", t:"The name is the key",
-       b:"Spell it the way the game does. This exact string is what <em>hero-sheet.js</em>, <em>hero-mine.js</em> and <em>skill-seq.js</em> all match on, so a typo here becomes a hero nobody else has. A warning appears if the name is already taken.",
+       b:"Spell it the way the game does. This exact string is what <em>core-skills.js</em>, <em>hero-mine.js</em> and <em>skill-seq.js</em> all match on, so a typo here becomes a hero nobody else has. A warning appears if the name is already taken.",
        f:()=>document.getElementById("nhName")},
 
       {k:"do", t:"Alias",
@@ -5106,7 +5107,7 @@ const HELP = {
        f:()=>document.querySelector("#newBody .nhgaps, #newBody .nhdone")},
 
       {k:"do", t:"The two file lines — don't skip these",
-       b:"Adding puts the hero in <em>this browser only</em>. Paste these two lines into <em>hero-sheet.js</em> and <em>hero-mine.js</em> and they're real for everyone — and on the next reload the files win over your browser layer.",
+       b:"Adding puts the hero in <em>this browser only</em>. Paste these two lines into <em>core-skills.js</em> and <em>hero-mine.js</em> and they're real for everyone — and on the next reload the files win over your browser layer.",
        f:()=>[...document.querySelectorAll("#newBody .nhcode")]},
 
       {k:"do", t:"Add them",
@@ -5593,7 +5594,7 @@ function uniqueKey(base){
 /* ---- onboarding a hero ----
    One form holding every fact the app uses, so nothing is discovered missing
    three tabs later. It writes into the app straight away AND prints the two
-   file lines, because hero-sheet.js and hero-mine.js stay the source of truth
+   file lines, because core-skills.js and hero-mine.js stay the source of truth
    and a hero that only exists in someone's browser is a hero nobody else has. */
 const NEW_HERO = {name:"", alias:"", tier:"B", troop:"", trees:["","",""],
                   skin:"", obtain:"", modes:[], own:true, warband:""};
@@ -5671,7 +5672,7 @@ function drawNewHero(){
         <h3 style="margin-top:12px">Lines for your files</h3>
         <p class="nhhint">Adding below puts them in this browser. Paste these to make it real for
           everyone, then the app reads them from the files instead of your layer.</p>
-        <div class="nhcode"><span class="nhwhich">hero-sheet.js</span><code>${sheetLine(n)}</code>
+        <div class="nhcode"><span class="nhwhich">core-skills.js</span><code>${sheetLine(n)}</code>
           <button class="btn tiny" data-nhcopy="sheet">copy</button></div>
         <div class="nhcode"><span class="nhwhich">hero-mine.js</span><code>${mineLine(n)}</code>
           <button class="btn tiny" data-nhcopy="mine">copy</button></div>
@@ -6046,7 +6047,7 @@ function drawSkills(){
     const vs = versScoreOf(h.key);
     /* Every slot is a dropdown over the whole tree list, so a hero whose trees
        you haven't recorded can still be scored here — and one you got wrong is
-       a click to fix. The value shown is whatever hero-sheet.js says; change it
+       a click to fix. The value shown is whatever core-skills.js says; change it
        here and the override is remembered, with the sheet still winning for
        anyone you haven't touched. */
     const rows = [0,1,2].map(i=>{
@@ -6062,7 +6063,7 @@ function drawSkills(){
             return T ? treeShort(T) : "—";
           })()}</span>
         <select class="trsel ${ov!==undefined?"over":""}" data-tree="${h.key}:${i}"
-          title="${ov!==undefined ? "Set here, overriding hero-sheet.js" : "From hero-sheet.js"}">
+          title="${ov!==undefined ? "Set here, overriding core-skills.js" : "From core-skills.js"}">
           <option value="">—</option>
           ${TREES.map(T=>`<option value="${T.id}" ${T.id===cur?"selected":""}>${T.name}</option>`).join("")}
         </select>
@@ -6088,7 +6089,7 @@ function drawSkills(){
       <div class="skcfoot">
         ${(TREE_OVERRIDE[h.key] || TREE_SCORE[h.key] || treesLayered(h))
           ? `<button class="btn tiny" data-treset="${h.key}"
-               title="Put ${h.n}'s trees back to what hero-sheet.js says, and drop any scores set here.
+               title="Put ${h.n}'s trees back to what core-skills.js says, and drop any scores set here.
 Your sheet is never changed by this — it's the copy in the browser that's overriding it.">↺ sheet</button>`
           : ""}
         <span class="trvers ${h.versatile?"on":""}" title="${h.versatile
@@ -6096,7 +6097,7 @@ Your sheet is never changed by this — it's the copy in the browser that's over
           : `No ${treeById(VERSATILE_TREE).name} tree — their bonuses only land under a commander of their own troop.`}">${
           h.versatile ? "any troop" : "own troop only"}</span>
         <span class="grow"></span>
-        <span class="trnote" title="Trees come from hero-sheet.js. Changing one here overrides it for this hero only.">${
+        <span class="trnote" title="Trees come from core-skills.js. Changing one here overrides it for this hero only.">${
           TREE_OVERRIDE[h.key] ? "set here"
             : treesLayered(h) ? "saved in this browser" : "from your sheet"}</span>
       </div>
@@ -6288,12 +6289,12 @@ Your sheet is never changed by this — it's the copy in the browser that's over
     const sks = skillsOf(h);
     return `<section class="skhero ${h.own?"":"notmine"}">
       <div class="skhhead">
-        <label class="ownbox" title="${h.own?"You own this hero":"You don't own this hero"} — ticking also puts their talents back to what hero-sheet.js says">
+        <label class="ownbox" title="${h.own?"You own this hero":"You don't own this hero"} — ticking also puts their talents back to what core-skills.js says">
           <input type="checkbox" class="ownck" data-skown="${h.key}" ${h.own?"checked":""}> own</label>
         <span class="avatar" data-jump="${h.key}">${portraitOf(h)?`<img src="${portraitOf(h)}" alt="">`:h.n[0]}</span>
         <b class="skname2">${h.n}</b>
         <span class="sktier t-${h.t.replace("+","p")}">${h.t}</span>
-        <span class="sktroop" title="Primary troop, from hero-sheet.js">${
+        <span class="sktroop" title="Primary troop, from core-skills.js">${
           h.troop ? `${troopById(h.troop)?.icon ? `<img src="${troopById(h.troop).icon}" alt="">` : ""}${troopName(h.troop)}`
                   : `<i>no troop</i>`}</span>
         <span class="skvers ${h.versatile?"on":""}"
@@ -6301,7 +6302,7 @@ Your sheet is never changed by this — it's the copy in the browser that's over
             ? `Runs any troop — the ${treeById(VERSATILE_TREE).name} tree isn't tied to one, so they aren't stuck with ${h.troop?troopName(h.troop):"their own"}.`
             : `Not versatile — only their own troop${h.troop?`, ${troopName(h.troop)}`:""}.`}
 Trees: ${(h.treeSet||[]).filter(Boolean).map(t=>treeById(t)?.name||t).join(" · ") || "none recorded"}
-Both come from hero-sheet.js.">${h.versatile ? "ANY TROOP" : "own troop only"}</span>
+Both come from core-skills.js.">${h.versatile ? "ANY TROOP" : "own troop only"}</span>
         <label class="skwb" title="Which warband they belong to — type it and it's remembered">warband
           <input list="wbNames" data-wb="${h.key}" value="${warbandOf(h.key).replace(/"/g,"&quot;")}"
                  placeholder="—"></label>
@@ -6387,7 +6388,7 @@ function drawFxVocab(){
       what actually gets scored. What's here is only what a tree is worth when you haven't said otherwise.</p>
     <div class="traitw">
       <button class="btn" id="fitTrees">Work them out from the tiers</button>
-      <button class="btn" id="repullTrees">↺ Re-pull every hero's talents from hero-sheet.js</button>
+      <button class="btn" id="repullTrees">↺ Re-pull every hero's talents from core-skills.js</button>
       <span class="msg">Averages the tier of every hero carrying each tree, so a tree that keeps
         appearing on your best heroes scores higher. Thin evidence is pulled toward the middle.</span>
     </div>
@@ -6479,8 +6480,8 @@ function wireSkills(){
     cb.addEventListener("change", ()=>{
       const h = setOwn(cb.dataset.skown, cb.checked); if(!h) return;
       if(cb.checked && !publishedTrees(h) && !sheetHasTrees())
-        alert("hero-sheet.js isn't loaded next to this page, so there are no talents to pull.\n\n"
-          + "Put hero-sheet.js in the same folder as this file and refresh. "
+        alert("core-skills.js isn't loaded next to this page, so there are no talents to pull.\n\n"
+          + "Put core-skills.js in the same folder as this file and refresh. "
           + "Nothing was changed.");
       drawSkills(); renderAll();
     }));
@@ -6553,8 +6554,8 @@ function wireSkills(){
   const rp = document.getElementById("repullTrees");
   if(rp) rp.addEventListener("click", ()=>{
     if(!sheetHasTrees()){
-      alert("hero-sheet.js isn't loaded next to this page, so there's nothing to pull from.\n\n"
-        + "Put hero-sheet.js in the same folder as this file and refresh. Nothing was changed.");
+      alert("core-skills.js isn't loaded next to this page, so there's nothing to pull from.\n\n"
+        + "Put core-skills.js in the same folder as this file and refresh. Nothing was changed.");
       return;
     }
     const changed = Object.keys(TREE_OVERRIDE).length, scored = Object.keys(TREE_SCORE).length;
@@ -6563,7 +6564,7 @@ function wireSkills(){
                   + ((st0.del && st0.del.TREE_SET) || []).length;
     if(!changed && !scored && !layered){
       alert("Nothing is sitting on your sheet — every hero already reads straight from it."); return; }
-    if(!confirm(`Put every hero's trees back to what hero-sheet.js says?\n\n`
+    if(!confirm(`Put every hero's trees back to what core-skills.js says?\n\n`
       + `${changed} hero${changed===1?"":"es"} with a tree changed here\n`
       + `${scored} hero${scored===1?"":"es"} with tree scores set here\n`
       + `${layered} hero${layered===1?"":"es"} with trees saved in this browser\n\n`
@@ -9431,10 +9432,10 @@ function startProgress(){
   const skinAvail = HEROES.filter(h=>h.skin==="yes").length;
   const ap = (typeof arenaPairs === "function") ? arenaPairs() : [];
   return [
-    {k:"Troop type",     n:HEROES.filter(h=>h.troop).length,                       d:N, where:"hero-sheet.js"},
-    {k:"Talent trees",   n:HEROES.filter(h=>(h.treeSet||[]).filter(Boolean).length===3).length, d:N, where:"hero-sheet.js"},
-    {k:"Skin recorded",  n:HEROES.filter(h=>h.skin).length,                        d:N, where:"hero-sheet.js"},
-    {k:"How to get them",n:HEROES.filter(h=>h.obtain).length,                      d:N, where:"hero-sheet.js"},
+    {k:"Troop type",     n:HEROES.filter(h=>h.troop).length,                       d:N, where:"core-skills.js"},
+    {k:"Talent trees",   n:HEROES.filter(h=>(h.treeSet||[]).filter(Boolean).length===3).length, d:N, where:"core-skills.js"},
+    {k:"Skin recorded",  n:HEROES.filter(h=>h.skin).length,                        d:N, where:"core-skills.js"},
+    {k:"How to get them",n:HEROES.filter(h=>h.obtain).length,                      d:N, where:"core-skills.js"},
     {k:"Training order", n:HEROES.filter(h=>h.seq).length,                         d:N, where:"skill-seq.js"},
     {k:"Heroes you own", n:HEROES.filter(h=>h.own).length,                         d:N, where:"hero-mine.js"},
     {k:"Skins you own",  n:HEROES.filter(h=>h.mySkin).length,   d:skinAvail,            where:"hero-mine.js"},

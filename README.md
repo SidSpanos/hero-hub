@@ -35,7 +35,7 @@ Everything else in the app is built on the gap between those two.
 | **Pairings** | Who goes with whom outside the arena, grouped by situation, with your reasoning written underneath. |
 | **Timeline** | Meta shifts by your own week number — who came in above the line, who dropped off below it. |
 | **Arena** | Your teams, the enemy defences you keep meeting, a board to answer them on, and the positioning rules the suggestions are fired from. |
-| **Hero Score** | The rating work. Ten values per hero per mode: five skills as commander and as lieutenant, three talents, any-troop, meta frequency. |
+| **Hero Score** | The rating work. Ten values per hero per mode: five skills as commander and as lieutenant, three talents, any-troop, meta frequency. Each skill arrives already named, with what it does and its five-level curve, read from `core-skills.js`. |
 | **Roster** | The source of truth. Every hero in one editable table or as cards. |
 | **New hero** | One form with everything the app scores on — and the two file lines that make a hero real for everyone, not just your browser. |
 
@@ -133,7 +133,7 @@ Five files make the whole site, and each one owns a different kind of truth.
 |---|---|---|
 | `index.html` | the entire app | yes |
 | `hero-names.js` | `id → display name`, one per line | yes |
-| `hero-sheet.js` | one line per hero: troop, three talents, skin, how you get them | yes |
+| `core-skills.js` | **the hero authority** — troop, talent trees, skin, obtain, and every hero's five skills | yes |
 | `skill-seq.js` | the order each hero's skills get trained | yes |
 | `hero-data.js` | the saved layout, written by the app | yes |
 | `hero-mine.js` | **your account** — which heroes you have | **no** |
@@ -141,9 +141,42 @@ Five files make the whole site, and each one owns a different kind of truth.
 They're read in that order, each one winning over the last, with your browser's
 own edits on top of all of them.
 
+### Why `core-skills.js` is one file and not two
+
+It used to be two. `hero-sheet.js` held troop, talents, skin and obtain;
+`core-skills.js` held the skills — and, because it was transcribed off the
+game's character panel, a second copy of each hero's talents. Two files both
+claiming to know the same fact is a bug waiting to happen, and it happened:
+they disagreed on **31 of 35 heroes** without anything noticing.
+
+So they're one file now, in two halves that join on the internal hero id:
+
+**Half one — the sheet.** One line per hero, hand-edited, the same plain
+format as before. This is the only home for the talent trees, and the reason
+is *order*. The three trees are positional — 10 o'clock, 12 o'clock, 2 o'clock
+on the wheel — and the game's character panel doesn't draw them in that order.
+No screenshot can recover it. It's read off the wheel by hand, and nothing in
+the other half is permitted to rearrange it.
+
+**Half two — the skills.** Five slots per hero: name, type, rage cost, the
+conditions in words, and one line per numbered effect with all five levels.
+Every skill is read **at max** — what a hero is worth is what they're worth
+fully trained, so the level-5 figure leads and the climb sits behind it.
+
+Where the skills came from is recorded and shown on the card. Fifteen heroes
+were read off the game itself; the rest came from a guide site, and those lines
+are badged **from guide** — with slots 2–4 badged **slot order unverified**,
+because the guide's ordering was checked against the four heroes held both ways
+and was wrong every time.
+
+Nothing in `core-skills.js` scores, counts as a rating, or gets written to your
+saved data. It's a floor, not a ceiling: the moment you change a value it
+becomes yours, it wins, and only your version is saved — so a later correction
+to the file still reaches you instead of being blocked by a copy of itself.
+
 `hero-mine.js` is in `.gitignore` and `publish.cmd` doesn't copy it. Nothing
 breaks without it: a visitor simply starts owning all 35 heroes and unticks
-their own. Same portraits, same talents, same training orders, same scores —
+their own. Same portraits, same talents, same skills, same training orders, same scores —
 only ownership differs.
 
 The left-hand side of `hero-names.js` is a stable id that never changes, so
