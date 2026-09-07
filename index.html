@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===========================================================
-     2026-09-07 17:55 — hero-sheet.js and core-skills.js are now ONE file.
+     2026-09-07 22:18 — hero-sheet.js and core-skills.js are now ONE file.
      core-skills.js is the hero authority and carries both halves:
      the hand-edited sheet table (troop, the three talent trees in
      wheel order, skin, obtain) and every hero's five skill slots,
@@ -14,7 +14,10 @@
      screenshot can supply it.
      Coverage: 35 of 35 heroes have skills, trees, troop, skin and
      obtain. Warband on the 15 read off the game; the guide pages
-     do not carry it. Every skill is read AT MAX. Nothing from this
+     do not carry it. Effect rows read LEFT TO RIGHT, level 1 to 5,
+     the same order the game prints the Upgrade Preview, with the
+     value at max in bold — it used to hoist max to the front, which
+     read faster for one number and worse for the line. Nothing from this
      file scores, counts as filled, or is written to your saved
      data — your browser edits still sit on top and still win.
      Still open: Baldur slots 1-4 (his guide page is the blue form),
@@ -2462,16 +2465,18 @@ function maxOf(e){
     if(e.values[i] !== null && e.values[i] !== undefined) return e.values[i];
   return null;
 }
+/* Left to right, level 1 to level 5, exactly the order the game prints the
+   Upgrade Preview in. The last one — the value at max — is the one that
+   counts, so it is the one in bold. Reordering the row to put max first
+   made it quicker to read one number and harder to read the line. */
 function curveText(e){
   if(!e || !Array.isArray(e.values) || !e.values.length) return "";
   const u = e.unit || "";
-  const top = maxOf(e);
-  if(top === null) return "";
-  const head = '<b>' + fmtNum(top) + u + '</b>';
-  if(e.values.length === 1) return head;
-  const climb = e.values.slice(0, -1).map(v => fmtNum(v) + u).join(" · ");
-  return head + ' <span class="fxclimb">at max</span>'
-       + (climb ? ' <span class="fxclimb">&nbsp;·&nbsp; ' + climb + '</span>' : "");
+  const last = e.values.length - 1;
+  return e.values.map((v,i)=>{
+    const t = fmtNum(v) + u;
+    return i === last ? '<b>' + t + '</b>' : '<span class="fxclimb">' + t + '</span>';
+  }).join('<span class="fxclimb"> · </span>');
 }
 /* The core row behind this one. Position first: skillsOf seeds the rows in
    core order, so row 2 is effect 2 — and a skill with two lines that share a
