@@ -40,6 +40,7 @@ copy /y "%SRC%\hero-data.js"   "hero-data.js"   >nul
 copy /y "%SRC%\hero-names.js"  "hero-names.js"  >nul
 copy /y "%SRC%\hero-sheet.js"  "hero-sheet.js"  >nul
 copy /y "%SRC%\skill-seq.js"   "skill-seq.js"   >nul
+copy /y "%SRC%\core-skills.js" "core-skills.js" >nul
 rem  hero-mine.js is NOT copied - that one is yours. See .gitignore.
 
 git add -A

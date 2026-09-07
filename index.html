@@ -1,4 +1,26 @@
 <!DOCTYPE html>
+<!-- ===========================================================
+     2026-09-07 17:02 — core-skills.js now covers ALL 35 heroes.
+     15 read off the game itself (93 screenshots). 20 more from the
+     fatewarguide.com mirror, recovered from <hero>/amp/index.html —
+     HTTrack left the top-level index.html as a 0-byte stub for ten
+     of them, which an earlier pass mistook for a gap in the scrape.
+     THE GUIDE'S SLOT ORDER IS NOT RELIABLE. Against the four heroes
+     held both ways — Kiana, Karl, Aelfwine, Reinhardt — slot 1 and
+     the awakened slot always agree and slots 2-4 are shuffled every
+     single time. So the guide may never place a skill in slots 2-4
+     of a hero the game already covers; it may only fill a slot the
+     game left empty, and then only by elimination on the name. That
+     is how Kiana slot 3 became Succor of Frost. Guide-only heroes
+     carry their slots 2-4 as given, badged "slot order unverified".
+     EVERY SKILL IS READ AT MAX: the level-5 figure leads, in bold.
+     No empty boxes — an untouched line is a sentence, with a small
+     "score" button to open the boxes for that one line. Nothing from
+     core-skills.js scores, counts as filled, or is saved to your data.
+     Baldur is still NOT taken from the guide: that page is his blue
+     form (DMG Factor 735) against gold (10,500) in your screenshots,
+     so his slots 1-4 stay blank rather than take the wrong rarity.
+     ========================================================== -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -1452,6 +1474,34 @@
   #tip .row .l{color:var(--text-secondary)}
   text{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
   footer{margin-top:14px;font-size:12px;color:var(--text-secondary)}
+
+  /* ---- what the game says, shown plainly -------------------------------
+     A line straight from core-skills.js is text, not a form. It only turns
+     into boxes when you press "score", because that is the moment it stops
+     being what the game said and starts being what you think. */
+  .fxrow.ro{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
+             padding:3px 0 4px; border-bottom:1px dotted var(--rule,#e6e6e1); }
+  .fxwhatro{ font-size:12px; color:var(--ink,#23231f); }
+  .fxrow.ro .fxref{ flex:1 1 100%; }
+  .fxref{ font-size:11px; color:var(--muted,#8a8a80); letter-spacing:.01em;
+          font-variant-numeric:tabular-nums; line-height:1.5; }
+  .fxref b{ color:var(--ink,#23231f); font-weight:600; }
+  .fxclimb{ opacity:.6; }
+  .srcguide{ color:#a8762e; letter-spacing:.06em; }
+  .srcwarn{ color:#b4553c; letter-spacing:.06em; }
+  .fxref i{ font-style:normal; opacity:.75; }
+  .fxedit{ font:inherit; font-size:10px; line-height:1; padding:3px 7px;
+           border:1px solid var(--rule,#dcdcd6); border-radius:999px;
+           background:transparent; color:var(--muted,#8a8a80); cursor:pointer; }
+  .fxedit:hover{ color:var(--ink,#23231f); border-color:var(--ink,#23231f); }
+  .skref{ display:flex; flex-direction:column; gap:2px; margin:2px 0 7px; }
+  .skreftag{ font-size:10px; text-transform:uppercase; letter-spacing:.06em;
+             color:var(--muted,#8a8a80); }
+  .skrefnote{ font-size:11px; color:var(--muted,#8a8a80); line-height:1.45; }
+  .skrefmiss{ font-size:11px; color:#b4553c; line-height:1.45; }
+  @media (prefers-color-scheme: dark){
+    .fxref b, .fxwhatro{ color:#e9e9e4; }
+  }
 </style>
 </head>
 <body>
@@ -1970,6 +2020,11 @@ The middle word is loose — skill, skillicon, skiicon, icon, or nothing.
 
 <!-- Optional sidecar. If hero-data.js sits next to this file, its values win.
      Missing file = harmless 404 in the console; the built-in defaults are used. -->
+<!-- core-skills.js — what each hero's five skills ARE, read off the game.
+     Facts, not opinions. It sits UNDER your edits: a name or an effect you
+     have never touched is read from here, and the moment you change one,
+     yours wins and only yours is saved. Missing file = blank rows, as before. -->
+<script src="core-skills.js"></script>
 <script src="hero-data.js"></script>
 
 <script>
@@ -2372,6 +2427,112 @@ let META_DATA = null;      // the meta list as published / saved
    seats: CL fires in either seat · C commander only · L lieutenant only.
    That's what lets a hero score differently as commander and as lieutenant. */
 const SKILL_FX = {};
+/* ---- core-skills.js, as a layer underneath -------------------------------
+   CORE_SKILLS is keyed by the internal hero id — the same key SKILL_FX uses —
+   and within a hero by slot. A row that came from there is flagged core:true
+   and carries no amount, which is what keeps it out of every score: it is a
+   label waiting for your number, not a rating pretending to be one. Type an
+   amount and the flag comes off, the row becomes yours, and it saves. */
+const coreOf = key => (typeof CORE_SKILLS === "object" && CORE_SKILLS && CORE_SKILLS[key]) || null;
+const coreSlot = (key, slot) => { const c = coreOf(key); return (c && c.skills && c.skills[slot]) || null; };
+/* a row still exactly as core-skills.js handed it over */
+const isCoreRow = f => !!(f && f.core && typeof f.amt !== "number");
+/* the warband, same arrangement: yours if you typed one, otherwise whatever
+   the game screen said, and only yours is ever saved */
+const warbandOf = key => WARBANDS[key] || ((coreOf(key) || {}).warband) || "";
+/* ---- what the game actually says, shown beside the boxes ------------------
+   The captured numbers are NOT poured into "how much". A DMG Factor of 13,000
+   is a game-engine coefficient, not a rating, and dropping it into a box that
+   gets multiplied into a score would wreck every total on the page. So the
+   real figures sit next to the row as reference, with your trained level
+   marked, and you decide what the 1-5 is worth. */
+const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtNum = v => v === null || v === undefined ? "?" :
+  (typeof v === "number" ? v.toLocaleString("en-GB") : String(v));
+/* one effect's five levels, the trained one picked out */
+/* Every skill is read AT MAX. What a hero is worth is what they are worth
+   fully trained — your own level 2 today is a fact about your account, not
+   about the hero, and rating them on it would mark a good skill down for
+   being young. So level 5 is the figure in front, and the climb to it
+   follows behind for context. */
+function maxOf(e){
+  if(!e || !Array.isArray(e.values) || !e.values.length) return null;
+  for(let i = e.values.length - 1; i >= 0; i--)
+    if(e.values[i] !== null && e.values[i] !== undefined) return e.values[i];
+  return null;
+}
+function curveText(e){
+  if(!e || !Array.isArray(e.values) || !e.values.length) return "";
+  const u = e.unit || "";
+  const top = maxOf(e);
+  if(top === null) return "";
+  const head = '<b>' + fmtNum(top) + u + '</b>';
+  if(e.values.length === 1) return head;
+  const climb = e.values.slice(0, -1).map(v => fmtNum(v) + u).join(" · ");
+  return head + ' <span class="fxclimb">at max</span>'
+       + (climb ? ' <span class="fxclimb">&nbsp;·&nbsp; ' + climb + '</span>' : "");
+}
+/* The core row behind this one. Position first: skillsOf seeds the rows in
+   core order, so row 2 is effect 2 — and a skill with two lines that share a
+   label (a Burst dealing DMG twice, say) would otherwise resolve both to the
+   first one. Label matching stays as the fallback for a row you have since
+   renamed or reordered. */
+function coreFx(hk, slot, what, fi){
+  const c = coreSlot(hk, slot); if(!c) return null;
+  const list = c.effects || [];
+  const key = (what||"").trim().toLowerCase();
+  if(typeof fi === "number" && list[fi]
+     && (list[fi].what||"").trim().toLowerCase() === key) return list[fi];
+  return list.find(e => (e.what||"").trim().toLowerCase() === key) || null;
+}
+function fxRefHTML(hk, slot, f, fi){
+  const e = coreFx(hk, slot, f && f.what, fi); if(!e) return "";
+  const c = coreSlot(hk, slot);
+  const txt = curveText(e);
+  if(!txt) return "";
+  const note = e.note ? ' <i>' + esc(e.note) + '</i>' : "";
+  return '<div class="fxref" title="The value at skill level 5, in bold, because every hero here is read at max. The lower levels follow for context.">'
+         + txt + note + '</div>';
+}
+/* the wording that isn't a number: type, rage, and the conditions */
+function skRefHTML(hk, slot){
+  const c = coreSlot(hk, slot); if(!c) return "";
+  const bits = [];
+  /* Where the line came from matters. Read off the game it is a fact; taken
+     from a third-party guide it is someone else's reading, usually right and
+     occasionally out of date. Say which, once per skill, rather than letting
+     the two look identical. */
+  const rec = coreOf(hk) || {};
+  if(rec.sourceKind === "guide") bits.push('<span class="srcguide">from guide</span>');
+  /* The guide's slot ORDER is not reliable. Checked against the four heroes
+     we have both ways, slot 1 and the awakened slot always agree and slots
+     2-4 are shuffled every time. So say so on the slots it affects rather
+     than letting an unverified position pass as a fact. */
+  if(rec.slotOrder === "guide" && slot !== "1" && slot !== "U")
+    bits.push('<span class="srcwarn">slot order unverified</span>');
+  if(c.filledFromGuide) bits.push('<span class="srcguide">filled from guide by elimination</span>');
+  if(c.type) bits.push(esc(c.type));
+  if(c.rageCost) bits.push("rage " + c.rageCost);
+  if(c.buffs) bits.push("buffs " + esc(c.buffs));
+  if(c.newSkill) bits.push("a new skill, not a buff");
+  if(c.locked) bits.push(esc(c.locked));
+  const head = bits.length ? '<span class="skreftag">' + bits.join(" · ") + "</span>" : "";
+  const cond = c.notes || c.trigger || "";   // some rows recorded the condition as "trigger"
+  const body = cond ? '<span class="skrefnote">' + esc(cond) + "</span>" : "";
+  const miss = c.missing ? '<span class="skrefmiss">' + esc(c.missing) + "</span>" : "";
+  const nte  = c.note ? '<span class="skrefnote">' + esc(c.note) + "</span>" : "";
+  return (head||body||miss||nte) ? '<div class="skref">' + head + body + nte + miss + "</div>" : "";
+}
+/* a skill entry the user has not touched at all */
+function skUntouched(key, sk){
+  if(!sk) return true;
+  const c = coreSlot(key, sk.slot);
+  const dfltSeat = sk.slot === "1" ? "CL" : "C";
+  if((sk.seats || dfltSeat).toUpperCase() !== dfltSeat) return false;
+  if(typeof sk.w === "number") return false;
+  if((sk.name || "").trim() !== ((c && c.name) || "")) return false;
+  return (sk.fx || []).every(isCoreRow);
+}
 const WARBANDS = {};        // heroKey -> warband name, open vocabulary
 const SLOTS = ["1","2","3","4","U"];
 const SEAT_ORDER = ["C","L","CL"];
@@ -2604,6 +2765,10 @@ function heroTreeScore(h){
 const FX_DEFAULT = 1;       // an effect nobody has weighted yet still counts a little
 function fxScore(f){
   if(!f || !f.what) return 0;
+  /* a label core-skills.js supplied, with no amount of yours on it yet, is
+     information rather than a judgement — it scores nothing until you say
+     how big it is */
+  if(isCoreRow(f)) return 0;
   const w   = (FX_W[f.what.trim()] !== undefined) ? FX_W[f.what.trim()] : FX_DEFAULT;
   const amt = (typeof f.amt === "number" && !isNaN(f.amt)) ? f.amt : 10;   // unknown size = modest
   const who = WHO_MULT[(f.who||"").trim().toLowerCase()]  ?? 1;
@@ -5801,12 +5966,18 @@ function focusCellHTML(h){
 let skQuery = "", skFilter = "all", skSort = "tier";
 function skillsOf(h){
   const list = SKILL_FX[h.key] || (SKILL_FX[h.key] = []);
-  SLOTS.forEach(sl=>{ if(!list.some(x=>x.slot===sl))
-    list.push({slot:sl, seats: sl==="1" ? "CL" : "C", name:"", fx:[]}); });
+  SLOTS.forEach(sl=>{ if(!list.some(x=>x.slot===sl)){
+    const c = coreSlot(h.key, sl);
+    list.push({slot:sl, seats: sl==="1" ? "CL" : "C",
+               name: (c && c.name) || "",
+               fx: c && c.effects ? c.effects.filter(e=>e && e.what)
+                     .map(e=>({what:e.what, amt:null, unit:e.unit || "", who:"", when:"", core:true}))
+                   : []});
+  }});
   list.sort((a,b)=>SLOTS.indexOf(a.slot)-SLOTS.indexOf(b.slot));
   return list;
 }
-const fxFilled = f => !!(f && (f.what||"").trim());
+const fxFilled = f => !!(f && (f.what||"").trim() && !isCoreRow(f));
 function drawSkillModes(){
   const bar = document.getElementById("skModeBar"); if(!bar) return;
   const n = m => HEROES.filter(h=> (VERS_SCORE[h.key]||{})[m] !== undefined
@@ -5842,7 +6013,17 @@ function drawSkills(){
     <datalist id="whoNames">${Object.keys(WHO_MULT).map(v=>`<option value="${v}">`).join("")}</datalist>
     <datalist id="whenNames">${Object.keys(WHEN_MULT).map(v=>`<option value="${v}">`).join("")}</datalist>`;
 
-  const fxRow = (hk, si, fi, f)=>`
+  const fxRow = (hk, si, fi, f)=>{
+    const slot = ((SKILL_FX[hk]||[])[si]||{}).slot;
+    /* Straight off the game and untouched: no boxes, just what it does and
+       what it does it by. Four empty dropdowns say nothing a sentence can't. */
+    if(isCoreRow(f)) return `
+    <div class="fxrow ro">
+      <span class="fxwhatro">${esc(f.what||"")}</span>
+      <button class="fxedit" data-fxedit="${hk}:${si}:${fi}" title="Score this line — opens the boxes">score</button>
+      ${fxRefHTML(hk, slot, f, +fi)}
+    </div>`;
+    return `
     <div class="fxrow">
       <input class="fxwhat" list="fxNames" data-fx="${hk}:${si}:${fi}:what" value="${(f.what||"").replace(/"/g,"&quot;")}"
              placeholder="what it does">
@@ -5855,7 +6036,9 @@ function drawSkills(){
              placeholder="who it hits">
       <input class="fxwhen" list="whenNames" data-fx="${hk}:${si}:${fi}:when" value="${(f.when||"").replace(/"/g,"&quot;")}"
              placeholder="when">
+      ${fxRefHTML(hk, slot, f, +fi)}
     </div>`;
+  };
 
   /* the sixth card — what they bring before a single skill fires */
   const TR_PIP = ["does almost nothing here","minor","useful","strong in this mode","the tree you want"];
@@ -6067,6 +6250,7 @@ Your sheet is never changed by this — it's the copy in the browser that's over
       </div>
       <input class="skname" data-skname="${h.key}:${si}" value="${(sk.name||"").replace(/"/g,"&quot;")}"
              placeholder="skill name">
+      ${skRefHTML(h.key, sk.slot)}
       <div class="skfx">${(sk.fx||[]).map((f,fi)=>fxRow(h.key,si,fi,f)).join("")}</div>
       <div class="skrate">
         <div class="rrow" title="What this skill is worth when they are the COMMANDER, in ${skMode}.${
@@ -6119,7 +6303,7 @@ Your sheet is never changed by this — it's the copy in the browser that's over
 Trees: ${(h.treeSet||[]).filter(Boolean).map(t=>treeById(t)?.name||t).join(" · ") || "none recorded"}
 Both come from hero-sheet.js.">${h.versatile ? "ANY TROOP" : "own troop only"}</span>
         <label class="skwb" title="Which warband they belong to — type it and it's remembered">warband
-          <input list="wbNames" data-wb="${h.key}" value="${(WARBANDS[h.key]||"").replace(/"/g,"&quot;")}"
+          <input list="wbNames" data-wb="${h.key}" value="${warbandOf(h.key).replace(/"/g,"&quot;")}"
                  placeholder="—"></label>
         <span class="grow"></span>
         <span class="sktally" title="${tallyTip(h, rt)}">
@@ -6239,7 +6423,8 @@ function wireSkills(){
   root.querySelectorAll("[data-wb]").forEach(inp=>
     inp.addEventListener("change", ()=>{
       const v = inp.value.trim();
-      if(v) WARBANDS[inp.dataset.wb] = v; else delete WARBANDS[inp.dataset.wb];
+      const core = ((coreOf(inp.dataset.wb) || {}).warband) || "";
+      if(v && v !== core) WARBANDS[inp.dataset.wb] = v; else delete WARBANDS[inp.dataset.wb];
       touch(); drawSkills();
     }));
   const bagOf = tag => tag === "VERS" ? VERS_SCORE : META_SCORE;
@@ -6343,6 +6528,13 @@ function wireSkills(){
       (sk.fx = sk.fx || []).push({what:"", amt:null, unit:"%", who:"", when:"always"});
       touch(); drawSkills();
     }));
+  root.querySelectorAll("[data-fxedit]").forEach(b=>
+    b.addEventListener("click", ()=>{
+      const [hk, si, fi] = b.dataset.fxedit.split(":");
+      const sk = (SKILL_FX[hk]||[])[+si]; if(!sk || !sk.fx[+fi]) return;
+      delete sk.fx[+fi].core;            // yours from here on
+      touch(); drawSkills();
+    }));
   root.querySelectorAll("[data-fxdel]").forEach(b=>
     b.addEventListener("click", ()=>{
       const [hk, si, fi] = b.dataset.fxdel.split(":");
@@ -6355,6 +6547,7 @@ function wireSkills(){
       const sk = (SKILL_FX[hk]||[])[+si]; if(!sk || !sk.fx[+fi]) return;
       const f = sk.fx[+fi];
       f[field] = field === "amt" ? (inp.value === "" ? null : parseFloat(inp.value)) : inp.value.trim();
+      delete f.core;                       // you touched it, so it is yours now
       touch(); drawSkills();
     }));
   const rp = document.getElementById("repullTrees");
@@ -9525,10 +9718,15 @@ function buildDataObject(){
          unless the skill also had a name or an effect. */
       const dfltSeat = sl => sl === "1" ? "CL" : "C";
       Object.entries(SKILL_FX).forEach(([k, list])=>{
-        const keep = (list||[]).filter(sk=>(sk.name||"").trim()
+        /* Anything core-skills.js already says is left out on purpose. Saving
+           it would freeze today's reading into your file and a later fix to
+           core-skills.js would never reach you. Your edits are what get kept. */
+        const keep = (list||[]).filter(sk=>!skUntouched(k, sk) && ((sk.name||"").trim()
           || (sk.fx||[]).some(f=>(f.what||"").trim())
           || (sk.seats||dfltSeat(sk.slot)).toUpperCase() !== dfltSeat(sk.slot)
-          || typeof sk.w === "number");
+          || typeof sk.w === "number"))
+          .map(sk=>{ const o = JSON.parse(JSON.stringify(sk));
+                     o.fx = (o.fx||[]).filter(f=>!isCoreRow(f)); return o; });
         if(keep.length) out[k] = JSON.parse(JSON.stringify(keep));
       }); return out; })(),
     WARBANDS: {...WARBANDS},

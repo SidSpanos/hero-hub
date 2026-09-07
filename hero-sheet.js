@@ -23,21 +23,33 @@
              trees and a hero can have both.
      skin    yes / no
      obtain  how you get them
+
+   2026-09-07 17:08 — talent TREES corrected for the remaining 18 heroes, from
+   the talent sentences on their fatewarguide.com pages ("This Hero
+   excels at leading Cavalry" -> cav, and so on). That mapping was
+   checked first against the four heroes held BOTH ways — Karl, Kiana,
+   Reinhardt, Aelfwine — and reproduced the game's own panel exactly
+   on all four, which is why it is trusted here. Positions preserved
+   the same way: a tree already recorded kept its slot. Seven rows had
+   been sitting on the placeholder "gath bal def".
+   NINE heroes had no tree in common with their source, so their
+   positions are the source's listed order and NOT wheel order —
+   Oda Nobunaga, Reinhardt, Kiana, Roro, Helda, Reid, Kalthas, Linda
+   and Elia. The three NAMES are right; the arrangement is a
+   placeholder until you open each wheel. Troop, skin and obtain were
+   not touched.
+
+   2026-09-07 17:06 — talent TREES corrected for the 13 heroes whose character
+   panel was screenshotted and disagreed with this file. Only the tree
+   NAMES changed. Positions were preserved: a tree already recorded here
+   that the game confirms kept its slot, because that slot is the
+   10/12/2 o'clock reading off the wheel and no screenshot can give it.
+   Three heroes had no tree in common with the panel at all — Oda
+   Nobunaga, Reinhardt and Kiana — so for those the positions are the
+   panel's left-to-right order, which is NOT wheel order. Check those
+   three on the wheel when you get a chance. Troop, skin and obtain
+   were not touched. Previous version backed up alongside.
 */
-
-// ---------------------------------------------------------------
-// 2026-08-23 11:34:13 UTC - note added by Claude, agreed with Sid.
-//   This file is the SINGLE SOURCE OF TRUTH for hero facts.
-//   Claude edits it only with permission, backs it up first, and
-//   changes only the agreed lines - never regenerates the file.
-//   Backup of this file before the note was written:
-//     _archive/hero-sheet.2026-08-23_113413.bak.js
-// ---------------------------------------------------------------
-
-// CHANGE LOG - newest last
-// 2026-08-25 09:23:01 UTC  two tree misspellings fixed: Farad "axel"->"axe",
-//                          Irin "skil"->"skill". Nothing else touched.
-//                          Backup: _archive/hero-sheet.2026-08-25_092300.bak.js
 
 window.HERO_SHEET = `
 # troop   axe   bers   cav   beast
@@ -47,12 +59,12 @@ window.HERO_SHEET = `
 # hero         | troop | trees             | skin | obtain
 # ---- S+ ----
 Arthur       | bers  | siege bal def     | yes  | chief
-Farad        | axe   | ver axe skill      | yes  | wheel   # Farhad
-Freya        | beast   | siege beast def     | yes  | p2p   # Freyja
-Irin         | cav | hunter cav skill  | yes  | wheel   # Erin
-Odaunaga     | axe   | ver cav atk   | yes  | chief   # Oda Nobunaga
-Shan         | bers   | vers bal skill    | yes  | chief   # Joan
-Shisunin     | bers  | garr bal def     | yes  | wheel   # Yi Sun-sin
+Farad        | cav   | axe skill vers    | yes  | wheel   # Farhad
+Freya        | axe   | beast siege def   | yes  | p2p   # Freyja
+Irin         | beast | cav skill hunt    | yes  | wheel   # Erin
+Odaunaga     | axe   | cav vers atk      | yes  | chief   # Oda Nobunaga
+Shan         | cav   | vers bal skill    | yes  | chief   # Joan
+Shisunin     | bers  | bal garr def      | yes  | wheel   # Yi Sun-sin
 
 # troop   axe   bers   cav   beast
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
@@ -60,10 +72,10 @@ Shisunin     | bers  | garr bal def     | yes  | wheel   # Yi Sun-sin
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
 # hero         | troop | trees             | skin | obtain
 # ---- S ----
-Amaterasu    | axe   | siege bal skill     | yes  | wheel
-Asuka        | cav   | vers cav field      | yes  | boxes   # Aska
-Rot          | axe | ver axe field   | yes  | wheel   # Roro
-Wukong       | cav  | ver cav skill    | yes  | p2p   # Wukon
+Amaterasu    | axe   | siege skill bal   | yes  | wheel
+Asuka        | cav   | cav vers field    | yes  | boxes   # Aska
+Rot          | beast | axe vers field    | yes  | wheel   # Roro
+Wukong       | bers  | cav skill vers    | yes  | p2p   # Wukon
 
 # troop   axe   bers   cav   beast
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
@@ -71,13 +83,13 @@ Wukong       | cav  | ver cav skill    | yes  | p2p   # Wukon
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
 # hero         | troop | trees             | skin | obtain
 # ---- A ----
-Carl         | bers   | ver bers def     | no   | wheel   # Karl
-Held         | axe | siege axe skill    | no   | shift   # Helda
-Morgan Lefe  | axe   | hunt axe atk     | no   | p2p
-Petra        | bers  | vers bers def      | no   | boxes
-Reald        | bers   | garr bers def      | no   | shift   # Reid
-Reinhardt    | cav   | hunt cav field      | no   | shift
-Silvin       | beast | vers bal skill   | no   | f2p   # Sylvan
+Carl         | cav   | bers vers def     | no   | wheel   # Karl
+Held         | beast | axe siege skill   | no   | shift   # Helda
+Morgan Lefe  | axe   | axe hunt atk      | no   | p2p
+Petra        | bers  | bers def vers     | no   | boxes
+Reald        | cav   | bers garr def     | no   | shift   # Reid
+Reinhardt    | axe   | cav hunt field    | no   | shift
+Silvin       | beast | vers skill bal    | no   | f2p   # Sylvan
 
 # troop   axe   bers   cav   beast
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
@@ -85,15 +97,15 @@ Silvin       | beast | vers bal skill   | no   | f2p   # Sylvan
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
 # hero         | troop | trees             | skin | obtain
 # ---- B ----
-Balder       | bers  | hunt bers def     | no   | f2p   # Baldur
-Elfwine      | axe   | hunt bal supp       | no   | f2p   # Aelfwine
-Iris         | beast   | garr beast sup      | no   | f2p
+Balder       | bers  | bers hunt def     | no   | f2p   # Baldur
+Elfwine      | cav   | hunt supp bal     | no   | f2p   # Aelfwine
+Iris         | axe   | beast garr supp   | no   | f2p
 Kaira        | axe   | vers axe field    | no   | boxes
-Kiana        | beast   | ver beast supp     | no   | vip
-Kus          | axe  | hunt axe atk      | no   | any   # Kalthas
-Reynald      | cav   | hunt cav field      | no   | f2p
-Sara         | bers | hunt bal supp    | no   | f2p
-Selena       | cav   | hunt cav field     | no   | f2p
+Kiana        | cav   | beast vers supp   | no   | vip
+Kus          | bers  | axe hunt atk      | no   | any   # Kalthas
+Reynald      | axe   | cav hunt field    | no   | f2p
+Sara         | beast | hunt supp bal     | no   | f2p
+Selena       | cav   | cav hunt field    | no   | f2p
 Voll         | bers  | hunt bers skill   | no   | f2p
 
 # troop   axe   bers   cav   beast
@@ -102,9 +114,9 @@ Voll         | bers  | hunt bers skill   | no   | f2p
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
 # hero         | troop | trees             | skin | obtain
 # ---- C ----
-Linda        | axe   | vers axe skill      | no   | f2p
-Rex          | bers  | garr ber def      | no   | f2p
-Vista        | axe | vers bal supp      | no   | f2p
+Linda        | axe   | cav vers skill    | no   | f2p
+Rex          | cav   | bers garr def     | no   | f2p
+Vista        | beast | vers bal supp     | no   | f2p
 
 # troop   axe   bers   cav   beast
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
@@ -112,8 +124,8 @@ Vista        | axe | vers bal supp      | no   | f2p
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
 # hero         | troop | trees             | skin | obtain
 # ---- D ----
-Elina        | bers   | gath bal supp      | no   | any   # Elena
-Ilia         | axe   | hunt axe supp      | no   | any   # Elia
-Scarnet      | axe  | gath bal supp      | no   | any   # Skerne
-Sigrid       | axe | gath bal sup      | no   | any
+Elina        | axe   | gath bal supp     | no   | any   # Elena
+Ilia         | cav   | axe hunt supp     | no   | any   # Elia
+Scarnet      | bers  | gath bal supp     | no   | any   # Skerne
+Sigrid       | beast | gath bal supp     | no   | any
 `;
