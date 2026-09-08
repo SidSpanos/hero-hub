@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <!-- ===========================================================
-     2026-09-08 18:20 — THREE IS A TRIFECTA, FOUR IS A QUADFECTA,
-     five is a QUINTFECTA. Three was being treated as the whole rule
-     rather than the floor, so Arthur's four offensive skills and
-     Iris's four defensive ones read as "trifecta, 4 skills" — the
-     number was there but the thing had no name and did not read as a
-     bigger achievement than a three. On the current roster: FOUR
-     quadfectas (Arthur, Morgan and Reinhardt offensive, Iris
-     defensive), seventeen trifectas, no quintfectas yet. Five is
-     reachable — a hero has five slots and nothing stops all of them
-     pointing the same way.
+     2026-09-08 18:20 — THREE IS A TRIFECTA, FOUR IS A QUADFECTA.
+     Three was being treated as the whole rule rather than the floor,
+     so Arthur's four offensive skills and Iris's four defensive ones
+     read as "trifecta, 4 skills" — the number was there but the thing
+     had no name and did not read as a bigger achievement than a
+     three. On the current roster: FOUR quadfectas (Arthur, Morgan and
+     Reinhardt offensive, Iris defensive) and seventeen trifectas.
+     Five of a side is possible on paper and nobody has it; it has not
+     been named, so it shows its count rather than a word I invented.
      THE BONUS DID NOT CHANGE and is still +1 on each skill in the
      fecta. A quadfecta is already worth more than a trifecta because
      it lifts FOUR skills instead of three: +4 against +3. If a
@@ -2959,15 +2958,16 @@ function skillSide(k){
   if(!off && !def) return null;
   return off >= def ? "off" : "def";
 }
-/* Three of a side is the floor, not the whole story. Sid's naming: three is a
-   TRIFECTA, four a QUADFECTA, five a QUINTFECTA — and five is reachable, since
-   a hero has five slots and nothing stops all of them pointing the same way.
-   The bonus is +1 on each of those skills at every size; a bigger fecta is
-   worth more because it lifts MORE skills, not because each one lifts further. */
-const FECTA      = {3:"TRIFECTA", 4:"QUADFECTA", 5:"QUINTFECTA"};
-const FECTA_SHORT= {3:"TRI",      4:"QUAD",      5:"QUINT"};
-const fectaName  = n => FECTA[n] || (n > 5 ? "QUINTFECTA" : "");
-const fectaShort = n => FECTA_SHORT[n] || (n > 5 ? "QUINT" : "");
+/* Sid's naming: three of a side is a TRIFECTA, four is a QUADFECTA. That is
+   the whole list. Five is possible on paper — a hero has five slots — but no
+   hero on the roster has it and it has not been named, so anything above four
+   shows its COUNT rather than a word I made up.
+   The bonus is +1 on each of those skills either way; a quadfecta is worth
+   more because it lifts FOUR skills, not because each one lifts further. */
+const FECTA      = {3:"TRIFECTA", 4:"QUADFECTA"};
+const FECTA_SHORT= {3:"TRI",      4:"QUAD"};
+const fectaName  = n => FECTA[n] || (n + " OF A SIDE");
+const fectaShort = n => FECTA_SHORT[n] || String(n);
 function trifectasOf(key){
   const sk = (coreOf(key) || {}).skills || {};
   let off = 0, def = 0;
@@ -2977,7 +2977,7 @@ function trifectasOf(key){
   }
   const out = [];
   const tip = (n, side, what) => `${n} of this hero's skills are ${side} — ${what}. `
-    + `Three is a trifecta, four a quadfecta, five a quintfecta; this is a ${fectaName(n).toLowerCase()}. `
+    + `Three is a trifecta, four a quadfecta; this is a ${fectaName(n).toLowerCase()}. `
     + `Each of those ${n} skills scores a point higher for it.`;
   if(off >= 3) out.push({id:"OFFENSIVE", n:off, name:fectaName(off), short:fectaShort(off),
     tip: tip(off, "offensive", "a payload, damage-up, defence-down, a summon or a counterattack")});
