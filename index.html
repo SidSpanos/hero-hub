@@ -1,5 +1,32 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-08 17:31 — THE OWN TICK LOCKED THE BROWSER FOR A SECOND
+     AND A HALF. Unticking a hero took 989ms; ticking back on took
+     1,483ms. Same shape of bug as the rating pips, one level up.
+     The handler ran drawSkills() and then renderAll() — the whole app
+     twice — and renderAll rebuilt ALL EIGHT TABS. Seven of them sit
+     behind display:none at any moment, so seven eighths of that work
+     was thrown away before anyone could see it. Not cheap work
+     either: roster 66ms, arena 61, pairings 51, radar 43, board 35,
+     ~315ms all told, with the Hero Score list another 470 on top.
+     Two changes. Each view now knows how to draw itself; renderAll
+     draws the ONE you are looking at and marks the rest stale, and
+     switchView catches a stale view up on the way in. Nothing is ever
+     shown out of date — the work happens when it can be seen instead
+     of in advance. And a change to a single hero goes through
+     heroChanged(), which replaces that hero's Hero Score card rather
+     than all 36: 11ms against 470.
+     autoPlaceUnplaced() and resolveSlots() still run every time,
+     because they CHANGE DATA rather than draw it — a view drawn later
+     would otherwise read stale values.
+     989ms -> 130ms, and 1,483ms -> 134ms.
+     Two bugs fell out of it. paintScores walked every card in the
+     document, hidden tabs included — 130 heroRating() calls to repaint
+     pixels nobody could see; it now paints the visible view, 26.5ms
+     -> 0.8ms. And it took firstElementChild from scoreBadge, which
+     since this morning returns TWO chips: every repaint installed a
+     fresh percentage next to a STALE kit value. Both go back now.
+
      2026-09-08 16:52 — GANGLOT HAD NO MODES BECAUSE THE SHEET HEADER
      DID NOT NAME THE COLUMN. Her row carried them all along. The
      parser reads column ORDER off the "# hero | troop | ..." line
@@ -4899,16 +4926,37 @@ function drawModeFilters(){
 /* Repaint the badges in place. A pip click shouldn't rebuild the whole board —
    that would be slow and would yank the Hero Score list out from under you
    mid-tap — so the badge is swapped on its own wherever that hero is drawn. */
+/* Repaint the score chips in place, without rebuilding the cards around them.
+   Two things to get right:
+
+   scoreBadge now returns TWO chips — the percentage and the kit/worth beside
+   it. This used to take firstElementChild and drop the second on the floor,
+   so a repaint left a fresh percentage sitting next to a stale kit. Both go
+   back, together.
+
+   And with one exception it only paints what is on screen. Cards on hidden
+   tabs are already marked stale and get rebuilt on arrival, so painting them
+   costs a heroRating() per card — about 130 of them across the board, pairs,
+   arena and timeline — for pixels nobody can see. Passing a key still reaches
+   every copy of that hero anywhere, because a hero can be on the board twice
+   and both should agree. */
 function paintScores(key){
+  const roots = key ? [document]
+    : ["viewBoard","viewRadar","viewPairs","viewRoster","viewPlan","viewArena","viewSkills","viewNew"]
+        .map(id=>document.getElementById(id))
+        .filter(v=>v && !v.classList.contains("hidden"));
   const sel = key ? `.card[data-key="${CSS.escape(key)}"] .hscore` : ".card .hscore";
-  document.querySelectorAll(sel).forEach(el=>{
+  roots.forEach(root=> root.querySelectorAll(sel).forEach(el=>{
     const card = el.closest(".card"); if(!card) return;
     const h = byKey(card.dataset.key); if(!h) return;
     const wrap = document.createElement("span");
     wrap.innerHTML = scoreBadge(h);
-    const fresh = wrap.firstElementChild;
-    if(fresh) el.replaceWith(fresh);
-  });
+    if(!wrap.firstElementChild) return;
+    /* drop the old kit chip so the new one does not land beside it */
+    const stale = el.nextElementSibling;
+    if(stale && stale.classList.contains("kitscore")) stale.remove();
+    el.replaceWith(...wrap.childNodes);
+  }));
 }
 function scoreModeNow(){
   return (typeof mode === "string" && MODES.includes(mode)) ? mode : skMode;
@@ -5089,7 +5137,7 @@ function wireCardBits(scope){
     cb.addEventListener("change", e=>{
       e.stopPropagation();
       setOwn(cb.dataset.hown, cb.checked);
-      setTimeout(renderAll, 0);
+      setTimeout(()=>heroChanged(cb.dataset.hown), 0);
     });
   });
   root.querySelectorAll(".goRadar").forEach(b=>{
@@ -5480,15 +5528,80 @@ function autoPlaceUnplaced(){
   });
   return moved;
 }
+/* ============================================================
+   RENDER — the tab you are looking at, now; the rest when you get there
+   ============================================================
+   renderAll used to rebuild all eight tabs on every change. Seven of
+   them are hidden behind display:none at any moment, so seven eighths
+   of that work was thrown away before anyone saw it — and it is not
+   cheap work: the roster, arena, pairings and radar cost 40-70ms each,
+   ~315ms all told, and any handler that also touched the Hero Score
+   list paid another 470ms on top. Ticking "own" ran drawSkills() and
+   then renderAll(), which is the whole app twice: 989ms to untick and
+   1483ms to tick back on, which is a locked-up browser, not a click.
+
+   Now each view knows how to draw itself, renderAll draws only the
+   visible one and marks the others STALE, and switchView catches a
+   stale view up on the way in. Nothing is ever shown out of date —
+   the work just happens when it can be seen instead of in advance.
+
+   Two things stay unconditional because they are not drawing:
+   autoPlaceUnplaced() and resolveSlots() both CHANGE DATA, and a view
+   that drew itself later would otherwise read the old values.
+   ============================================================ */
+const VIEW_DRAW = {
+  board:  ()=>{ buildBoard(); buildMatrix(); applyFilter(); drawTrayInto("heroTray3","trayQ3"); },
+  radar:  ()=>{ drawBig(); drawSmall(); drawScores(); },
+  pairs:  ()=>{ drawPairs(); drawTray(); drawTrayInto("heroTray2","trayQ2"); },
+  plan:   ()=>{ syncPlanControls(); drawPhases(); drawShifts(); },
+  arena:  ()=>{ drawArena(); drawTrayInto("heroTray4","trayQ4"); },
+  skills: ()=>{ drawSkills(); },
+  roster: ()=>{ drawRoster(); },
+  new:    ()=>{ if(typeof drawNewHero === "function") drawNewHero(); }
+};
+let viewStale = {};
+function drawView(v){
+  const f = VIEW_DRAW[v]; if(!f) return;
+  f(); viewStale[v] = false;
+}
 function renderAll(){
-  autoPlaceUnplaced();
-  buildBoard(); buildMatrix(); applyFilter();
-  drawBig(); drawSmall(); drawScores(); drawTroopKey(); wireNameEditing(); buildNamesDoc();
-  drawTargetSelect(); drawIconLib(); drawBuildImgKey(); drawTray(); drawTrayInto("heroTray2","trayQ2"); drawTrayInto("heroTray3","trayQ3");
-  drawShifts();
-  resolveSlots(); drawPairs(); drawArena(); drawTrayInto("heroTray4","trayQ4");
-  syncPlanControls(); drawPhases(); drawRoster(); updateExport();
+  autoPlaceUnplaced();                 // data, not drawing — must always run
+  resolveSlots();                      // ditto: resolves pairing slots to hero keys
+  /* the chrome outside the tabs, all of it cheap */
+  drawTroopKey(); wireNameEditing(); buildNamesDoc();
+  drawTargetSelect(); drawIconLib(); drawBuildImgKey();
+  updateExport();
   document.getElementById("heroTotal").textContent = HEROES.length;
+  /* the tab in front of you now; the rest owe a redraw */
+  Object.keys(VIEW_DRAW).forEach(v=>{ if(v !== view) viewStale[v] = true; });
+  drawView(view);
+  markDirty();
+}
+/* everything, right now, hidden tabs included — for the few callers that
+   genuinely need the whole DOM built (the ? overlay measures live elements,
+   and the tests walk every tab) */
+function renderAllNow(){
+  renderAll();
+  Object.keys(VIEW_DRAW).forEach(v=>{ if(viewStale[v]) drawView(v); });
+}
+/* ONE hero changed — the own tick, a rating, a troop, a portrait.
+   Same idea as renderAll but one step finer: on the Hero Score tab it
+   replaces that hero's card rather than all 36, which is 11ms against
+   470. The list is only rebuilt in full when the change can move a hero
+   in or out of it — the "mine" filter is exactly that case, since
+   unticking own has to make the hero leave the list. */
+function heroChanged(key){
+  autoPlaceUnplaced();
+  resolveSlots();
+  Object.keys(VIEW_DRAW).forEach(v=>{ viewStale[v] = true; });
+  if(view === "skills" && key && skFilter !== "mine"){
+    redrawHero(key);
+    viewStale.skills = false;
+  }else{
+    drawView(view);
+  }
+  updateExport();
+  paintScores();
   markDirty();
 }
 
@@ -6042,9 +6155,6 @@ function helpDraw(spec){
 
 function switchView(v){
   view = v;
-  /* ratings are edited on another tab and the radar is drawn from them, so
-     redraw it on arrival rather than leaving yesterday's shapes up */
-  if(v === "radar" && typeof drawBig === "function"){ drawBig(); drawSmall(); drawScores(); }
   document.getElementById("viewBoard").classList.toggle("hidden", v!=="board");
   document.getElementById("viewRadar").classList.toggle("hidden", v!=="radar");
   document.getElementById("viewPairs").classList.toggle("hidden", v!=="pairs");
@@ -6061,8 +6171,11 @@ function switchView(v){
   document.getElementById("tabArena").setAttribute("aria-selected", String(v==="arena"));
   document.getElementById("tabSkills").setAttribute("aria-selected", String(v==="skills"));
   document.getElementById("tabNew").setAttribute("aria-selected", String(v==="new"));
-  if(v === "skills") drawSkills();
-  if(v === "new") drawNewHero();
+  /* catch this view up if it fell behind while it was hidden. The radar and
+     Hero Score are always redrawn on arrival regardless: ratings are edited on
+     one tab and the radar is drawn from them, so neither should ever be showing
+     yesterday's shapes. */
+  if(viewStale[v] || v === "radar" || v === "skills" || v === "new") drawView(v);
   paintScores();
 }
 function revealOnBoard(key){
@@ -7367,13 +7480,13 @@ function wireSkills(scope){
   root.querySelectorAll("[data-skicon]").forEach(b=>
     b.addEventListener("click", e=>{
       if(e.target.closest("[data-skiconclr]")) return;
-      pickSkillIcon(b.dataset.skicon, ()=>{ drawSkills(); renderAll(); });
+      pickSkillIcon(b.dataset.skicon, ()=>{ renderAll(); });
     }));
   root.querySelectorAll("[data-skiconclr]").forEach(x=>
     x.addEventListener("click", e=>{
       e.stopPropagation();
       delete SKILL_ICONS[x.dataset.skiconclr];
-      touch(); drawSkills(); renderAll();
+      touch(); renderAll();
     }));
   root.querySelectorAll("[data-rate]").forEach(b=>
     b.addEventListener("click", ()=>{
@@ -7424,7 +7537,7 @@ function wireSkills(scope){
       const cur = WORTH_ADJ[hk] || 0;
       const next = (+d === 0) ? 0 : Math.max(-10, Math.min(10, cur + (+d)));
       if(next) WORTH_ADJ[hk] = next; else delete WORTH_ADJ[hk];
-      touch(); drawSkills(); renderAll();
+      touch(); renderAll();
     }));
   root.querySelectorAll("[data-wsug]").forEach(btn=>
     btn.addEventListener("click", ()=>{
@@ -7434,7 +7547,7 @@ function wireSkills(scope){
       custom = HEROES.some(x=>{ const o = ORIGINAL.find(y=>y.key===x.key); return o && o.t !== x.t; });
       const flag = document.getElementById("customFlag");
       if(flag) flag.classList.toggle("on", custom);
-      touch(); drawSkills(); renderAll();
+      touch(); renderAll();
     }));
   root.querySelectorAll("[data-skown]").forEach(cb=>
     cb.addEventListener("change", ()=>{
@@ -7443,13 +7556,13 @@ function wireSkills(scope){
         alert("core-skills.js isn't loaded next to this page, so there are no talents to pull.\n\n"
           + "Put core-skills.js in the same folder as this file and refresh. "
           + "Nothing was changed.");
-      drawSkills(); renderAll();
+      heroChanged(cb.dataset.skown);
     }));
   root.querySelectorAll("[data-treset]").forEach(b=>
     b.addEventListener("click", ()=>{
       const hk = b.dataset.treset, h = byKey(hk); if(!h) return;
       pullTrees(h);
-      touch(); drawSkills(); renderAll();
+      touch(); renderAll();
     }));
   root.querySelectorAll("[data-trscore]").forEach(inp=>
     inp.addEventListener("change", ()=>{
@@ -7727,7 +7840,7 @@ function wireRosterBits(){
     cb.addEventListener("change", e=>{
       e.stopPropagation();
       setOwn(cb.dataset.hown, cb.checked);
-      setTimeout(renderAll, 0);
+      setTimeout(()=>heroChanged(cb.dataset.hown), 0);
     });
   });
   document.querySelectorAll("#rosterWrap .avatar[data-jump]").forEach(el=>
@@ -7753,7 +7866,7 @@ function wireRosterBits(){
   document.querySelectorAll("#rosterWrap .ownck[data-hown]").forEach(cb=>
     cb.addEventListener("change", ()=>{
       setOwn(cb.dataset.hown, cb.checked);
-      setTimeout(renderAll, 0);
+      setTimeout(()=>heroChanged(cb.dataset.hown), 0);
     }));
   document.querySelectorAll("#rosterWrap [data-rskills]").forEach(inp=>
     inp.addEventListener("change", ()=>{
@@ -10233,7 +10346,7 @@ document.getElementById("skIconFiles").addEventListener("change", ev=>{
   const msg = document.getElementById("skIconMsg");
   let pending = files.length, hits = 0; const missed = [];
   const finish = ()=>{
-    if(hits){ markDirty(); drawSkills(); renderAll(); }
+    if(hits){ markDirty(); renderAll(); }
     if(msg) msg.innerHTML = `${hits} icon${hits===1?"":"s"} in`
       + (missed.length ? ` · <b>couldn't read ${missed.length}</b>: ${missed.slice(0,6).join(", ")}${
           missed.length>6?` +${missed.length-6} more`:""}` : "");
