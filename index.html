@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===========================================================
-     2026-09-08 09:50 — hero-sheet.js and core-skills.js are now ONE file.
+     2026-09-08 10:00 — hero-sheet.js and core-skills.js are now ONE file.
      core-skills.js is the hero authority and carries both halves:
      the hand-edited sheet table (troop, the three talent trees in
      wheel order, skin, obtain) and every hero's five skill slots,
@@ -35,7 +35,20 @@
      it - shield raised to 8,000 so a C-tier shield stops firing the
      full 5, damage lowered to 5,000 so real mid bursts stop scoring
      the same as no burst at all. -0.873 -> -0.913, weights untouched.
-     NEW: a SUMMONS marker, worth 3. A dragon, wolves, clones, a
+     Payload and SUMMONS are now graded 3-5, the same shape as base
+     power, because a flat marker could not tell 63,000 damage from
+     7,000, or Ganglot's Bone Dragon from Sara's boulders. Payload
+     grades on the SINGLE hit, not the total across targets: tested
+     both, and the single number tracks the tier list at -0.73 while
+     the AoE total manages only -0.39. Reach is real, it is just not
+     what the list rewards. Costs about 0.012 of accuracy and buys a
+     marker that can see the difference between a big hit and a huge
+     one. Drain and damage-conversion now count as healing too - only
+     a literal "Heal Factor" did before, which quietly read Ganglot,
+     Aelfwine, Oda, Morgan le Fay and Karl as having no sustain. And
+     an effect the game puts no number on now counts toward BREADTH,
+     since breadth is about variety, not size.
+     NEW: a SUMMONS marker. A dragon, wolves, clones, a
      resurrection - eight heroes do it and six are top half, -0.357
      against the tier list, as strong as defence-down. It was simply
      missing from the first cut and adding Ganglot is what found it.
@@ -2528,13 +2541,13 @@ const warbandOf = key => WARBANDS[key] || ((coreOf(key) || {}).warband) || "";
                      correlate with the tier list, and the one to ignore if you
                      are judging the kit rather than predicting the list. */
 const MARKERS = [
-  {id:"payload", w:5, label:"real payload",  tip:"A Burst that actually lands: 5,000+ damage, or 8,000+ healing, or an 8,000+ shield. Calibrated against your tier list, not guessed."},
+  {id:"payload", w:5, label:"real payload",  graded:true,  tip:"A Burst that actually lands: 5,000+ damage, or 8,000+ healing, or an 8,000+ shield. Calibrated against your tier list, not guessed."},
   {id:"mode",    w:4, label:"scarce mode",   tip:"Plays Rally or Garrison. Every Rally hero on your board is top half; only six heroes garrison at all."},
   {id:"trigger", w:3, label:"trigger 20%+",  tip:"A chance-gated skill that fires at 20% or better. Ten percent gates sit on filler skills."},
   {id:"defdown", w:3, label:"defence down",  tip:"Ignores or strips enemy DEF. Not one C or D hero has any."},
   {id:"breadth", w:3, label:"breadth 5+",    tip:"Five or more kinds of effect that clear 10%. Below that they read as decoration."},
   {id:"counter", w:3, label:"counter kit",   tip:"A counterattack of 10%+ with defence and a heal behind it. Arthur and Reid, nobody else."},
-  {id:"summon",  w:3, label:"summons",       tip:"Puts an extra unit on the field — a dragon, wolves, clones, a resurrection. Eight heroes do it and six are top half. It was missing from the first cut of this card and Ganglot is what found it."},
+  {id:"summon",  w:5, label:"summons",       graded:true,       tip:"Puts an extra unit on the field — a dragon, wolves, clones, a resurrection. Eight heroes do it and six are top half. It was missing from the first cut of this card and Ganglot is what found it."},
   {id:"power",   w:5, label:"base power",    graded:true,
    tip:"A hero's power at level 60 and 6 stars — the same yardstick for everyone. Bottom third of what you have supplied scores 3, middle 4, top 5. Fill basePower in core-skills.js; a hero left blank does not score it."},
   {id:"skin",    w:5, label:"skin",          tip:"A bonus, not a capability — what the game charges for them.", bonus:true}
@@ -2563,7 +2576,11 @@ const mkMax = e => { if(!e || !Array.isArray(e.values)) return null;
   for(let i=e.values.length-1;i>=0;i--) if(e.values[i]!=null) return e.values[i]; return null; };
 const MK_CAT = [
   ["payload", [/dmg factor|direct dmg|bleed dmg|additional dmg/i]],
-  ["heal",    [/heal(ing)? factor|heal ratio/i]],
+  /* Healing does not always arrive as a "Heal Factor". Drain siphons it out
+     of the target, and several heroes convert a share of damage dealt into
+     healing instead. Counting only the literal factor line made Ganglot,
+     Aelfwine, Oda, Morgan le Fay and Karl all read as having no sustain. */
+  ["heal",    [/heal(ing)? factor|heal ratio|dmg conversion rate|siphon|drain|converts? .*into healing/i]],
   ["shield",  [/shield factor/i]],
   ["dmgUp",   [/increase atk|increase dmg dealt|increase dmg of normal|increase counterattack dmg|^skill dmg|critical rate/i]],
   ["defDown", [/ignore .*def|^reduce def by|increase dmg enemies receive/i]],
@@ -2577,6 +2594,7 @@ function heroMarkers(h){
   const core = coreOf(h.key);
   if(!core || !core.skills) return null;
   let dmg=0, heal=0, shield=0, chance=0, defdown=0, ctr=0, defUp=0, anyHeal=0, summons=0;
+  let targets = 1, falloff = 0, summonPower = 0;
   const kinds = new Set();
   /* how much of this hero's card we could not read. A blank is not a zero,
      and a score built on four unread markers is not a verdict — it says so
@@ -2586,7 +2604,21 @@ function heroMarkers(h){
     if(slot === "U") continue;
     const k = core.skills[slot];
     if(!k || !k.name){ if(k && k.missing){ unread++; gaps.push("slot " + slot); } continue; }
-    if(/summon|clone|wolves|wolf|bone dragon|resurrect|boulders/i.test((k.name||"") + " " + (k.notes||""))) summons = 1;
+    const blob = (k.name||"") + " " + (k.notes||"");
+    if(/summon|clone|wolves|wolf|bone dragon|resurrect|boulders/i.test(blob)) summons = 1;
+    if(slot === "1"){
+      const tm = blob.match(/up to (\d+) (?:enem|target)/i);
+      if(tm) targets = Math.max(targets, parseInt(tm[1]));
+      const fm = blob.match(/reduced by (\d+(?:\.\d+)?)%/i);
+      if(fm) falloff = parseFloat(fm[1]) / 100;
+    }
+    /* a summon that carries a share of your own ATK, or does damage of its
+       own, is worth more than one that just stands there */
+    (k.effects||[]).forEach(e=>{ const w = e.what || "";
+      if(/summon|dragon|clone|wolf|wolves/i.test(w)){
+        if(/dmg factor/i.test(w)) summonPower++;
+        if(/inherited atk|share of/i.test(w)) summonPower++;
+      }});
     (k.effects||[]).forEach(e=>{
       const w = e.what || ""; if(/before awakening|after awakening/i.test(w)) return;
       const v = mkMax(e);
@@ -2599,9 +2631,13 @@ function heroMarkers(h){
       if(e.unit === "%" && /ignore .*def|^reduce def by|increase dmg enemies receive/i.test(w)) defdown = 1;
       if(/counterattack/i.test(w) && /increase/i.test(w)) ctr = Math.max(ctr, v||0);
       if(/increase def/i.test(w)) defUp = Math.max(defUp, v||0);
-      if(/heal(ing)? factor|heal ratio/i.test(w)) anyHeal = 1;
+      if(/heal(ing)? factor|heal ratio|dmg conversion rate|siphon|drain/i.test(w)) anyHeal = 1;
       MK_CAT.forEach(([nm, rs])=>{ if(!rs.some(r=>r.test(w))) return;
-        if(e.unit === "%" ? (v != null && v >= 10) : (v != null && v > 0)) kinds.add(nm); });
+        /* An effect the game never puts a figure on is still an effect. It
+           counts toward BREADTH, which is about variety, but it can never
+           feed a magnitude marker. Ganglot's Death Drain is the case: it
+           heals and the tooltip gives no factor for it. */
+        if(v == null || (e.unit === "%" ? v >= 10 : v > 0)) kinds.add(nm); });
     });
     const m = (k.notes||"").match(/(\d+(?:\.\d+)?)%\s*chance/ig);
     if(m) m.forEach(x=>{ const p = parseFloat(x); if(!isNaN(p)) chance = Math.max(chance, p); });
@@ -2634,7 +2670,18 @@ function heroMarkers(h){
      base power it is a column nobody filled, not something missing from
      THIS hero, and flagging all 36 would just be noise */
   if(core.basePower == null && powerBands()){ unread++; gaps.push("base power"); }
-  const val = m => m.graded ? (m.id === "power" ? pw : 0) : (hit[m.id] ? m.w : 0);
+  /* A flat marker cannot tell 63,000 damage from 7,000, or a Bone Dragon
+     from a boulder. These two are graded the way base power is: 3 for
+     having it, 4 and 5 as it gets genuinely bigger. */
+  /* Graded on the SINGLE hit, not the total across targets. Tested both:
+     the single number tracks the tier list at -0.73 and the AoE total only
+     at -0.39, so spreading damage over six is worth far less per point than
+     it looks. Reach is real, it just is not what your list rewards. */
+  const outTotal = dmg * targets * Math.max(0.1, 1 - falloff*(targets-1));
+  const pay = !hit.payload ? 0 : dmg >= 13000 ? 5 : dmg >= 8000 ? 4 : 3;
+  const sum = !summons ? 0 : (summonPower >= 2 ? 5 : summonPower >= 1 ? 4 : 3);
+  const val = m => !m.graded ? (hit[m.id] ? m.w : 0)
+    : m.id === "power" ? pw : m.id === "payload" ? pay : m.id === "summon" ? sum : 0;
   const total = MARKERS.reduce((a,m)=>a + val(m), 0);
   const kit   = MARKERS.filter(m=>!m.bonus).reduce((a,m)=>a + val(m), 0);
   return {hit, val, total, kit, max: markerMax, kitMax: markerMax - 5, power: pw, unread, gaps,

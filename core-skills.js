@@ -731,6 +731,8 @@ window.CORE_SKILLS = {
         notes: "Death Drain siphons HP from up to 6 enemies in a circle around her and deals DMG; DMG to each target drops 5% per extra target hit. Also summons a Bone Dragon with 5x the siphoned HP for 4s - DMG dealt to Blackforged is not converted into Bone Dragon HP. The Bone Dragon inherits 40% of Ganglot's Troop's ATK and 50% of its DEF, and each second hits up to 2 targets in a frontal cone. Summoned units cannot be controlled by players.",
         effects: [
           { what: "DMG Factor", values: [4200, null, null, null, 14000], note: "level 1 read from the skill tooltip and level 5 from the awakened skill's Before Awakening block; the Upgrade Preview line was not captured, so the middle three levels are unknown" },
+          { what: "HP siphoned from up to 6 enemies", values: [null], note: "Death Drain - the tooltip gives no factor for the amount siphoned, but it heals and it is what the Bone Dragon's HP is built from" },
+          { what: "Bone Dragon HP, multiple of HP siphoned", values: [5], note: "fixed, not on the upgrade curve" },
           { what: "Bone Dragon DMG Factor", values: [360, null, null, null, 1200], note: "levels 1 and 5 only, same reason" },
           { what: "Bone Dragon inherited ATK", unit: "%", values: [40], note: "fixed, not on the upgrade curve" },
           { what: "Bone Dragon inherited DEF", unit: "%", values: [50], note: "fixed, not on the upgrade curve" }
