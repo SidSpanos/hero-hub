@@ -1,5 +1,21 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-08 15:05 — THE KIT AND THE WORTH ARE NOW ON THE CARD.
+     Only one number was on screen and it was the wrong one to read:
+     Ganglot showed 68 while her kit is 22, and there was nothing
+     saying those measure different things. They do.
+     68 is a PERCENTAGE — what she reaches of what a hero could carry
+     in this mode (skills 22 + talents 9 + meta 3 = 34, out of a
+     ceiling of 50). It places nobody.
+     22 is the KIT — the five skills added up, 1-5 each, out of 25.
+     25 is the WORTH — kit plus skin, meta and your call. THIS is
+     what places a hero: everyone sorts by it, the tiers fill in the
+     sizes your board already uses, and ties go to the better kit.
+     Every card now carries a second chip, "KIT 22 -> 25", beside the
+     percentage, and the Hero Score header prints both. Hovering
+     either spells out the sum and says plainly which one moves a
+     hero and which one does not.
+
      2026-09-08 14:41 — TIES ARE BROKEN BY THE KIT, NOT BY LUCK.
      Ranking sorted on the total alone, so two heroes on the same
      score were separated by whichever sat earlier in the roster
@@ -848,6 +864,23 @@
   .hscore b{font-size:11.5px;font-weight:800;color:var(--fg);line-height:1.3}
   .hscore i{font-style:normal;font-size:9px;font-weight:700;color:var(--muted)}
   .hscore i::before{content:"/";opacity:.5;margin-right:1px}
+  /* the placement score — kit, then worth. Deliberately styled apart from
+     .hscore so the two are never read as one number: this one is points,
+     that one is a percentage. */
+  .kitscore{display:inline-flex;align-items:baseline;gap:3px;padding:1px 6px;margin-left:4px;
+    border:1px solid color-mix(in srgb,var(--accent) 40%,var(--border));border-radius:999px;
+    background:color-mix(in srgb,var(--accent) 8%,transparent)}
+  .kitscore b{font-size:11.5px;font-weight:800;color:var(--fg);line-height:1.3}
+  .kitscore i{font-style:normal;font-size:9px;font-weight:700;color:var(--muted)}
+  .kitscore i::before{content:"→";opacity:.55;margin-right:2px}
+  .kitscore u{text-decoration:none;font-size:8.5px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted);opacity:.8}
+  .skworth{display:inline-flex;align-items:baseline;gap:5px;font-size:10px;color:var(--muted);
+    padding:2px 8px;margin-left:8px;border-radius:999px;
+    border:1px solid color-mix(in srgb,var(--accent) 40%,var(--border));
+    background:color-mix(in srgb,var(--accent) 8%,transparent)}
+  .skworth b{font-size:15px;font-weight:800;color:var(--fg)}
+  .skworth i{font-style:normal}
   .hscore.auto{opacity:.75}
   .hscore.part{border-color:color-mix(in srgb,var(--series-1) 45%,var(--border))}
   .hscore.full{border-color:color-mix(in srgb,var(--series-3) 55%,var(--border));
@@ -4756,12 +4789,27 @@ function scoreBadge(h){
   const r = heroRating(h, m);
   const own = r.done, of = r.outOf;
   const state = own === of ? "full" : own ? "part" : "auto";
+  /* The kit sits beside the tally on every card, because the tally is a
+     percentage of a ceiling and the kit is the hero. Reading 68 next to a
+     kit of 22 is the whole point — they are not the same measurement and
+     only one of them places anybody. */
+  const kit = (typeof kitOf === "function") ? kitOf(h) : null;
+  const worth = (typeof worthOf === "function") ? worthOf(h) : null;
+  const kb = kit === null ? "" :
+    `<span class="kitscore" title="${h.n} — kit ${kit} of 25: the five skills added up (${
+      r.sk.map(x=>x.v).join(" + ")}), nothing else in it.
+WORTH ${worth} = kit ${kit}${String(h.skin||"").toLowerCase()==="yes"?" + skin 5":" + skin 0"} + meta ${
+      metaScoreOf(h.key).v||0}${(WORTH_ADJ[h.key]||0) ? ` + your call ${(WORTH_ADJ[h.key]>0?"+":"")}${WORTH_ADJ[h.key]}` : ""}.
+Worth is what places them on the board. The ${r.cmdPct}/${r.ltPct} beside this is a
+percentage of what they could carry in ${m} — it places nobody.">
+      <u>kit</u><b>${kit}</b><i>${worth}</i></span>`;
   return `<span class="hscore ${state}" title="${h.n} in ${m} — out of 100 in each seat.
 commander  ${r.cmd} of ${r.scale}   →  ${r.cmdPct}
 lieutenant ${r.lt} of ${r.scale}   →  ${r.ltPct}   (tops out at ${r.ltCeil})
 ${own} of ${of} scored by you${own===of ? "" : ` — the rest fall back to the upgrade order and the general talent values`}.
+This is a percentage of a ceiling, NOT the score that places them — that is the kit/worth chip beside it.
 Set them on the Hero Score tab.">
-    <b>${r.cmdPct}</b><i>${r.ltPct}</i></span>`;
+    <b>${r.cmdPct}</b><i>${r.ltPct}</i></span>` + kb;
 }
 function cardHTML(h, copy, phaseId, slotId){
   const tags = h.tags.map(m=>
@@ -6749,6 +6797,42 @@ Your sheet is never changed by this — it's the copy in the browser that's over
     return L.length ? `${head}\n\n${L.join("\n")}\n\n${cmd}\n${lt}`
                     : `${head}\n\nNothing scored yet — click the pips.`;
   }
+  /* ---------------------------------------------------------------
+     TWO NUMBERS, BOTH SHOWN, BECAUSE THEY ANSWER DIFFERENT QUESTIONS.
+     The tally (commander/lieutenant) is a PERCENTAGE of what a hero
+     could carry in this mode — skills + talents + meta + any-troop,
+     out of 50 — so it says "how much of their ceiling do they reach
+     here". The KIT is the five skills added up, 1-5 each, out of 25,
+     and WORTH is that plus skin, meta and your call. Worth is what
+     places a hero on the board; the tally never does.
+     They were easy to confuse because only the percentage was on
+     screen: Ganglot read 68 and her kit is 22. Both now show, with
+     the sum spelled out on hover.
+     --------------------------------------------------------------- */
+  const kitTallyHTML = (h, rt)=>{
+    const kit = kitOf(h);
+    if(kit === null) return "";
+    const skin = String(h.skin||"").toLowerCase() === "yes" ? 5 : 0;
+    const meta = metaScoreOf(h.key).v || 0;
+    const adj  = WORTH_ADJ[h.key] || 0;
+    const worth = worthOf(h);
+    const sg = suggestTier(h);
+    const parts = [`kit ${kit}`, skin?`skin ${skin}`:"skin —", meta?`meta ${meta}`:"meta —"]
+      .concat(adj ? [`your call ${adj>0?"+":""}${adj}`] : []);
+    const tip = `KIT ${kit} of 25 — the five skills, ${rt.sk.map(x=>x.v).join(" + ")}.
+This is the hero. Nothing else is in it.
+
+WORTH ${worth} = ${parts.join(" + ").replace(/ —/g," 0")}
+Worth is what places them: everyone is sorted by it and the tiers are
+filled in the sizes your board already uses. A tie goes to the better kit.
+${sg ? `\nOn ${worth} they rank into ${sg.tier}. ${sg.same ? "That is where they are." : `They are in ${h.t}.`}` : ""}
+
+The commander/lieutenant numbers beside this are a different thing: a
+percentage of what this hero could carry in ${skMode} (skills + talents
++ meta + any-troop, out of ${rt.scale}). They do not place anyone.`;
+    return `<span class="skworth" title="${tip.replace(/"/g,"&quot;")}">
+      <i>kit</i><b>${kit}</b><i>worth</i><b>${worth}</b></span>`;
+  };
   const pipRow = (tag, key, v, tips, extra)=>[1,2,3,4,5].map(n=>
     `<button class="pip ${v===n?"on":""} ${v>=n?"lit":""}" data-rate="${tag}:${key}:${n}"
       title="${(tips&&tips[n-1])||n}">${n}</button>`).join("") + (extra||"");
@@ -7000,6 +7084,7 @@ Both come from core-skills.js.">${h.versatile ? "ANY TROOP" : "own troop only"}<
         <span class="sktally" title="${tallyTip(h, rt)}">
           <i>commander</i><b>${rt.cmdPct||"·"}</b>
           <i>lieutenant</i><b>${rt.ltPct||"·"}</b><u>max ${rt.ltCeil}</u></span>
+        ${kitTallyHTML(h, rt)}
         <span class="skdone ${rt.done===rt.outOf?"full":rt.done?"part":""}"
           title="How much of this score is your own judgement: ${rt.done} of the ${rt.outOf} things you can rate for ${skMode}.
 ${rt.outOf} = ${rt.sk.length} skills + 3 talents + meta${h.versatile ? " + any troop" : ""}.
