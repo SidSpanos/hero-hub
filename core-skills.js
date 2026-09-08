@@ -142,6 +142,7 @@ window.CORE_SKILLS = {
 
   "Amaterasu": {
     name: "Amaterasu",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -198,6 +199,7 @@ window.CORE_SKILLS = {
   "Arthur": {
     name: "Arthur",
     warband: "Eternal King",
+    basePower: null,
     rarity: "S",
     sourceKind: "game",
     level: 60,
@@ -267,6 +269,7 @@ window.CORE_SKILLS = {
   "Asuka": {
     name: "Aska",
     warband: "Blade of Judgment",
+    basePower: null,
     rarity: "S",
     sourceKind: "game",
     level: 60,
@@ -335,6 +338,7 @@ window.CORE_SKILLS = {
   "Balder": {
     name: "Baldur",
     warband: "Ironshield",
+    basePower: null,
     rarityNote: "not asserted - Baldur starts blue and progresses to gold, so rarity is a per-account fact, not a hero fact",
     sourceKind: "game",
     level: 60,
@@ -389,6 +393,7 @@ window.CORE_SKILLS = {
   "Carl": {
     name: "Karl",
     warband: "Eternal Flame",
+    basePower: null,
     rarity: "S",
     sourceKind: "game",
     level: 53,
@@ -456,6 +461,7 @@ window.CORE_SKILLS = {
   "Elfwine": {
     name: "Aelfwine",
     warband: "Peace Ambassador",
+    basePower: null,
     rarity: "S",
     sourceKind: "game",
     level: 60,
@@ -520,6 +526,7 @@ window.CORE_SKILLS = {
 
   "Elina": {
     name: "Elena",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -575,6 +582,7 @@ window.CORE_SKILLS = {
   "Farad": {
     name: "Farhad",
     warband: "Whirling Thunder",
+    basePower: null,
     rarity: "S",
     sourceKind: "game",
     level: 60,
@@ -640,6 +648,7 @@ window.CORE_SKILLS = {
   "Freya": {
     name: "Freyja",
     warband: "War Song Siren",
+    basePower: null,
     rarity: "S",
     sourceKind: "game",
     owned: false,
@@ -701,6 +710,7 @@ window.CORE_SKILLS = {
 
   "Held": {
     name: "Helda",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -757,6 +767,7 @@ window.CORE_SKILLS = {
 
   "Ilia": {
     name: "Elia",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -802,6 +813,7 @@ window.CORE_SKILLS = {
 
   "Irin": {
     name: "Erin",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -858,6 +870,7 @@ window.CORE_SKILLS = {
 
   "Iris": {
     name: "Iris",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -915,6 +928,7 @@ window.CORE_SKILLS = {
 
   "Kaira": {
     name: "Kaira",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -971,6 +985,7 @@ window.CORE_SKILLS = {
   "Kiana": {
     name: "Kiana",
     warband: "Frost Speaker",
+    basePower: null,
     rarity: "S",
     sourceKind: "game",
     level: 60,
@@ -1039,6 +1054,7 @@ window.CORE_SKILLS = {
 
   "Kus": {
     name: "Kalthas",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -1092,6 +1108,7 @@ window.CORE_SKILLS = {
 
   "Linda": {
     name: "Linda",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -1147,6 +1164,7 @@ window.CORE_SKILLS = {
   "Morgan Lefe": {
     name: "Morgan le Fay",
     warband: "Evernight Witch",
+    basePower: null,
     rarity: "S",
     sourceKind: "game",
     owned: false,
@@ -1208,6 +1226,7 @@ window.CORE_SKILLS = {
   "Odaunaga": {
     name: "Oda Nobunaga",
     warband: "Demon King of the Sixth Heaven",
+    basePower: null,
     rarity: "S",
     sourceKind: "game",
     owned: false,
@@ -1269,6 +1288,7 @@ window.CORE_SKILLS = {
   "Petra": {
     name: "Petra",
     warband: "Crystalline Guardian",
+    basePower: null,
     rarity: "S",
     sourceKind: "game",
     owned: false,
@@ -1331,6 +1351,7 @@ window.CORE_SKILLS = {
 
   "Reald": {
     name: "Reid",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -1388,6 +1409,7 @@ window.CORE_SKILLS = {
   "Reinhardt": {
     name: "Reinhardt",
     warband: "Blade of Justice",
+    basePower: null,
     rarity: "S",
     sourceKind: "game",
     level: 39,
@@ -1464,6 +1486,7 @@ window.CORE_SKILLS = {
 
   "Rex": {
     name: "Rex",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -1519,6 +1542,7 @@ window.CORE_SKILLS = {
 
   "Reynald": {
     name: "Reynald",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -1576,6 +1600,7 @@ window.CORE_SKILLS = {
 
   "Rot": {
     name: "Roro",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -1631,6 +1656,7 @@ window.CORE_SKILLS = {
 
   "Sara": {
     name: "Sara",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -1687,6 +1713,7 @@ window.CORE_SKILLS = {
 
   "Scarnet": {
     name: "Skerne",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -1740,6 +1767,7 @@ window.CORE_SKILLS = {
 
   "Selena": {
     name: "Selena",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -1795,6 +1823,7 @@ window.CORE_SKILLS = {
   "Shan": {
     name: "Joan",
     warband: "The Blessed Maiden",
+    basePower: null,
     rarity: "S",
     sourceKind: "game",
     level: 60,
@@ -1861,6 +1890,7 @@ window.CORE_SKILLS = {
 
   "Shisunin": {
     name: "Yi Sun-sin",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -1915,6 +1945,7 @@ window.CORE_SKILLS = {
 
   "Sigrid": {
     name: "Sigrid",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -1971,6 +2002,7 @@ window.CORE_SKILLS = {
   "Silvin": {
     name: "Sylvan",
     warband: "Forest Guardian",
+    basePower: null,
     rarity: "S",
     sourceKind: "game",
     owned: false,
@@ -2039,6 +2071,7 @@ window.CORE_SKILLS = {
 
   "Vista": {
     name: "Vista",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -2092,6 +2125,7 @@ window.CORE_SKILLS = {
 
   "Voll": {
     name: "Voll",
+    basePower: null,
     sourceKind: "guide",
     slotOrder: "guide",
     warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
@@ -2146,6 +2180,7 @@ window.CORE_SKILLS = {
   "Wukong": {
     name: "Wukong",
     warband: "Monkey King",
+    basePower: null,
     rarity: "S",
     sourceKind: "game",
     owned: false,

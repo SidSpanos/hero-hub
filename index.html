@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===========================================================
-     2026-09-08 09:05 — hero-sheet.js and core-skills.js are now ONE file.
+     2026-09-08 09:16 — hero-sheet.js and core-skills.js are now ONE file.
      core-skills.js is the hero authority and carries both halves:
      the hand-edited sheet table (troop, the three talent trees in
      wheel order, skin, obtain) and every hero's five skill slots,
@@ -35,6 +35,18 @@
      it - shield raised to 8,000 so a C-tier shield stops firing the
      full 5, damage lowered to 5,000 so real mid bursts stop scoring
      the same as no burst at all. -0.873 -> -0.913, weights untouched.
+     NEW: a base power marker, scored 3 to 5 rather than flat. It
+     reads basePower from core-skills.js, which starts null on every
+     hero and is YOURS to fill: power at level 60 and 6 stars, one
+     yardstick for everyone. It has to be that way because what the
+     game shows is power at whatever level your account has, which
+     measures training, not the hero - read against your tier list
+     those figures run backwards (Baldur 677,530 at B, maxed;
+     Reinhardt 99,440 at A, level 39, one star). The bands work
+     themselves out from whatever you have filled in - bottom third
+     scores 3, middle 4, top 5 - so no threshold is invented in
+     advance, and it stays quiet until at least three heroes have a
+     number. A hero left blank reads "not supplied" and scores it 0.
      It scores -0.91 against your tier list and touches nothing:
      your ratings, the tally and the saved overlay are untouched.
      A rating pip now redraws ONE hero's card, not all 35. It always
@@ -2501,8 +2513,29 @@ const MARKERS = [
   {id:"defdown", w:3, label:"defence down",  tip:"Ignores or strips enemy DEF. Not one C or D hero has any."},
   {id:"breadth", w:3, label:"breadth 5+",    tip:"Five or more kinds of effect that clear 10%. Below that they read as decoration."},
   {id:"counter", w:3, label:"counter kit",   tip:"A counterattack of 10%+ with defence and a heal behind it. Arthur and Reid, nobody else."},
+  {id:"power",   w:5, label:"base power",    graded:true,
+   tip:"A hero's power at level 60 and 6 stars — the same yardstick for everyone. Bottom third of what you have supplied scores 3, middle 4, top 5. Fill basePower in core-skills.js; a hero left blank does not score it."},
   {id:"skin",    w:5, label:"skin",          tip:"A bonus, not a capability — what the game charges for them.", bonus:true}
 ];
+/* Bands for base power, worked out from whatever has been filled in so far,
+   so it calibrates itself instead of needing a threshold invented up front.
+   Fewer than three heroes supplied and it stays quiet rather than guessing. */
+function powerBands(){
+  const v = [];
+  const all = (typeof CORE_SKILLS === "object" && CORE_SKILLS) || {};
+  for(const id in all){ const p = all[id].basePower;
+    if(typeof p === "number" && p > 0) v.push(p); }
+  if(v.length < 3) return null;
+  v.sort((a,b)=>a-b);
+  const at = q => v[Math.floor((v.length-1)*q)];
+  return {lo: at(1/3), hi: at(2/3), n: v.length};
+}
+function powerScore(hero){
+  const p = (coreOf(hero.key)||{}).basePower;
+  if(typeof p !== "number" || p <= 0) return 0;
+  const b = powerBands(); if(!b) return 0;
+  return p >= b.hi ? 5 : p >= b.lo ? 4 : 3;
+}
 const markerMax = MARKERS.reduce((a,m)=>a+m.w, 0);
 const mkMax = e => { if(!e || !Array.isArray(e.values)) return null;
   for(let i=e.values.length-1;i>=0;i--) if(e.values[i]!=null) return e.values[i]; return null; };
@@ -2561,12 +2594,17 @@ function heroMarkers(h){
     counter: (ctr >= 10 && defUp > 0 && anyHeal) ? 1 : 0,
     /* h.skin is the string "yes"/"no" off the sheet, so a bare truthiness
        test counts "no" as a skin and hands every hero the bonus */
+    power:   powerScore(h) > 0 ? 1 : 0,
     skin:    String(h.skin).toLowerCase() === "yes" ? 1 : 0
   };
-  const total = MARKERS.reduce((a,m)=>a + (hit[m.id] ? m.w : 0), 0);
-  const kit   = MARKERS.filter(m=>!m.bonus).reduce((a,m)=>a + (hit[m.id] ? m.w : 0), 0);
-  return {hit, total, kit, max: markerMax, kitMax: markerMax - 5,
-          detail:{dmg, heal, shield, chance, kinds:[...kinds], ctr}};
+  const pw = powerScore(h);
+  /* a graded marker carries the band it earned, not a flat weight */
+  const val = m => m.graded ? (m.id === "power" ? pw : 0) : (hit[m.id] ? m.w : 0);
+  const total = MARKERS.reduce((a,m)=>a + val(m), 0);
+  const kit   = MARKERS.filter(m=>!m.bonus).reduce((a,m)=>a + val(m), 0);
+  return {hit, val, total, kit, max: markerMax, kitMax: markerMax - 5, power: pw,
+          detail:{dmg, heal, shield, chance, kinds:[...kinds], ctr,
+                  basePower:(coreOf(h.key)||{}).basePower ?? null}};
 }
 /* ---- what the game actually says, shown beside the boxes ------------------
    The captured numbers are NOT poured into "how much". A DMG Factor of 13,000
@@ -6324,11 +6362,12 @@ Your sheet is never changed by this — it's the copy in the browser that's over
     const m = heroMarkers(h);
     if(!m) return "";
     const rows = MARKERS.map(k=>{
-      const on = m.hit[k.id];
-      return `<tr class="${on?"":"z"}${k.bonus?" mbonus":""}" title="${k.tip}">
+      const got = m.val(k);
+      const waiting = k.id === "power" && m.detail.basePower == null;
+      return `<tr class="${got?"":"z"}${k.bonus?" mbonus":""}" title="${k.tip}">
         <td>${k.bonus?"+ ":""}${k.label}</td>
-        <td class="tv">${on ? k.w : "·"}</td>
-        <td class="tnote">of ${k.w}</td></tr>`;
+        <td class="tv">${got || "·"}</td>
+        <td class="tnote">${waiting ? "not supplied" : (k.graded ? "3-5" : "of "+k.w)}</td></tr>`;
     }).join("");
     return `<div class="skcard tally markers">
       <div class="skctop">
