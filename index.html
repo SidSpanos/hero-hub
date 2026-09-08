@@ -1,5 +1,32 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-08 16:24 — A NEW HERO'S PICTURE IS NOW A DROPPED FILE.
+     Adding a portrait used to mean someone hand-encoding the image
+     into this file as a base64 blob. That is not a workflow, it is a
+     favour you have to ask for, and it does not scale past the 35
+     baked in here. Portraits now resolve in three steps: your own
+     crop or a baked-in one, then portraits/<hero id>.png sitting in
+     a folder next to this page, then the letter tile. png, webp, jpg
+     and jpeg all work, tried in that order.
+     So a hero the app has never met needs one thing: their file, in
+     the portraits folder, named after their id. No encoding, no code
+     edit, nobody in the loop. "Save portrait files…" in the Portraits
+     panel writes out every portrait you already hold, correctly
+     named, ready to drop in — which is also how you make your own
+     crops permanent instead of leaving them in browser storage.
+     The check is an <img> tag rather than fetch(), because fetch is
+     blocked on file:// and this page has to run from a double-click
+     as well as from Pages: point an image at the file and let it
+     report back. One capture-phase listener covers all sixteen places
+     a hero face is drawn, so no call site had to change. A hero with
+     nothing in the folder is remembered after the first look — four
+     requests once, then never again, instead of hundreds of 404s as
+     36 heroes redraw across seven tabs.
+     Ganglot is the first one in: portraits/Ganglot.png, cropped from
+     the screenshots. She is unowned, so there is no framed hero card
+     to capture the way the other 35 were — this is her art. Overwrite
+     the file when you have her.
+
      2026-09-08 15:05 — THE KIT AND THE WORTH ARE NOW ON THE CARD.
      Only one number was on screen and it was the wrong one to read:
      Ganglot showed 68 while her kit is 22, and there was nothing
@@ -1826,9 +1853,11 @@
     <button class="panelx" data-closes="portraitBtn" title="Close">&times;</button>
     <h2>Portraits</h2>
     <p class="note">Pick from the icon library below, or load a screenshot of your hero roster and click a hero's face in it — the crop lands on whichever hero is targeted below and moves on to the next one without a portrait. Click any card's avatar to re-target it.</p>
+    <p class="note"><b>To make a portrait permanent, put a file in the <code>portraits</code> folder</b> next to this page, named after the hero's id — <code>portraits/Ganglot.png</code>. png, webp, jpg and jpeg all work. That is all a new hero ever needs: no encoding, no code, no waiting on anyone. “Save portrait files…” writes out everything you already hold, correctly named, ready to drop in.</p>
     <div class="erow" style="margin-top:0">
       <label class="btn">Load screenshots<input type="file" id="shotFile" accept="image/*" multiple style="display:none"></label>
       <label class="btn">Load portraits.json<input type="file" id="portFile" accept=".json,application/json" style="display:none"></label>
+      <button class="btn" id="savePortFiles">Save portrait files…</button>
       <button class="btn" id="savePortBtn">Save portraits.json</button>
       <button class="btn" id="clearPortBtn">Clear this hero</button>
       <span class="pcount" id="portCount"></span>
@@ -4517,12 +4546,90 @@ const ORIGINAL = HEROES.map(h=>({key:h.key, t:h.t}));
    ============================================================ */
 const PORTRAITS = Object.assign({}, PORTRAIT_DATA);
 /* heroes shown under the same name share a portrait — if one has it, they all show it */
+/* ============================================================
+   PORTRAITS — three places to look, in this order
+   ============================================================
+   1. PORTRAITS[key]      your own crop, or one baked into this file
+   2. portraits/<key>.png a plain image file sitting next to the page
+   3. the hero's initial  the letter tile
+
+   (2) is the one that matters for heroes we have not met yet. Adding
+   a hero used to mean someone hand-encoding a picture into this file
+   as a base64 blob — that is not a workflow, it is a favour you have
+   to ask for. Now you drop "Ganglot.png" into the portraits folder,
+   named after the hero's id, and it is there. png, webp, jpg and jpeg
+   all work; the page tries them in that order.
+
+   Why not just check whether the file exists first? Because fetch()
+   is blocked on file:// and this page has to run from a double-click
+   as well as from GitHub Pages. An <img> tag is not blocked, so we
+   point one at the file and let it tell us: if it loads, that is the
+   portrait; if it errors, we try the next extension and finally fall
+   back to the letter. A hero with nothing in the folder is remembered
+   in PORTRAIT_MISS so the page asks once per session and never again
+   — without that, 36 heroes re-rendered across seven tabs would fire
+   hundreds of 404s.
+   ============================================================ */
+const PORTRAIT_DIR  = "portraits/";
+const PORTRAIT_EXT  = ["png","webp","jpg","jpeg"];
+const PORTRAIT_MISS = {};        // key -> true once the folder has been ruled out
+const PORTRAIT_HIT  = {};        // key -> the extension that worked
+/* does this hero have a picture we already hold? Used where the answer
+   changes the layout rather than just the src — the "no icon" sort, and
+   the chips that draw nothing rather than a letter. */
+function hasPortrait(h){
+  if(!h) return false;
+  if(PORTRAITS[h.key] || PORTRAIT_HIT[h.key]) return true;
+  return !!HEROES.find(x=> x!==h && PORTRAITS[x.key] && norm(x.n)===norm(h.n));
+}
+function portraitFile(key, ext){
+  return PORTRAIT_DIR + encodeURIComponent(key) + "." + (ext || PORTRAIT_EXT[0]);
+}
 function portraitOf(h){
   if(!h) return null;
   if(PORTRAITS[h.key]) return PORTRAITS[h.key];
   const twin = HEROES.find(x=> x!==h && PORTRAITS[x.key] && norm(x.n)===norm(h.n));
-  return twin ? PORTRAITS[twin.key] : null;
+  if(twin) return PORTRAITS[twin.key];
+  if(PORTRAIT_MISS[h.key]) return null;                 // asked already, nothing there
+  return portraitFile(h.key, PORTRAIT_HIT[h.key]);
 }
+/* One listener for every avatar on the page. `error` does not bubble, so
+   this is registered in the CAPTURE phase — that is what lets a single
+   handler cover all sixteen places a hero face gets drawn without any of
+   them having to know about it. */
+document.addEventListener("error", ev=>{
+  const img = ev.target;
+  if(!img || img.tagName !== "IMG") return;
+  const src = img.getAttribute("src") || "";
+  if(src.indexOf(PORTRAIT_DIR) !== 0) return;           // not one of ours
+  const rest = src.slice(PORTRAIT_DIR.length);
+  const dot  = rest.lastIndexOf(".");
+  const key  = decodeURIComponent(rest.slice(0, dot));
+  const at   = PORTRAIT_EXT.indexOf(rest.slice(dot + 1));
+  if(at > -1 && at < PORTRAIT_EXT.length - 1){
+    img.setAttribute("src", portraitFile(key, PORTRAIT_EXT[at + 1]));   // try the next one
+    return;
+  }
+  /* out of extensions — the folder has nothing for this hero. Remember it,
+     and put the letter where the picture would have gone. */
+  PORTRAIT_MISS[key] = true;
+  const h = byKey(key);
+  const letter = (h && h.n && h.n[0]) || "?";
+  const holder = img.parentNode;
+  if(holder) img.replaceWith(document.createTextNode(letter));
+  else img.remove();
+}, true);
+/* and the other way: remember which extension worked, so the next render
+   goes straight to it instead of walking the list again */
+document.addEventListener("load", ev=>{
+  const img = ev.target;
+  if(!img || img.tagName !== "IMG") return;
+  const src = img.getAttribute("src") || "";
+  if(src.indexOf(PORTRAIT_DIR) !== 0) return;
+  const rest = src.slice(PORTRAIT_DIR.length);
+  const dot  = rest.lastIndexOf(".");
+  PORTRAIT_HIT[decodeURIComponent(rest.slice(0, dot))] = rest.slice(dot + 1);
+}, true);
 let view = "board";
 let copies = [], copySeq = 0;          // extra placements of a hero on the tier board
 let phases = [], phaseSeq = 0;         // the fortnightly plan
@@ -7451,7 +7558,7 @@ function drawRoster(){
     az:    (a,b)=> a.n.localeCompare(b.n),
     za:    (a,b)=> b.n.localeCompare(a.n),
     modes: (a,b)=> b.tags.length-a.tags.length || a.n.localeCompare(b.n),
-    noicon:(a,b)=> (portraitOf(a)?1:0)-(portraitOf(b)?1:0) || a.n.localeCompare(b.n),
+    noicon:(a,b)=> (hasPortrait(a)?1:0)-(hasPortrait(b)?1:0) || a.n.localeCompare(b.n),
     focus: (a,b)=>{ const f = focusRank();
       const ra = f.get(a.key), rb = f.get(b.key);
       return (ra?ra.rank:9e9) - (rb?rb.rank:9e9) || a.n.localeCompare(b.n); }
@@ -9882,6 +9989,36 @@ function wirePortraits(){
     const n = byKey(target).n;
     renderAll(); setTarget(target);
     portMsg(`${n}'s portrait cleared.`);
+  });
+  /* ---- the way OUT of needing anyone to bake a picture into this file ----
+     Every portrait you hold is written out as <hero id>.png. Drop them into
+     the "portraits" folder next to this page and they are permanent: they
+     load for anyone who opens it, they survive clearing your browser, and a
+     hero we have never met needs nothing but their file dropped in the same
+     folder under the same name. portraits.json stays for moving your work
+     between browsers; this is for making it stick. */
+  document.getElementById("savePortFiles").addEventListener("click", ()=>{
+    const keys = Object.keys(PORTRAITS).filter(k=>byKey(k));
+    if(!keys.length) return portMsg("No portraits held yet — crop one first.");
+    let n = 0, i = 0;
+    /* browsers throttle a burst of downloads, so they go out one at a time */
+    const next = ()=>{
+      if(i >= keys.length){
+        portMsg(`${n} file${n===1?"":"s"} saved. Put them in a folder called "portraits" `
+          + `next to this page — the names are the hero ids and must stay exactly as they are.`);
+        return;
+      }
+      const k = keys[i++], url = PORTRAITS[k];
+      try{
+        const a = document.createElement("a");
+        a.href = url; a.download = k + ".png";
+        document.body.appendChild(a); a.click(); a.remove();
+        n++;
+      }catch(_){}
+      setTimeout(next, 220);
+    };
+    portMsg(`Saving ${keys.length} portrait file${keys.length===1?"":"s"}…`);
+    next();
   });
   document.getElementById("savePortBtn").addEventListener("click", ()=>{
     const blob = new Blob([JSON.stringify(PORTRAITS, null, 1)], {type:"application/json"});
