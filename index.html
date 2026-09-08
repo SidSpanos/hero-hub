@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===========================================================
-     2026-09-08 13:32 — hero-sheet.js and core-skills.js are now ONE file.
+     2026-09-08 13:39 — hero-sheet.js and core-skills.js are now ONE file.
      core-skills.js is the hero authority and carries both halves:
      the hand-edited sheet table (troop, the three talent trees in
      wheel order, skin, obtain) and every hero's five skill slots,
@@ -30,6 +30,24 @@
      the tier board as its source of truth, so it could only ever
      rediscover what the board already said. This one reads the
      skills and disagrees where it disagrees, which is the point.
+     THE SCORE NOW PLACES A HERO. A hero nobody has ever placed -
+     one whose sheet row left the tier column blank, which is how a
+     new hero arrives - is dropped where their score says and keeps
+     moving as their data fills in. Drag them once and the flag comes
+     off and they stay where you put them; a hero you HAVE placed is
+     never moved automatically.
+     The tier it reads is worked out by RANK, not by nearest median.
+     Medians do not work here: S+ holds several heroes on 26 while S
+     is tight at 25-27, so S ended up with the higher median and
+     Arthur on 29 was told he was an S. Sorting everyone by score and
+     handing out places in the sizes the board already uses cannot
+     invert like that.
+     AND YOU CAN OVERRULE THE SCORE WITHOUT ABANDONING IT. Every
+     hero has a "your call" row on the WORTH card, plus or minus in
+     whole points. The score reads the skills and knows nothing about
+     how a hero actually plays - that row is where you say so. It
+     counts toward the total, toward where an unplaced hero lands,
+     and it saves with the rest of your edits.
      Every hero is read AWAKENED by default, the same way every skill
      is read at max: what a hero is worth is what they are worth fully
      developed. On the ULT the After-awakening figure now wins over
@@ -1554,6 +1572,17 @@
            border-radius:999px; padding:2px 7px; margin-right:6px; }
   .mkwarnnote{ color:#b4553c !important; }
   .skcard.markers tr.mtri td{ color:#2f6f4f; }
+  .wsug{ margin-top:9px; padding:7px 9px; border-radius:7px; font-size:11px; line-height:1.5; }
+  .wsug.ok{  background:rgba(47,111,79,.07);  color:#2f6f4f; }
+  .wsug.off{ background:rgba(180,85,60,.07);  color:#b4553c; }
+  .wsugbtn{ font:inherit; font-size:10px; margin-left:6px; padding:2px 8px; cursor:pointer;
+            border:1px solid currentColor; border-radius:999px; background:transparent; color:inherit; }
+  .wsugbtn:hover{ background:rgba(0,0,0,.05); }
+  .skcard.markers tr.madj td{ color:#3a63a8; font-weight:600; }
+  .wadj{ font:inherit; font-size:11px; line-height:1; width:18px; padding:2px 0; margin-left:2px;
+         border:1px solid var(--rule,#dcdcd6); border-radius:4px; background:transparent;
+         color:var(--muted,#8a8a80); cursor:pointer; }
+  .wadj:hover{ color:var(--ink,#23231f); border-color:var(--ink,#23231f); }
   .skcard.markers tr.mtri td:first-child{ font-weight:600; letter-spacing:.03em; }
   .skcard.markers .thead td{ letter-spacing:.06em; }
   .skcard.markers tr.z td{ opacity:.42; }
@@ -2500,6 +2529,12 @@ let META_DATA = null;      // the meta list as published / saved
    seats: CL fires in either seat · C commander only · L lieutenant only.
    That's what lets a hero score differently as commander and as lieutenant. */
 const SKILL_FX = {};
+/* Your thumb on the scale. The WORTH score reads the skills and knows nothing
+   about how a hero actually plays — a nudge here says "I know something the
+   card does not" and rides on top, in whole points, plus or minus. It counts
+   toward the total and therefore toward where an unplaced hero lands, and it
+   is saved with the rest of your edits. */
+const WORTH_ADJ = {};
 /* ---- core-skills.js, as a layer underneath -------------------------------
    CORE_SKILLS is keyed by the internal hero id — the same key SKILL_FX uses —
    and within a hero by slot. A row that came from there is flagged core:true
@@ -2724,6 +2759,44 @@ function trifectasOf(key){
 /* the side a hero's trifecta is on, so a skill knows if it is part of it */
 function trifectaSides(key){
   return new Set(trifectasOf(key).map(t=>t.id === "OFFENSIVE" ? "off" : "def"));
+}
+/* ---- what tier does this score suggest -----------------------------------
+   The tiers overlap, so a straight range lookup is no good — A runs 18-23 and
+   B runs 8-22, and a 22 sits in both. Instead every tier's MEDIAN score is
+   worked out from the heroes already in it, and the hero is put with whichever
+   median sits closest. The hero being judged is left out of that calculation
+   so they cannot vote for their own tier.
+
+   It is a SUGGESTION and nothing acts on it. Where a hero sits is yours. */
+function worthOf(h){
+  if(!h) return null;
+  const per = ["1","2","3","4","U"].map(sl=>coreSkillValue(h.key, sl));
+  if(per.every(v=>v === null)) return null;
+  const skills = per.reduce((a,v)=>a + (v||0), 0);
+  const skin   = String(h.skin||"").toLowerCase() === "yes" ? 5 : 0;
+  const meta   = (metaScoreOf(h.key).v) || 0;
+  const adj    = WORTH_ADJ[h.key] || 0;
+  return skills + skin + meta + adj;
+}
+/* By RANK, not by nearest median. Medians do not work here: S+ holds several
+   heroes on 26 while S is tight at 25-27, so S ends up with the HIGHER median
+   and Arthur on 29 gets told he is an S. Sorting everyone by score and handing
+   out places in the sizes your board already uses cannot invert like that —
+   the best score always lands in the best tier. */
+function suggestTier(h){
+  const mine = worthOf(h); if(mine === null) return null;
+  const pool = HEROES.map(x=>({key:x.key, t:x.t, s:worthOf(x)}))
+                     .filter(x=>x.s !== null)
+                     .sort((a,b)=>b.s - a.s);
+  const sizes = TIERS.map(t=>({k:t.k, n:HEROES.filter(x=>x.t === t.k).length}));
+  let i = 0; const placed = {};
+  sizes.forEach(({k,n})=>{ for(let j=0;j<n && i<pool.length;j++,i++) placed[pool[i].key] = k; });
+  while(i < pool.length) placed[pool[i++].key] = sizes[sizes.length-1].k;
+  const tier = placed[h.key];
+  const bands = {};
+  sizes.forEach(({k})=>{ const v = pool.filter(x=>placed[x.key] === k).map(x=>x.s);
+    if(v.length) bands[k] = Math.min(...v) + "-" + Math.max(...v); });
+  return {tier, score:mine, bands, same: tier === h.t};
 }
 function heroMarkers(h){
   const core = coreOf(h.key);
@@ -3761,7 +3834,7 @@ const MAP_SECTIONS = ["RENAMES","TIERS","TROOPS","SKINS","OBTAIN","SKILLS","SIZE
                       "BUILDS","BUILD_IMAGES","PAIR_LINKS","MODE_INFO","TROOP_ICONS","PORTRAITS","OWNED",
                       "SKIN_OWNED","SKILLSEQ","SKILL_ICONS"];
 const WHOLE_SECTIONS = ["ROSTER","OBTAIN_TYPES","PAIRINGS","PHASES","FORMATIONS","COPIES","PLAN_START","META",
-                        "SKILL_FX","WARBANDS","FX_W","TRAIT_W","TREE_W","TREE_OVERRIDE","TREE_SCORE",
+                        "SKILL_FX","WARBANDS","WORTH_ADJ","FX_W","TRAIT_W","TREE_W","TREE_OVERRIDE","TREE_SCORE",
                         "VERS_SCORE","META_SCORE","SK_MODE",
                         "SK_RATE","TR_RATE","TREE_RATE","SHIFTS"];
 const sameVal = (a,b)=> JSON.stringify(a===undefined?null:a) === JSON.stringify(b===undefined?null:b);
@@ -4133,7 +4206,7 @@ let SHEET_DATA = null;
           note(`"${col.tier}" isn't a tier. Use: ${TIERS.map(x=>x.k).join(" ")}`);
         if(!blank(col.modes) && !tags.length)
           note(`none of "${col.modes}" is a mode. Use: ${MODES.join(" ")}`);
-        SD.NEW.push({n:key, t:tk || "C", tags});
+        SD.NEW.push({n:key, t:tk || "C", tags, hadTier: !!tk});
       }
       if(!blank(col.obtain)){
         const o = OBTAIN_OF[flat(col.obtain)];
@@ -4169,10 +4242,14 @@ let SHEET_DATA = null;
   if(sawColumns){
     if(bad.length) console.warn("column files — skipped:\n  " + bad.join("\n  "));
     window.__SHEET_SKIPPED = bad;
-    /* heroes the file introduced that the page did not ship with */
+    /* heroes the file introduced that the page did not ship with. One whose
+       row left the tier column blank has never been placed by anyone, so it
+       is marked unplaced and the app drops them where their score says, and
+       keeps doing so as their data fills in. A hero you HAVE placed is never
+       moved automatically. */
     (SD.NEW || []).forEach(r=>{
       if(HEROES.some(h=>h.n === r.n || h.key === r.n)) return;
-      HEROES.push({t:r.t, n:r.n, tags:[...(r.tags||[])]});
+      HEROES.push({t:r.t, n:r.n, tags:[...(r.tags||[])], unplaced:!r.hadTier});
     });
     window.__SHEET_NEW = (SD.NEW || []).map(r=>r.n);
     delete SD.NEW;
@@ -4260,6 +4337,7 @@ let SHEET_DATA = null;
   if(D.SKILL_ICONS) Object.assign(SKILL_ICONS, D.SKILL_ICONS);
   if(Array.isArray(D.META)) META_DATA = D.META;
   if(D.SKILL_FX) Object.assign(SKILL_FX, JSON.parse(JSON.stringify(D.SKILL_FX)));
+  if(D.WORTH_ADJ) Object.assign(WORTH_ADJ, D.WORTH_ADJ);
   if(D.WARBANDS) Object.assign(WARBANDS, D.WARBANDS);
   if(D.FX_W)     Object.assign(FX_W, D.FX_W);
   if(D.TRAIT_W)  Object.assign(TRAIT_W, D.TRAIT_W);
@@ -5126,7 +5204,7 @@ function commitArrangement(){
           if(cp) cp.t = sec.dataset.t;
           return;
         }
-        const h = byKey(c.dataset.key); if(h){ h.t = sec.dataset.t; score(h); next.push(h); }
+        const h = byKey(c.dataset.key); if(h){ h.t = sec.dataset.t; delete h.unplaced; score(h); next.push(h); }
       });
     });
   } else {
@@ -5142,7 +5220,18 @@ function commitArrangement(){
   renderAll();
   didDrag = false;
 }
+/* A hero nobody has placed follows their score. The moment you drag them the
+   flag comes off and they stay where you put them. */
+function autoPlaceUnplaced(){
+  let moved = false;
+  HEROES.filter(h=>h.unplaced).forEach(h=>{
+    const sg = suggestTier(h);
+    if(sg && sg.tier !== h.t){ h.t = sg.tier; score(h); moved = true; }
+  });
+  return moved;
+}
 function renderAll(){
+  autoPlaceUnplaced();
   buildBoard(); buildMatrix(); applyFilter();
   drawBig(); drawSmall(); drawScores(); drawTroopKey(); wireNameEditing(); buildNamesDoc();
   drawTargetSelect(); drawIconLib(); drawBuildImgKey(); drawTray(); drawTrayInto("heroTray2","trayQ2"); drawTrayInto("heroTray3","trayQ3");
@@ -6620,7 +6709,8 @@ Your sheet is never changed by this — it's the copy in the browser that's over
     const skin   = String(h.skin||"").toLowerCase() === "yes" ? 5 : 0;
     const meta   = (metaScoreOf(h.key).v) || 0;
     const tri    = trifectasOf(h.key);
-    const total  = skills + skin + meta;
+    const adj    = WORTH_ADJ[h.key] || 0;
+    const total  = skills + skin + meta + adj;
     const gaps   = per.filter(x=>x.v === null).length;
     const why = {
       5:"how the hero kills — a payload of 8,000+, a summon, or defence-down",
@@ -6649,8 +6739,22 @@ Your sheet is never changed by this — it's the copy in the browser that's over
           <tr class="${skin?"":"z"} mbonus" title="A bonus on top, not a decider — what the game charges, not what the hero does."><td>+ skin</td><td class="tv">${skin||"·"}</td><td class="tnote">of 5</td></tr>
           <tr class="${meta?"":"z"} mbonus" title="How often they turn up in the lineups you have logged on the Meta tab. Set it there, or on the META card.">
             <td>+ meta</td><td class="tv">${meta||"·"}</td><td class="tnote">${meta?"of 5":"not set"}</td></tr>
+          <tr class="${adj?"madj":"z"} mbonus" title="Your own adjustment, in whole points. The score reads the skills and knows nothing about how a hero actually plays — this is where you say so. It counts toward the total and toward where an unplaced hero lands, and it saves with your other edits.">
+            <td>${adj>0?"+ ":adj<0?"− ":"± "}your call</td>
+            <td class="tv">${adj ? (adj>0?"+"+adj:adj) : "·"}</td>
+            <td class="tnote"><button class="wadj" data-wadj="${h.key}:-1" title="A point down">−</button><button class="wadj" data-wadj="${h.key}:1" title="A point up">+</button>${
+              adj ? `<button class="wadj" data-wadj="${h.key}:0" title="Back to what the skills say">×</button>` : ""}</td></tr>
           <tr class="tsum"><td>total</td><td class="tv">${total}</td><td class="tnote">of 35</td></tr>
         </table>
+        ${(()=>{ const sg = suggestTier(h); if(!sg) return "";
+          const med = TIERS.map(t=>t.k + " " + (sg.bands[t.k] ?? "–")).join(" · ");
+          return `<div class="wsug ${sg.same?"ok":"off"}" title="Each tier's median score, worked out from the heroes already in it, with this hero left out so they cannot vote for themselves: ${med}. Nothing moves on its own — where a hero sits is yours.">
+            <b>${total}</b> reads as <b>${sg.tier}</b>${
+              h.unplaced ? ` — and that is where they are sitting. Nobody has placed them, so they follow their score and will keep moving as their data fills in. Drag them once and they stay put.`
+              : sg.same ? ` — where you have them.`
+              : `, you have them at <b>${h.t}</b>.`}
+            ${(sg.same || h.unplaced) ? "" : `<button class="wsugbtn" data-wsug="${h.key}:${sg.tier}">move to ${sg.tier}</button>`}
+          </div>`; })()}
         <p class="tallynote">Every skill scores at least <b>3</b>, the good ones <b>4</b>, the ones
           that decide a fight <b>5</b> — then skin and meta on top. Nothing here is fitted to your
           tier board; it reads <b>core-skills.js</b> and scores what each skill does. It agrees with
@@ -6984,6 +7088,24 @@ function wireSkills(scope){
       const [tag, hk] = b.dataset.rateclr.split(":");
       scoreSet(bagOf(tag), hk, skMode, "");
       touch(); redrawHero(hk); paintScores(hk);
+    }));
+  root.querySelectorAll("[data-wadj]").forEach(btn=>
+    btn.addEventListener("click", ()=>{
+      const [hk, d] = btn.dataset.wadj.split(":");
+      const cur = WORTH_ADJ[hk] || 0;
+      const next = (+d === 0) ? 0 : Math.max(-10, Math.min(10, cur + (+d)));
+      if(next) WORTH_ADJ[hk] = next; else delete WORTH_ADJ[hk];
+      touch(); drawSkills(); renderAll();
+    }));
+  root.querySelectorAll("[data-wsug]").forEach(btn=>
+    btn.addEventListener("click", ()=>{
+      const [hk, t] = btn.dataset.wsug.split(":");
+      const hh = byKey(hk); if(!hh) return;
+      hh.t = t; score(hh);
+      custom = HEROES.some(x=>{ const o = ORIGINAL.find(y=>y.key===x.key); return o && o.t !== x.t; });
+      const flag = document.getElementById("customFlag");
+      if(flag) flag.classList.toggle("on", custom);
+      touch(); drawSkills(); renderAll();
     }));
   root.querySelectorAll("[data-skown]").forEach(cb=>
     cb.addEventListener("change", ()=>{
@@ -10243,6 +10365,7 @@ function buildDataObject(){
         if(keep.length) out[k] = JSON.parse(JSON.stringify(keep));
       }); return out; })(),
     WARBANDS: {...WARBANDS},
+    WORTH_ADJ: {...WORTH_ADJ},
     FX_W: {...FX_W},
     TRAIT_W: {...TRAIT_W},
     TREE_W: {...TREE_W},
@@ -10522,7 +10645,7 @@ const OV_LABEL = {TIERS:"tier", RENAMES:"name", TROOPS:"troop type", SKINS:"skin
   BUILD_IMAGES:"build screenshot", PAIR_LINKS:"pairing link", MODE_INFO:"mode note",
   TROOP_ICONS:"troop icon", ROSTER:"the roster", PAIRINGS:"the pairings", PHASES:"the timeline",
   COPIES:"extra cards", OBTAIN_TYPES:"obtain methods", FORMATIONS:"arena layouts",
-  PLAN_START:"the start date", META:"the arena meta", SKILL_FX:"skill effects",
+  PLAN_START:"the start date", META:"the arena meta", SKILL_FX:"skill effects", WORTH_ADJ:"your worth adjustments",
   WARBANDS:"warbands", FX_W:"effect weights", TRAIT_W:"reach weights", TREE_W:"talent values",
   TREE_OVERRIDE:"talents set on the Hero Score tab", TREE_SCORE:"talent scores",
   VERS_SCORE:"any-troop scores", META_SCORE:"meta frequency scores", SK_MODE:"the mode you were scoring",
