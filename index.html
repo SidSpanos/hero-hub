@@ -1,5 +1,22 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-08 18:20 — THREE IS A TRIFECTA, FOUR IS A QUADFECTA,
+     five is a QUINTFECTA. Three was being treated as the whole rule
+     rather than the floor, so Arthur's four offensive skills and
+     Iris's four defensive ones read as "trifecta, 4 skills" — the
+     number was there but the thing had no name and did not read as a
+     bigger achievement than a three. On the current roster: FOUR
+     quadfectas (Arthur, Morgan and Reinhardt offensive, Iris
+     defensive), seventeen trifectas, no quintfectas yet. Five is
+     reachable — a hero has five slots and nothing stops all of them
+     pointing the same way.
+     THE BONUS DID NOT CHANGE and is still +1 on each skill in the
+     fecta. A quadfecta is already worth more than a trifecta because
+     it lifts FOUR skills instead of three: +4 against +3. If a
+     quadfecta should also lift each skill further, that is a scoring
+     decision and it is Sid's to make, not something to slip in with
+     a rename.
+
      2026-09-08 17:58 — TRIFECTAS ARE NOW VISIBLE ON THE CARDS.
      They were computed on every hero and shown in exactly ONE place:
      a table row inside the WORTH card on the Hero Score tab. A rule
@@ -2942,6 +2959,15 @@ function skillSide(k){
   if(!off && !def) return null;
   return off >= def ? "off" : "def";
 }
+/* Three of a side is the floor, not the whole story. Sid's naming: three is a
+   TRIFECTA, four a QUADFECTA, five a QUINTFECTA — and five is reachable, since
+   a hero has five slots and nothing stops all of them pointing the same way.
+   The bonus is +1 on each of those skills at every size; a bigger fecta is
+   worth more because it lifts MORE skills, not because each one lifts further. */
+const FECTA      = {3:"TRIFECTA", 4:"QUADFECTA", 5:"QUINTFECTA"};
+const FECTA_SHORT= {3:"TRI",      4:"QUAD",      5:"QUINT"};
+const fectaName  = n => FECTA[n] || (n > 5 ? "QUINTFECTA" : "");
+const fectaShort = n => FECTA_SHORT[n] || (n > 5 ? "QUINT" : "");
 function trifectasOf(key){
   const sk = (coreOf(key) || {}).skills || {};
   let off = 0, def = 0;
@@ -2950,10 +2976,13 @@ function trifectasOf(key){
     if(side === "off") off++; else if(side === "def") def++;
   }
   const out = [];
-  if(off >= 3) out.push({id:"OFFENSIVE", n:off,
-    tip:off + " of this hero's skills are offensive — a payload, damage-up, defence-down, a summon or a counterattack. Three or more is a trifecta, and each of them scores a point higher for it."});
-  if(def >= 3) out.push({id:"DEFENSIVE", n:def,
-    tip:def + " of this hero's skills are defensive — healing, shields, mitigation or defence. Three or more is a trifecta, and each of them scores a point higher for it."});
+  const tip = (n, side, what) => `${n} of this hero's skills are ${side} — ${what}. `
+    + `Three is a trifecta, four a quadfecta, five a quintfecta; this is a ${fectaName(n).toLowerCase()}. `
+    + `Each of those ${n} skills scores a point higher for it.`;
+  if(off >= 3) out.push({id:"OFFENSIVE", n:off, name:fectaName(off), short:fectaShort(off),
+    tip: tip(off, "offensive", "a payload, damage-up, defence-down, a summon or a counterattack")});
+  if(def >= 3) out.push({id:"DEFENSIVE", n:def, name:fectaName(def), short:fectaShort(def),
+    tip: tip(def, "defensive", "healing, shields, mitigation or defence")});
   return out;
 }
 /* the side a hero's trifecta is on, so a skill knows if it is part of it */
@@ -5023,7 +5052,7 @@ function scoreBadge(h){
   const tri = (typeof trifectasOf === "function") ? trifectasOf(h.key) : [];
   const tb = tri.map(t=>{
     const off = t.id === "OFFENSIVE";
-    return `<span class="trichip ${off?"off":"def"}" title="${t.tip}">${off?"OFF":"DEF"}<b>${t.n}</b></span>`;
+    return `<span class="trichip ${off?"off":"def"}" title="${t.tip}">${off?"OFF":"DEF"}<b>${t.short}</b></span>`;
   }).join("");
   const kb = kit === null ? "" :
     `<span class="kitscore" title="${h.n} — kit ${kit} of 25: the five skills added up (${
@@ -7228,7 +7257,7 @@ percentage of what this hero could carry in ${skMode} (skills + talents
         <table class="ttab">
           <tr class="thead"><td colspan="2">EACH SKILL</td><td class="tv">${skills}</td></tr>
           ${rows}
-          ${tri.map(t=>`<tr class="mtri" title="${t.tip}"><td colspan="2">${t.id} TRIFECTA &nbsp;<span style="opacity:.65;font-weight:400">— ${t.n} skills</span></td><td class="tnote">+1 each</td></tr>`).join("")}
+          ${tri.map(t=>`<tr class="mtri" title="${t.tip}"><td colspan="2">${t.id} ${t.name} &nbsp;<span style="opacity:.65;font-weight:400">— ${t.n} skills</span></td><td class="tnote">+1 each</td></tr>`).join("")}
           <tr class="${skin?"":"z"} mbonus" title="A bonus on top, not a decider — what the game charges, not what the hero does."><td>+ skin</td><td class="tv">${skin||"·"}</td><td class="tnote">of 5</td></tr>
           <tr class="${meta?"":"z"} mbonus" title="How often they turn up in the lineups you have logged on the Meta tab. Set it there, or on the META card.">
             <td>+ meta</td><td class="tv">${meta||"·"}</td><td class="tnote">${meta?"of 5":"not set"}</td></tr>
@@ -7311,8 +7340,10 @@ percentage of what this hero could carry in ${skMode} (skills + talents
     const side = k ? skillSide(k) : null;
     if(!side || !sides.has(side)) return "";
     const off = side === "off";
-    return `<span class="trimark ${off?"off":"def"}" title="This skill is one of the three that make ${h.n}'s ${
-      off?"offensive":"defensive"} trifecta, so it scores a point higher than it would alone.">${
+    const t = trifectasOf(h.key).find(x=>(x.id === "OFFENSIVE") === off);
+    const n = t ? t.n : 3;
+    return `<span class="trimark ${off?"off":"def"}" title="This skill is one of the ${n} that make ${h.n}'s ${
+      off?"offensive":"defensive"} ${fectaName(n).toLowerCase()}, so it scores a point higher than it would alone.">${
       off?"OFF":"DEF"} +1</span>`;
   };
   const skillBlock = (h, sk, si, skR)=>`
