@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===========================================================
-     2026-09-08 09:01 — hero-sheet.js and core-skills.js are now ONE file.
+     2026-09-08 09:05 — hero-sheet.js and core-skills.js are now ONE file.
      core-skills.js is the hero authority and carries both halves:
      the hand-edited sheet table (troop, the three talent trees in
      wheel order, skin, obtain) and every hero's five skill slots,
@@ -29,7 +29,13 @@
      both tried and dropped, correlating -0.03 and -0.12. The card
      shows the kit score and the skin-inclusive score separately,
      because skin is what the game charges, not what a hero does.
-     It scores -0.87 against your tier list and touches nothing:
+     Calibrated the way you said to: the top tier is taken as given
+     and the thresholds are moved until the rest falls into line,
+     rather than re-deriving what should be worth what. Two moves did
+     it - shield raised to 8,000 so a C-tier shield stops firing the
+     full 5, damage lowered to 5,000 so real mid bursts stop scoring
+     the same as no burst at all. -0.873 -> -0.913, weights untouched.
+     It scores -0.91 against your tier list and touches nothing:
      your ratings, the tally and the saved overlay are untouched.
      A rating pip now redraws ONE hero's card, not all 35. It always
      rebuilt the whole list; that was cheap when every skill row was
@@ -2474,7 +2480,7 @@ const warbandOf = key => WARBANDS[key] || ((coreOf(key) || {}).warband) || "";
    It is a SECOND OPINION, not a rating. Nothing here touches your 1-5 scores
    or the tally. Where it disagrees with you, that is the interesting part.
 
-     5  payload      a real Burst - 8,000 damage, or 8,000 heal, or 5,000 shield
+     5  payload      a real Burst - 5,000 damage, or 8,000 heal, or 8,000 shield
      4  scarce mode  plays Rally or Garrison. Every Rally hero you have is top
                      half, no exceptions, and only six heroes garrison at all.
      3  trigger      a chance-gated skill that fires at 20% or better. A 10%
@@ -2489,7 +2495,7 @@ const warbandOf = key => WARBANDS[key] || ((coreOf(key) || {}).warband) || "";
                      correlate with the tier list, and the one to ignore if you
                      are judging the kit rather than predicting the list. */
 const MARKERS = [
-  {id:"payload", w:5, label:"real payload",  tip:"A Burst that actually lands: 8,000+ damage, or 8,000+ healing, or a 5,000+ shield."},
+  {id:"payload", w:5, label:"real payload",  tip:"A Burst that actually lands: 5,000+ damage, or 8,000+ healing, or an 8,000+ shield. Calibrated against your tier list, not guessed."},
   {id:"mode",    w:4, label:"scarce mode",   tip:"Plays Rally or Garrison. Every Rally hero on your board is top half; only six heroes garrison at all."},
   {id:"trigger", w:3, label:"trigger 20%+",  tip:"A chance-gated skill that fires at 20% or better. Ten percent gates sit on filler skills."},
   {id:"defdown", w:3, label:"defence down",  tip:"Ignores or strips enemy DEF. Not one C or D hero has any."},
@@ -2541,7 +2547,13 @@ function heroMarkers(h){
   }
   const modes = h.tags || [];
   const hit = {
-    payload: (dmg >= 8000 || heal >= 8000 || shield >= 5000) ? 1 : 0,
+    /* Calibrated against the tier list with the weights held fixed. A shield
+       at 5,000 was firing the full 5 for Rex, who is C — raised to 8,000 it
+       stops. And 8,000 damage was too high a bar: Voll, Aelfwine and Kiana
+       carry real bursts at 5,800-7,000 and were scoring nothing, sitting level
+       with heroes who have no burst at all. 5,000 separates your B tier from
+       C and D cleanly. -0.873 -> -0.913. */
+    payload: (dmg >= 5000 || heal >= 8000 || shield >= 8000) ? 1 : 0,
     mode:    (modes.indexOf("Rally") >= 0 || modes.indexOf("Garrison") >= 0) ? 1 : 0,
     trigger: chance >= 20 ? 1 : 0,
     defdown: defdown,
