@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===========================================================
-     2026-09-08 13:26 — hero-sheet.js and core-skills.js are now ONE file.
+     2026-09-08 13:32 — hero-sheet.js and core-skills.js are now ONE file.
      core-skills.js is the hero authority and carries both halves:
      the hand-edited sheet table (troop, the three talent trees in
      wheel order, skin, obtain) and every hero's five skill slots,
@@ -30,7 +30,32 @@
      the tier board as its source of truth, so it could only ever
      rediscover what the board already said. This one reads the
      skills and disagrees where it disagrees, which is the point.
-     TRIFECTAS. Some skills are only worth what they are worth
+     Every hero is read AWAKENED by default, the same way every skill
+     is read at max: what a hero is worth is what they are worth fully
+     developed. On the ULT the After-awakening figure now wins over
+     the Before wherever the game gave us both - Petra 17,000 not
+     16,000, Wukon 16,000 not 15,000. Where the After block was never
+     captured the Before is all there is, and that reads as a floor.
+     TRIFECTAS, on Sid's rule: three offensive skills is an offensive
+     trifecta, three defensive skills is a defensive one. Five slots,
+     so a hero can hold at most ONE. The skills that make it up each
+     score a point higher, because three of a kind is worth more than
+     three separate things.
+     An earlier version of this defined four overlapping archetypes
+     and handed Arthur three of them - they shared categories, so a
+     broad kit tripped all of them at once. Trifecta count correlated
+     0.82 with simply how many kinds of effect a hero had: it was
+     measuring breadth and calling it synergy. Sid called it, and he
+     was right.
+     Two bugs fell out of rebuilding it. The awakened slot counted
+     for nothing on every hero, because its lines are all labelled
+     "before/after awakening" and those were being skipped. And
+     King's Dignity - a 13,000 Burst - classified as DEFENSIVE,
+     because its shield and damage-reduction riders outvoted the
+     damage. What a skill is FOR is not decided by a show of hands:
+     a payload, a defence-down or a summon now makes a skill
+     offensive outright.
+     Superseded: some skills are only worth what they are worth
      because of the skill beside them. Four combinations, found by
      testing every 3-way pairing across the roster: BREAKER (payload
      + defence-down + counter, held only by Arthur and Freyja, both
@@ -2544,6 +2569,19 @@ function powerScore(hero){
   return p >= b.hi ? 5 : p >= b.lo ? 4 : 3;
 }
 const markerMax = MARKERS.reduce((a,m)=>a+m.w, 0);
+/* Every hero is read AWAKENED, the same way every skill is read at max: what
+   a hero is worth is what they are worth fully developed. So on the awakened
+   slot the AFTER-awakening line wins over the before-awakening one wherever
+   the game gave us both. Where the After block was never captured — the
+   "toFill" heroes — before-awakening is all there is, and that reads as a
+   floor rather than a wrong answer. */
+function awakenedPref(effects, what){
+  if(!Array.isArray(effects)) return null;
+  const base = String(what||"").replace(/\s*(before|after) awakening\s*/i, "").trim().toLowerCase();
+  const after = effects.find(e=>/after awakening/i.test(e.what||"") &&
+    String(e.what).replace(/\s*after awakening\s*/i,"").trim().toLowerCase() === base);
+  return after || null;
+}
 const mkMax = e => { if(!e || !Array.isArray(e.values)) return null;
   for(let i=e.values.length-1;i>=0;i--) if(e.values[i]!=null) return e.values[i]; return null; };
 const MK_CAT = [
@@ -2583,8 +2621,9 @@ function coreSkillValue(key, slot){
   const summon = /\b(summons?|summoning)\s+(a|an|\d+|the)\b|resurrects?/.test(blob);
   let dmg=0, dUp=0, dd=0, heal=0, ctr=0, mit=0;
   (k.effects||[]).forEach(e=>{
-    const w = e.what || "", v = mkMax(e);
+    const w = e.what || "";
     if(/before awakening|after awakening/i.test(w) && !awk) return;
+    const v = mkMax(awk ? (awakenedPref(k.effects, w) || e) : e);
     if(/dmg factor|direct dmg/i.test(w)) dmg = Math.max(dmg, v||0);
     if(e.unit === "%"){
       if(/increase atk|increase dmg dealt|increase dmg of normal|^skill dmg|critical rate/i.test(w)) dUp = Math.max(dUp, v||0);
@@ -2602,72 +2641,45 @@ function coreSkillValue(key, slot){
      Shieldbearer is a small defence buff and scores 3 alone; it is also what
      keeps his counterattack firing, so it earns a 4. Remove it and the
      trifecta breaks — that is the test. */
-  if(v < 5){
-    const tc = trifectaCats(key), mine = skillCats(k);
-    for(const x of mine) if(tc.has(x)){ v = Math.min(5, v + 1); break; }
-  }
+  /* part of the hero's trifecta? three of a kind is worth more than three
+     separate things, so the skills that make it up each score a point up. */
+  if(v < 5 && trifectaSides(key).has(skillSide(k))) v = Math.min(5, v + 1);
   return v;
 }
 /* ---- trifectas -----------------------------------------------------------
-   Some skills are only worth what they are worth because of the skill next to
-   them. A counterattack with nothing keeping you alive gets you killed; the
-   defence and the heal are what let it keep firing. Scored one at a time none
-   of the three stands out, which is why every per-effect model rated Reid at
-   the bottom and your board has him at A.
+   Three offensive skills is an offensive trifecta. Three defensive skills is
+   a defensive trifecta. That is the whole rule.
 
-   Four combinations, found by testing every 3-way pairing across the roster:
+   Each skill is one or the other, by whichever side its biggest effect is on:
 
-     BREAKER   payload + defence-down + counter        S+ ONLY - Arthur, Freyja
-     SURVIVOR  counter + (defence or mitigation) + heal
-     ENGINE    payload + damage-up + (summon or heal)
-     GRINDER   defence-down + mitigation + heal
+     OFFENSIVE   a payload, damage-up, defence-down, a summon, a counterattack
+     DEFENSIVE   healing, a shield, mitigation, defence-up
 
-   11 of the 18 heroes in your top half hold at least one. One of the 17 in the
-   bottom half does. C and D hold none between them. Arthur holds THREE, which
-   nobody else does, and that is the real reason he sits above everyone. */
-const TRIFECTAS = [
-  {id:"BREAKER",  tip:"Payload, defence-down and a counterattack. Only Arthur and Freyja have it, and both are S+.",
-   has:c=>c.has("payload") && c.has("defdown") && c.has("counter")},
-  {id:"SURVIVOR", tip:"A counterattack with defence and healing behind it — the punish that stays alive to keep punishing.",
-   has:c=>c.has("counter") && (c.has("defup") || c.has("mit")) && c.has("heal")},
-  {id:"ENGINE",   tip:"A big payload, a damage multiplier, and a summon or a heal feeding it. The damage archetype.",
-   has:c=>c.has("payload") && c.has("dmgup") && (c.has("summon") || c.has("heal"))},
-  {id:"GRINDER",  tip:"Strips defence, soaks damage, heals it back. Wins the long fight.",
-   has:c=>c.has("defdown") && c.has("mit") && c.has("heal")}
-];
-function heroCats(key){
-  const sk = (coreOf(key) || {}).skills || {};
-  const c = new Set();
-  for(const slot in sk){
-    if(slot === "U") continue;
-    const k = sk[slot]; if(!k || !k.name) continue;
-    const blob = ((k.name||"") + " " + (k.notes||"")).toLowerCase();
-    if(/\b(summons?|summoning)\s+(a|an|\d+|the)\b|resurrects?/.test(blob)) c.add("summon");
-    (k.effects||[]).forEach(e=>{
-      const w = e.what || ""; if(/before awakening|after awakening/i.test(w)) return;
-      const v = mkMax(e);
-      if(/dmg factor|direct dmg/i.test(w) && (v||0) >= 8000) c.add("payload");
-      if(e.unit === "%"){
-        if(/ignore .*def|^reduce def by|increase dmg enemies receive/i.test(w) && (v||0) >= 5)  c.add("defdown");
-        if(/increase atk|increase dmg dealt|increase dmg of normal|^skill dmg|critical rate/i.test(w) && (v||0) >= 15) c.add("dmgup");
-        if(/reduce dmg .*receive|^reduce dmg by|damage taken reduced|reduce normal attack|reduce at ?k/i.test(w) && (v||0) >= 10) c.add("mit");
-        if(/increase def/i.test(w) && (v||0) >= 5) c.add("defup");
-      }
-      if(/heal(ing)? factor|heal ratio|siphon|drain/i.test(w)) c.add("heal");
-      if(/counterattack/i.test(w) && /increase/i.test(w) && (v||0) >= 10) c.add("counter");
-    });
-  }
-  return c;
-}
-const trifectasOf = key => { const c = heroCats(key); return TRIFECTAS.filter(t=>t.has(c)); };
-/* the categories ONE skill supplies, same tests as heroCats */
+   A hero has five slots, so three of one kind leaves only two of the other —
+   which means a hero holds at most ONE trifecta. That is the point. The
+   earlier version defined four overlapping archetypes and handed Arthur three
+   of them, because they shared categories and a broad kit tripped all of them
+   at once; trifecta count correlated 0.82 with simply how many kinds of
+   effect a hero had, so it was measuring breadth and calling it synergy.
+
+   The skills that make up the trifecta each score a point higher, because
+   three of a kind is worth more than three separate things. */
+const OFFENSIVE = ["payload","dmgup","defdown","summon","counter"];
+const DEFENSIVE = ["heal","shield","mit","defup"];
+/* the categories ONE skill supplies */
 function skillCats(k){
   const c = new Set(); if(!k || !k.name) return c;
+  const awk = (k.type||"") === "Awakened";
   const blob = ((k.name||"") + " " + (k.notes||"")).toLowerCase();
   if(/\b(summons?|summoning)\s+(a|an|\d+|the)\b|resurrects?/.test(blob)) c.add("summon");
   (k.effects||[]).forEach(e=>{
-    const w = e.what || ""; if(/before awakening|after awakening/i.test(w)) return;
-    const v = mkMax(e);
+    const w = e.what || "";
+    /* On the awakened skill every line is labelled "before/after awakening" —
+       skipping them left the ULT with no categories at all, so it never
+       counted toward a trifecta on any hero. */
+    if(/before awakening|after awakening/i.test(w) && !awk) return;
+    /* read awakened: prefer the After figure when the game gave us one */
+    const v = mkMax(awk ? (awakenedPref(k.effects, w) || e) : e);
     if(/dmg factor|direct dmg/i.test(w) && (v||0) >= 8000) c.add("payload");
     if(e.unit === "%"){
       if(/ignore .*def|^reduce def by|increase dmg enemies receive/i.test(w) && (v||0) >= 5)  c.add("defdown");
@@ -2676,23 +2688,43 @@ function skillCats(k){
       if(/increase def/i.test(w) && (v||0) >= 5) c.add("defup");
     }
     if(/heal(ing)? factor|heal ratio|siphon|drain/i.test(w)) c.add("heal");
+    if(/shield factor/i.test(w)) c.add("shield");
     if(/counterattack/i.test(w) && /increase/i.test(w) && (v||0) >= 10) c.add("counter");
   });
   return c;
 }
-/* every category that is doing work in one of this hero's trifectas */
-function trifectaCats(key){
-  const c = heroCats(key), out = new Set();
-  TRIFECTAS.filter(t=>t.has(c)).forEach(t=>{
-    ["payload","defdown","counter","defup","mit","heal","dmgup","summon"].forEach(x=>{
-      if(!c.has(x)) return;
-      const without = new Set([...c]); without.delete(x);
-      if(!t.has(without)) out.add(x);      // remove it and the trifecta breaks
-    });
-  });
+/* which side one skill falls on — null when it does neither */
+function skillSide(k){
+  const c = skillCats(k);
+  /* A skill that carries a payload, strips defence or puts a body on the
+     field is an ATTACKING skill, however many defensive riders it also has.
+     Counting categories made King's Dignity — a 13,000 Burst — read as
+     defensive, because its shield and its damage reduction outvoted the
+     damage. What a skill is FOR is not decided by a show of hands. */
+  if(c.has("payload") || c.has("defdown") || c.has("summon")) return "off";
+  const off = OFFENSIVE.filter(x=>c.has(x)).length;
+  const def = DEFENSIVE.filter(x=>c.has(x)).length;
+  if(!off && !def) return null;
+  return off >= def ? "off" : "def";
+}
+function trifectasOf(key){
+  const sk = (coreOf(key) || {}).skills || {};
+  let off = 0, def = 0;
+  for(const slot in sk){
+    const side = skillSide(sk[slot]);
+    if(side === "off") off++; else if(side === "def") def++;
+  }
+  const out = [];
+  if(off >= 3) out.push({id:"OFFENSIVE", n:off,
+    tip:off + " of this hero's skills are offensive — a payload, damage-up, defence-down, a summon or a counterattack. Three or more is a trifecta, and each of them scores a point higher for it."});
+  if(def >= 3) out.push({id:"DEFENSIVE", n:def,
+    tip:def + " of this hero's skills are defensive — healing, shields, mitigation or defence. Three or more is a trifecta, and each of them scores a point higher for it."});
   return out;
 }
-
+/* the side a hero's trifecta is on, so a skill knows if it is part of it */
+function trifectaSides(key){
+  return new Set(trifectasOf(key).map(t=>t.id === "OFFENSIVE" ? "off" : "def"));
+}
 function heroMarkers(h){
   const core = coreOf(h.key);
   if(!core || !core.skills) return null;
@@ -6613,7 +6645,7 @@ Your sheet is never changed by this — it's the copy in the browser that's over
         <table class="ttab">
           <tr class="thead"><td colspan="2">EACH SKILL</td><td class="tv">${skills}</td></tr>
           ${rows}
-          ${tri.map(t=>`<tr class="mtri" title="${t.tip}"><td colspan="3">${t.id} &nbsp;<span style="opacity:.65;font-weight:400">— the skills that build it score a point higher</span></td></tr>`).join("")}
+          ${tri.map(t=>`<tr class="mtri" title="${t.tip}"><td colspan="2">${t.id} TRIFECTA &nbsp;<span style="opacity:.65;font-weight:400">— ${t.n} skills</span></td><td class="tnote">+1 each</td></tr>`).join("")}
           <tr class="${skin?"":"z"} mbonus" title="A bonus on top, not a decider — what the game charges, not what the hero does."><td>+ skin</td><td class="tv">${skin||"·"}</td><td class="tnote">of 5</td></tr>
           <tr class="${meta?"":"z"} mbonus" title="How often they turn up in the lineups you have logged on the Meta tab. Set it there, or on the META card.">
             <td>+ meta</td><td class="tv">${meta||"·"}</td><td class="tnote">${meta?"of 5":"not set"}</td></tr>
