@@ -1,5 +1,22 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-08 14:12 — EVERY HERO CARD NOW HAS A ✎ THAT OPENS THAT
+     HERO ON THE HERO SCORE TAB. Tier board, roster, radar (both the
+     legend and the small multiples), pairings, arena and the timeline
+     all carry it. It is the mirror of the ⊞/avatar button that takes
+     you to the tier board: wherever you notice something wrong, you
+     are one click from the one place ratings are edited, instead of
+     changing tab and hunting down the hero. The two filters on that
+     tab are stood down on the way in and the search box is set to the
+     hero's name — a fully-rated hero is not in "still to do", so
+     without that the jump could land on an empty list.
+     ALSO FIXED, and it was a shipping mistake not a data one:
+     Ganglot's slot 4 (Cursed Echo, Healing Factor 450-1,500) went
+     into core-skills.js at 10:23 and the 13:39 publish copied only
+     index.html, so both the working folder and the repo were left on
+     the 10:01 build where slot 4 still read "tooltip not captured".
+     The sidecar ships with the page from now on.
+
      2026-09-08 13:39 — hero-sheet.js and core-skills.js are now ONE file.
      core-skills.js is the hero authority and carries both halves:
      the hand-edited sheet table (troop, the three talent trees in
@@ -250,6 +267,7 @@
   .card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   @keyframes flash{0%,100%{box-shadow:0 0 0 0 transparent}30%{box-shadow:0 0 0 3px var(--accent)}}
   .card.flash{animation:flash 1.1s ease-in-out 2}
+  .skhero.flash{animation:flash 1.1s ease-in-out 2}
   /* portraits */
   .avatar{
     width:34px;aspect-ratio:5/8;height:auto;border-radius:9px;flex:none;overflow:hidden;cursor:pointer;
@@ -353,7 +371,7 @@
     background:var(--plane);color:var(--text-primary);
     border:1px solid var(--accent);border-radius:6px;padding:2px 6px;
   }
-  .name{font-weight:650;font-size:14px;display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-right:20px}
+  .name{font-weight:650;font-size:14px;display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-right:26px}
   .alias{color:var(--text-secondary);font-weight:400;font-size:12px}
   .epic{font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 5px;border-radius:4px;
     border:1px solid var(--border);color:var(--text-secondary)}
@@ -368,17 +386,36 @@
     border:1px solid var(--border);background:var(--surface-1);color:var(--muted);
     font-size:11px;line-height:1;cursor:pointer;opacity:0;transition:.12s;
   }
-  .dupBtn{right:30px}
-  .delCopy{right:53px}
+  .dupBtn{right:53px}
+  .delCopy{right:76px}
   .card:hover .dupBtn,.card:hover .delCopy,.dupBtn:focus,.delCopy:focus{opacity:1}
   .dupBtn:hover,.delCopy:hover{color:var(--text-primary);border-color:var(--axis)}
   .goRadar{
-    position:absolute;top:7px;right:7px;width:19px;height:19px;border-radius:50%;
+    position:absolute;top:7px;right:30px;width:19px;height:19px;border-radius:50%;
     border:1px solid var(--border);background:var(--surface-1);color:var(--muted);
     font-size:11px;line-height:1;cursor:pointer;opacity:0;transition:.12s;padding:0;
   }
   .card:hover .goRadar,.goRadar:focus{opacity:1}
   .goRadar:hover{color:var(--text-primary);border-color:var(--axis)}
+  /* ✎ — jump to this hero's card on the Hero Score tab and edit it there.
+     Same button on every view that draws a hero, so wherever you spot
+     something wrong you are one click from the place you fix it. */
+  .goScore{
+    position:absolute;top:7px;right:7px;width:19px;height:19px;border-radius:50%;
+    border:1px solid var(--border);background:var(--surface-1);color:var(--muted);
+    font-size:10px;line-height:1;cursor:pointer;opacity:0;transition:.12s;padding:0;
+  }
+  .card:hover .goScore,.cell:hover .goScore,.pcard:hover .goScore,.goScore:focus{opacity:1}
+  .goScore:hover{color:var(--accent);border-color:var(--accent)}
+  .cell .goScore{top:4px;right:4px;z-index:3}
+  /* the inline flavour — rows and legends have no room for a corner button */
+  .goScoreInline{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:18px;height:18px;border-radius:50%;padding:0;vertical-align:middle;
+    border:1px solid var(--border);background:var(--surface-1);color:var(--muted);
+    font-size:10px;line-height:1;cursor:pointer;transition:.12s;
+  }
+  .goScoreInline:hover{color:var(--accent);border-color:var(--accent)}
   .tags{display:flex;flex-wrap:wrap;gap:4px}
   /* portrait + troop dropdown */
   .avwrap{position:relative;display:flex;flex-direction:column;gap:4px;align-items:center;flex:none}
@@ -4706,11 +4743,12 @@ function cardHTML(h, copy, phaseId, slotId){
       data-troops="${[h.troop, ...h.lt, h.versatile?"vers":""].filter(Boolean).join('|')}"
       ${h.note?`title="${h.note}"`:''}>
     ${copy?`<span class="copytag" title="A second placement of ${h.n} — same hero, extra card">copy</span>`:""}
-    ${slotId ? `<button class="delCopy" style="right:30px" data-clearslot="${slotId}" title="Clear this slot">×</button>`
-       : phaseId ? `<button class="delCopy" style="right:30px" data-phdrop-hero="${phaseId}:${h.key}" title="Remove from this window">×</button>`
+    ${slotId ? `<button class="delCopy" style="right:53px" data-clearslot="${slotId}" title="Clear this slot">×</button>`
+       : phaseId ? `<button class="delCopy" style="right:53px" data-phdrop-hero="${phaseId}:${h.key}" title="Remove from this window">×</button>`
                  : `<button class="dupBtn" data-dup="${h.key}" title="Put another ${h.n} card on the board">⧉</button>`}
     ${copy?`<button class="delCopy" data-delcopy="${copy.id}" title="Remove this copy">×</button>`:""}
     <button class="goRadar" data-go="${h.key}" title="Open ${h.n} on the radar">◎</button>
+    ${scoreJumpBtn(h, "goScore")}
     <div class="cardhead">
       <div class="avwrap">
         <div class="avatar ${target===h.key?'target':''}" data-avatar="${h.key}" title="Set a portrait for ${h.n}">
@@ -4814,6 +4852,7 @@ function setOwn(key, on){
 function wireCardBits(scope){
   const root = document.querySelector(scope) || document;
   wireBuilds(scope);
+  wireScoreJump(root);
   /* the own tick, wherever a hero card is drawn — same fact as the Roster and
      Hero Score tabs, so ticking it anywhere shows everywhere */
   root.querySelectorAll("[data-seqmove]").forEach(b=>{
@@ -5070,10 +5109,12 @@ function drawBig(){
       <span class="t">${h.tags.slice(0,3).join(" · ")}</span>
       ${h.troop||h.lt.length ? `<div style="margin-top:3px">${h.troop?troopBadge(h.troop,false):""}${h.lt.map(id=>troopBadge(id,true)).join("")}</div>`:""}</span>
       <span class="acts">
+        <button data-scoreedit="${k}" title="Edit ${h.n}'s ratings on the Hero Score tab">✎</button>
         <button data-find="${k}" title="Find ${h.n} on the tier board">⊞</button>
         <button data-drop="${k}" title="Remove">×</button>
       </span></div>`;
   }).join("");
+  wireScoreJump("#legend");
   document.querySelectorAll("#legend button[data-drop]").forEach(b=>
     b.addEventListener("click", ()=>{ selected = selected.filter(x=>x!==b.dataset.drop); drawBig(); drawSmall(); }));
   document.querySelectorAll("#legend button[data-find]").forEach(b=>
@@ -5099,7 +5140,7 @@ function drawSmall(){
         ...h.lt.map(id=>troopBadge(id, true))
       ].join("");
       return `<div class="cell" draggable="true" data-hero="${h.key}" data-sel="${selected.includes(h.key)?1:0}"
-                role="button" tabindex="0"><div class="tb">${badges}</div>${
+                role="button" tabindex="0">${scoreJumpBtn(h, "goScore")}<div class="tb">${badges}</div>${
         portraitOf(h) ? `<div class="pa"><img src="${portraitOf(h)}" alt=""></div>` : ""}${s}
         <div class="hn">${h.n}${h.epic?" ·E":""}${scoreBadge(h)}</div><div class="hm">${
           h.tags.length ? h.tags.join(" · ") : "no modes"}</div></div>`;
@@ -5127,6 +5168,7 @@ function drawSmall(){
     });
     c.addEventListener("mouseleave", hideTip);
   });
+  wireScoreJump("#smallMultiples");
   wireRadarDrag();
 }
 function drawScores(){
@@ -5823,6 +5865,48 @@ function revealOnBoard(key){
   if(!card) return;
   card.scrollIntoView({behavior:"smooth", block:"center"});
   card.classList.remove("flash"); void card.offsetWidth; card.classList.add("flash");
+}
+
+/* ------------------------------------------------------------------
+   editOnScore(key) — the mirror of revealOnBoard.
+   revealOnBoard takes you from anywhere TO the tier board; this takes
+   you from anywhere TO that hero's card on the Hero Score tab, which is
+   the one place ratings are edited. Every view that draws a hero carries
+   the ✎ button that calls it, so you never have to go and find them.
+
+   The two filters on that tab can hide the hero you just asked for — a
+   fully-rated hero is not in "still to do" — so both are stood down and
+   the search box is set to the hero's name. That leaves the list showing
+   what you asked for and nothing else, and the box tells you why.
+   ------------------------------------------------------------------ */
+function editOnScore(key){
+  const h = byKey(key); if(!h) return;
+  skFilter = "all";
+  const fsel = document.getElementById("skFilter"); if(fsel) fsel.value = "all";
+  skQuery = h.n;
+  const q = document.getElementById("skQ"); if(q) q.value = h.n;
+  switchView("skills");                       // switchView calls drawSkills for us
+  const sec = document.querySelector(`[data-skhero="${CSS.escape(key)}"]`);
+  if(!sec) return;
+  sec.scrollIntoView({behavior:"smooth", block:"start"});
+  sec.classList.remove("flash"); void sec.offsetWidth; sec.classList.add("flash");
+}
+/* one button, drawn two ways: a corner button on cards, an inline pill in
+   rows and legends where a corner would land on top of something else */
+function scoreJumpBtn(h, cls){
+  return `<button class="${cls||"goScoreInline"}" data-scoreedit="${h.key}"
+    title="Edit ${h.n}'s ratings on the Hero Score tab">✎</button>`;
+}
+/* wired the same way everywhere — pass an element or a selector */
+function wireScoreJump(scope){
+  const root = typeof scope === "string" ? (document.querySelector(scope) || document) : (scope || document);
+  root.querySelectorAll("[data-scoreedit]").forEach(b=>{
+    if(b.dataset.sjWired) return;
+    b.dataset.sjWired = "1";
+    b.setAttribute("draggable","false");
+    b.addEventListener("mousedown", e=>e.stopPropagation());
+    b.addEventListener("click", e=>{ e.stopPropagation(); e.preventDefault(); editOnScore(b.dataset.scoreedit); });
+  });
 }
 
 /* ============================================================
@@ -7276,7 +7360,8 @@ function drawRoster(){
       const onCount = h.tags.length;
       return `<tr data-row="${h.key}">
         <td><span class="avatar" data-jump="${h.key}" title="Show on the tier board">${
-          portraitOf(h)?`<img src="${portraitOf(h)}" alt="">`:h.n[0]}</span></td>
+          portraitOf(h)?`<img src="${portraitOf(h)}" alt="">`:h.n[0]}</span>
+          <div style="margin-top:4px;text-align:center">${scoreJumpBtn(h)}</div></td>
         <td><input class="rname" data-rn="${h.key}" value="${h.n.replace(/"/g,"&quot;")}">
             ${h.custom?'<span class="newtag">NEW</span>':''}${
             HEROES.filter(x=>norm(x.n)===norm(h.n)).length>1
@@ -7388,6 +7473,7 @@ function wireRosterBits(){
       document.getElementById("mergeMsg").textContent = `Merged into ${keeper.n}. Tidy up hero-names.js when convenient.`;
     }));
   wireBuilds("#rosterWrap");
+  wireScoreJump("#rosterWrap");
   /* the roster card view draws real hero cards, so their own ticks need the
      same wiring the tier board gives them */
   document.querySelectorAll("#rosterWrap .owntick [data-hown]").forEach(cb=>{

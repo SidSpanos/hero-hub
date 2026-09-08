@@ -721,8 +721,7 @@ window.CORE_SKILLS = {
     sourceKind: "game",
     owned: false,
     note: "unowned - level 1, so slot levels are display defaults, not training levels",
-    incomplete: "slot 4 tooltip was not opened - the fourth icon is still to be captured",
-    source: "game screenshots supplied 2026-09-08",
+    source: "game screenshots supplied 2026-09-08 (all five slots)",
     skills: {
       "1": {
         name: "Dragon's Descent",
@@ -755,8 +754,12 @@ window.CORE_SKILLS = {
         ]
       },
       "4": {
-        name: null,
-        missing: "tooltip not captured - the fourth skill icon still needs a screenshot"
+        name: "Cursed Echo",
+        type: "Passive",
+        notes: "requires a Troop of Berserkers only; fires whenever Ganglot's Troop OR her summons inflict a debuff on a target - and her own Merciless Pursuit keys off the HP Reduction debuff, so the two feed each other",
+        effects: [
+          { what: "Healing Factor", values: [450, 600, 750, 1050, 1500] }
+        ]
       },
       "U": {
         name: "Breath of Decay",
