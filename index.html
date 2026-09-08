@@ -1,5 +1,24 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-08 17:58 — TRIFECTAS ARE NOW VISIBLE ON THE CARDS.
+     They were computed on every hero and shown in exactly ONE place:
+     a table row inside the WORTH card on the Hero Score tab. A rule
+     that moves real points should be legible where you look at the
+     hero, so every card now carries an OFF or DEF chip with the count
+     — 21 of the 36 heroes have one, and no hero can have two.
+     And the bonus lands on the SKILLS, not the hero: a skill inside a
+     trifecta scores a point higher. That was invisible too — a 4 and
+     a 3-lifted-to-4 looked identical, so the card said "4" and never
+     said why. Each skill card in the trifecta now carries "OFF +1".
+     Nothing about the scoring changed. This is the same arithmetic,
+     finally showing its working.
+     Detection is automatic and always was: skillCats reads the effect
+     lines out of core-skills.js, skillSide decides what a skill is FOR
+     (a payload, a defence-down or a summon makes it offensive outright,
+     however many defensive riders it carries), and three of a side is
+     a trifecta. Nothing is hand-listed, so a new hero gets theirs the
+     moment their skills are in the file.
+
      2026-09-08 17:31 — THE OWN TICK LOCKED THE BROWSER FOR A SECOND
      AND A HALF. Unticking a hero took 989ms; ticking back on took
      1,483ms. Same shape of bug as the rating pips, one level up.
@@ -956,6 +975,24 @@
     padding:2px 8px;margin-left:8px;border-radius:999px;
     border:1px solid color-mix(in srgb,var(--accent) 40%,var(--border));
     background:color-mix(in srgb,var(--accent) 8%,transparent)}
+  /* OFF / DEF — three of a kind, and each of those skills scores a point
+     higher for it. Coloured apart from the score chips because it is a
+     property of the kit, not a number out of anything. */
+  .trichip{display:inline-flex;align-items:baseline;gap:3px;padding:1px 6px;margin-left:4px;
+    border-radius:999px;font-size:8.5px;font-weight:800;letter-spacing:.06em;
+    border:1px solid transparent;white-space:nowrap}
+  .trichip b{font-size:10px;font-weight:800}
+  .trichip.off{color:var(--series-2);border-color:color-mix(in srgb,var(--series-2) 45%,transparent);
+    background:color-mix(in srgb,var(--series-2) 12%,transparent)}
+  .trichip.def{color:var(--series-3);border-color:color-mix(in srgb,var(--series-3) 45%,transparent);
+    background:color-mix(in srgb,var(--series-3) 12%,transparent)}
+  /* the same fact on the individual skill card that earns the +1 */
+  .trimark{font-size:8.5px;font-weight:800;letter-spacing:.06em;padding:1px 5px;border-radius:999px;
+    border:1px solid transparent;margin-right:5px;white-space:nowrap}
+  .trimark.off{color:var(--series-2);border-color:color-mix(in srgb,var(--series-2) 45%,transparent);
+    background:color-mix(in srgb,var(--series-2) 12%,transparent)}
+  .trimark.def{color:var(--series-3);border-color:color-mix(in srgb,var(--series-3) 45%,transparent);
+    background:color-mix(in srgb,var(--series-3) 12%,transparent)}
   .skworth b{font-size:15px;font-weight:800;color:var(--fg)}
   .skworth i{font-style:normal}
   .hscore.auto{opacity:.75}
@@ -4952,9 +4989,14 @@ function paintScores(key){
     const wrap = document.createElement("span");
     wrap.innerHTML = scoreBadge(h);
     if(!wrap.firstElementChild) return;
-    /* drop the old kit chip so the new one does not land beside it */
-    const stale = el.nextElementSibling;
-    if(stale && stale.classList.contains("kitscore")) stale.remove();
+    /* drop the old kit and trifecta chips so the new ones do not land beside
+       them — scoreBadge returns the whole run, not just the percentage */
+    let stale = el.nextElementSibling;
+    while(stale && (stale.classList.contains("kitscore") || stale.classList.contains("trichip"))){
+      const next = stale.nextElementSibling;
+      stale.remove();
+      stale = next;
+    }
     el.replaceWith(...wrap.childNodes);
   }));
 }
@@ -4973,6 +5015,16 @@ function scoreBadge(h){
      only one of them places anybody. */
   const kit = (typeof kitOf === "function") ? kitOf(h) : null;
   const worth = (typeof worthOf === "function") ? worthOf(h) : null;
+  /* the trifecta, on the card. It is a scoring rule that moves real points —
+     three offensive or three defensive skills, each of them worth one more —
+     and it lived in exactly one place, a table row on the Hero Score tab. If
+     a rule changes a hero's score it should be legible where you look at the
+     hero. OFF or DEF, with the count. */
+  const tri = (typeof trifectasOf === "function") ? trifectasOf(h.key) : [];
+  const tb = tri.map(t=>{
+    const off = t.id === "OFFENSIVE";
+    return `<span class="trichip ${off?"off":"def"}" title="${t.tip}">${off?"OFF":"DEF"}<b>${t.n}</b></span>`;
+  }).join("");
   const kb = kit === null ? "" :
     `<span class="kitscore" title="${h.n} — kit ${kit} of 25: the five skills added up (${
       r.sk.map(x=>x.v).join(" + ")}), nothing else in it.
@@ -4987,7 +5039,7 @@ lieutenant ${r.lt} of ${r.scale}   →  ${r.ltPct}   (tops out at ${r.ltCeil})
 ${own} of ${of} scored by you${own===of ? "" : ` — the rest fall back to the upgrade order and the general talent values`}.
 This is a percentage of a ceiling, NOT the score that places them — that is the kit/worth chip beside it.
 Set them on the Hero Score tab.">
-    <b>${r.cmdPct}</b><i>${r.ltPct}</i></span>` + kb;
+    <b>${r.cmdPct}</b><i>${r.ltPct}</i></span>` + kb + tb;
 }
 function cardHTML(h, copy, phaseId, slotId){
   const tags = h.tags.map(m=>
@@ -7248,6 +7300,21 @@ percentage of what this hero could carry in ${skMode} (skills + talents
   };
   const SK_PIP = ["filler — it fires and nothing much happens","situational","solid, pulls its weight",
                   "strong — shapes the fight","the reason you bring them"];
+  /* The trifecta bonus lands on the SKILLS, not on the hero — a skill inside
+     one scores a point higher. That was invisible: a 4 and a 3-lifted-to-4
+     looked identical, so the card said "4" and never said why. This marks the
+     skills that are IN the trifecta, on the card that shows their number. */
+  const triMark = (h, slot)=>{
+    const sides = (typeof trifectaSides === "function") ? trifectaSides(h.key) : new Set();
+    if(!sides.size) return "";
+    const k = coreSlot(h.key, slot);
+    const side = k ? skillSide(k) : null;
+    if(!side || !sides.has(side)) return "";
+    const off = side === "off";
+    return `<span class="trimark ${off?"off":"def"}" title="This skill is one of the three that make ${h.n}'s ${
+      off?"offensive":"defensive"} trifecta, so it scores a point higher than it would alone.">${
+      off?"OFF":"DEF"} +1</span>`;
+  };
   const skillBlock = (h, sk, si, skR)=>`
     <div class="skcard ${sk.name||(sk.fx||[]).length?"":"empty"}">
       <div class="skctop">
@@ -7262,6 +7329,7 @@ percentage of what this hero could carry in ${skMode} (skills + talents
         </button>
         <span class="skslot">${sk.slot === "U" ? "ULT" : sk.slot}</span>
         <span class="grow"></span>
+        ${triMark(h, sk.slot)}
         <span class="skpts" title="What this skill is worth — commander, then lieutenant.">${
           skR ? (skR.v || skR.vL ? `${skR.v||"·"}<i>/</i>${skR.vL||"·"}` : "·") : "·"}</span>
       </div>
