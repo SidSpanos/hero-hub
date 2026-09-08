@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===========================================================
-     2026-09-08 09:27 — hero-sheet.js and core-skills.js are now ONE file.
+     2026-09-08 09:50 — hero-sheet.js and core-skills.js are now ONE file.
      core-skills.js is the hero authority and carries both halves:
      the hand-edited sheet table (troop, the three talent trees in
      wheel order, skin, obtain) and every hero's five skill slots,
@@ -35,6 +35,16 @@
      it - shield raised to 8,000 so a C-tier shield stops firing the
      full 5, damage lowered to 5,000 so real mid bursts stop scoring
      the same as no burst at all. -0.873 -> -0.913, weights untouched.
+     NEW: a SUMMONS marker, worth 3. A dragon, wolves, clones, a
+     resurrection - eight heroes do it and six are top half, -0.357
+     against the tier list, as strong as defence-down. It was simply
+     missing from the first cut and adding Ganglot is what found it.
+     NEW: the card now says what it COULD NOT READ. A blank field was
+     being scored as a zero, so a hero with three quarters of the card
+     unfilled got a confident low number that read as a verdict. It
+     now counts the unread markers, names them, and says to treat the
+     total as a floor. Base power only counts as unread once at least
+     one hero has it, or all 36 would flag it.
      NEW: core-skills.js can now INTRODUCE a hero. The roster used to
      be a fixed list in this page, so the file could describe a hero
      all day and nothing would appear - found by adding Ganglot and
@@ -1532,6 +1542,9 @@
           font-variant-numeric:tabular-nums; line-height:1.5; }
   .fxref b{ color:var(--ink,#23231f); font-weight:600; }
   .fxclimb{ opacity:.6; }
+  .mkwarn{ font-size:10px; letter-spacing:.05em; color:#b4553c; border:1px solid #e2b6a8;
+           border-radius:999px; padding:2px 7px; margin-right:6px; }
+  .mkwarnnote{ color:#b4553c !important; }
   .skcard.markers .thead td{ letter-spacing:.06em; }
   .skcard.markers tr.z td{ opacity:.42; }
   .skcard.markers tr.mbonus td:first-child{ font-style:italic; }
@@ -2521,6 +2534,7 @@ const MARKERS = [
   {id:"defdown", w:3, label:"defence down",  tip:"Ignores or strips enemy DEF. Not one C or D hero has any."},
   {id:"breadth", w:3, label:"breadth 5+",    tip:"Five or more kinds of effect that clear 10%. Below that they read as decoration."},
   {id:"counter", w:3, label:"counter kit",   tip:"A counterattack of 10%+ with defence and a heal behind it. Arthur and Reid, nobody else."},
+  {id:"summon",  w:3, label:"summons",       tip:"Puts an extra unit on the field — a dragon, wolves, clones, a resurrection. Eight heroes do it and six are top half. It was missing from the first cut of this card and Ganglot is what found it."},
   {id:"power",   w:5, label:"base power",    graded:true,
    tip:"A hero's power at level 60 and 6 stars — the same yardstick for everyone. Bottom third of what you have supplied scores 3, middle 4, top 5. Fill basePower in core-skills.js; a hero left blank does not score it."},
   {id:"skin",    w:5, label:"skin",          tip:"A bonus, not a capability — what the game charges for them.", bonus:true}
@@ -2562,11 +2576,17 @@ const MK_CAT = [
 function heroMarkers(h){
   const core = coreOf(h.key);
   if(!core || !core.skills) return null;
-  let dmg=0, heal=0, shield=0, chance=0, defdown=0, ctr=0, defUp=0, anyHeal=0;
+  let dmg=0, heal=0, shield=0, chance=0, defdown=0, ctr=0, defUp=0, anyHeal=0, summons=0;
   const kinds = new Set();
+  /* how much of this hero's card we could not read. A blank is not a zero,
+     and a score built on four unread markers is not a verdict — it says so
+     rather than printing a confident number. */
+  let unread = 0, gaps = [];
   for(const slot in core.skills){
     if(slot === "U") continue;
-    const k = core.skills[slot]; if(!k || !k.name) continue;
+    const k = core.skills[slot];
+    if(!k || !k.name){ if(k && k.missing){ unread++; gaps.push("slot " + slot); } continue; }
+    if(/summon|clone|wolves|wolf|bone dragon|resurrect|boulders/i.test((k.name||"") + " " + (k.notes||""))) summons = 1;
     (k.effects||[]).forEach(e=>{
       const w = e.what || ""; if(/before awakening|after awakening/i.test(w)) return;
       const v = mkMax(e);
@@ -2600,6 +2620,7 @@ function heroMarkers(h){
     defdown: defdown,
     breadth: kinds.size >= 5 ? 1 : 0,
     counter: (ctr >= 10 && defUp > 0 && anyHeal) ? 1 : 0,
+    summon:  summons,
     /* h.skin is the string "yes"/"no" off the sheet, so a bare truthiness
        test counts "no" as a skin and hands every hero the bonus */
     power:   powerScore(h) > 0 ? 1 : 0,
@@ -2607,10 +2628,16 @@ function heroMarkers(h){
   };
   const pw = powerScore(h);
   /* a graded marker carries the band it earned, not a flat weight */
+  if(!(h.tags||[]).length){ unread++; gaps.push("modes"); }
+  if(!String(h.skin||"").trim() || String(h.skin).trim() === "-"){ unread++; gaps.push("skin"); }
+  /* only a gap once the marker is actually in play — while nobody has a
+     base power it is a column nobody filled, not something missing from
+     THIS hero, and flagging all 36 would just be noise */
+  if(core.basePower == null && powerBands()){ unread++; gaps.push("base power"); }
   const val = m => m.graded ? (m.id === "power" ? pw : 0) : (hit[m.id] ? m.w : 0);
   const total = MARKERS.reduce((a,m)=>a + val(m), 0);
   const kit   = MARKERS.filter(m=>!m.bonus).reduce((a,m)=>a + val(m), 0);
-  return {hit, val, total, kit, max: markerMax, kitMax: markerMax - 5, power: pw,
+  return {hit, val, total, kit, max: markerMax, kitMax: markerMax - 5, power: pw, unread, gaps,
           detail:{dmg, heal, shield, chance, kinds:[...kinds], ctr,
                   basePower:(coreOf(h.key)||{}).basePower ?? null}};
 }
@@ -6408,6 +6435,7 @@ Your sheet is never changed by this — it's the copy in the browser that's over
       <div class="skctop">
         <span class="skslot">MARKERS</span>
         <span class="grow"></span>
+        ${m.unread ? `<span class="mkwarn" title="${m.gaps.join(", ")} — not recorded yet. A blank is not a zero, so this score is what has been read so far, not a verdict.">${m.unread} unread</span>` : ""}
         <span class="skpts" title="The kit alone, then with the skin bonus. Out of ${m.kitMax} and ${m.max}.">${m.kit}<i>/</i>${m.total}</span>
       </div>
       <div class="tallybody">
@@ -6416,6 +6444,10 @@ Your sheet is never changed by this — it's the copy in the browser that's over
           ${rows}
           <tr class="tsum"><td>total</td><td class="tv">${m.total}</td><td class="tnote">of ${m.max}</td></tr>
         </table>
+        ${m.unread ? `<p class="tallynote mkwarnnote"><b>${m.unread} of these could not be read</b> — ${m.gaps.join(", ")}
+          ${m.gaps.length === 1 ? "is" : "are"} not recorded yet. Those rows show 0 because there is nothing to
+          score, <em>not</em> because this hero lacks them, so treat the total as a floor rather than a verdict
+          until they are filled in.</p>` : ""}
         <p class="tallynote">Read off <b>core-skills.js</b>, not from your ratings —
           nothing here moves the tally on the left. The weights are yours: 5 for the
           strongest predictor of your tier list, 4 for the next, 3 for the rest, and
