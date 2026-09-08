@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===========================================================
-     2026-09-08 09:16 — hero-sheet.js and core-skills.js are now ONE file.
+     2026-09-08 09:27 — hero-sheet.js and core-skills.js are now ONE file.
      core-skills.js is the hero authority and carries both halves:
      the hand-edited sheet table (troop, the three talent trees in
      wheel order, skin, obtain) and every hero's five skill slots,
@@ -35,6 +35,14 @@
      it - shield raised to 8,000 so a C-tier shield stops firing the
      full 5, damage lowered to 5,000 so real mid bursts stop scoring
      the same as no burst at all. -0.873 -> -0.913, weights untouched.
+     NEW: core-skills.js can now INTRODUCE a hero. The roster used to
+     be a fixed list in this page, so the file could describe a hero
+     all day and nothing would appear - found by adding Ganglot and
+     watching her not turn up. A sheet row for a hero the page has
+     never seen now creates them, with two optional trailing columns,
+     tier and modes, that are read ONLY on that first appearance.
+     On a hero who already exists they are ignored, because where a
+     hero sits is yours to drag, not the file's.
      NEW: a base power marker, scored 3 to 5 rather than flat. It
      reads basePower from core-skills.js, which starts null on every
      hero and is YOURS to fill: power at level 60 and 6 stars, one
@@ -3800,7 +3808,7 @@ let SHEET_DATA = null;
   const NO  = new Set(["no","n","false","0","none"]);
 
   /* What the files contribute, in the same shape the app writes itself. */
-  const SD = {TROOPS:{}, TREE_SET:{}, SKINS:{}, OBTAIN:{}, SKILLS:{}, OWNED:{}, SKIN_OWNED:{}, SKILLSEQ:{}};
+  const SD = {TROOPS:{}, TREE_SET:{}, SKINS:{}, OBTAIN:{}, SKILLS:{}, OWNED:{}, SKIN_OWNED:{}, SKILLSEQ:{}, NEW:[]};
   const bad = [];
 
   /* Columns are named by the header row, so a file only carries the columns it
@@ -3810,7 +3818,10 @@ let SHEET_DATA = null;
        # hero | skills | own                       <- your account
 
      A file with no header row is read in the full default order. */
-  const COL_NAMES = ["hero","troop","trees","skin","obtain","skills","own","hasskin"];
+  /* tier and modes are optional and only ever used to INTRODUCE a hero the
+     built-in roster has never heard of. On a hero who already exists they are
+     ignored, because where a hero sits is yours to drag, not the file's. */
+  const COL_NAMES = ["hero","troop","trees","skin","obtain","skills","own","hasskin","tier","modes"];
   const DEFAULT_MAP = {hero:0, troop:1, trees:2, skin:3, obtain:4, skills:5, own:6};
   function headerMap(line){
     const parts = line.replace(/^#\s*/, "").split("|").map(x=>flat(x));
@@ -3888,6 +3899,23 @@ let SHEET_DATA = null;
         else if(NO.has(v)) SD.SKINS[key] = "no";
         else note(`skin should be yes or no, got "${col.skin}"`);
       }
+      /* A row for a hero the built-in list has never seen is how a NEW hero
+         joins: core-skills.js introduces them, the app makes room. Without
+         this the file could describe a hero all day and nothing would appear,
+         because the roster was a fixed list in the page. */
+      if(!HEROES.some(h=>h.n === key || h.key === key)
+         && !SD.NEW.some(r=>r.n === key)){
+        const tags = blank(col.modes) ? [] :
+          col.modes.split(/[\s,]+/).filter(Boolean)
+            .map(x=>MODES.find(mm=>flat(mm) === flat(x))).filter(Boolean);
+        const tk = blank(col.tier) ? null
+          : ((TIERS.find(x=>flat(x.k) === flat(col.tier)) || {}).k || null);
+        if(!blank(col.tier) && !tk)
+          note(`"${col.tier}" isn't a tier. Use: ${TIERS.map(x=>x.k).join(" ")}`);
+        if(!blank(col.modes) && !tags.length)
+          note(`none of "${col.modes}" is a mode. Use: ${MODES.join(" ")}`);
+        SD.NEW.push({n:key, t:tk || "C", tags});
+      }
       if(!blank(col.obtain)){
         const o = OBTAIN_OF[flat(col.obtain)];
         if(o) SD.OBTAIN[key] = o;
@@ -3922,6 +3950,13 @@ let SHEET_DATA = null;
   if(sawColumns){
     if(bad.length) console.warn("column files — skipped:\n  " + bad.join("\n  "));
     window.__SHEET_SKIPPED = bad;
+    /* heroes the file introduced that the page did not ship with */
+    (SD.NEW || []).forEach(r=>{
+      if(HEROES.some(h=>h.n === r.n || h.key === r.n)) return;
+      HEROES.push({t:r.t, n:r.n, tags:[...(r.tags||[])]});
+    });
+    window.__SHEET_NEW = (SD.NEW || []).map(r=>r.n);
+    delete SD.NEW;
     SHEET_DATA = SD;
   }
 

@@ -83,6 +83,11 @@ Amaterasu    | axe   | siege skill bal   | yes  | wheel
 Asuka        | cav   | cav vers field    | yes  | boxes   # Aska
 Rot          | beast | axe vers field    | yes  | wheel   # Roro
 Wukong       | bers  | cav skill vers    | yes  | p2p   # Wukon
+# hero         | troop | trees             | skin | obtain | tier | modes
+#   the last two columns are only read for a hero the app has never seen -
+#   they introduce them. On an existing hero they are ignored, because where
+#   a hero sits is yours to drag.
+Ganglot      | bers  | bers vers skill   | -    | -      | -    | -   # trees are PANEL order not wheel order - check on the wheel. Skin, obtain, tier and modes not yet known.
 
 # troop   axe   bers   cav   beast
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
@@ -703,6 +708,63 @@ window.CORE_SKILLS = {
         effects: [
           { what: "Resurrect share of Troop size", unit: "%", values: [5], note: "current-level value only, curve not shown" },
           { what: "Soul DMG as share of base ATK", unit: "%", values: [30], note: "current-level value only, curve not shown" }
+        ]
+      }
+    }
+  },
+
+  "Ganglot": {
+    name: "Ganglot",
+    warband: "Oath of Decay",
+    basePower: null,
+    rarity: "S",
+    sourceKind: "game",
+    owned: false,
+    note: "unowned - level 1, so slot levels are display defaults, not training levels",
+    incomplete: "slot 4 tooltip was not opened - the fourth icon is still to be captured",
+    source: "game screenshots supplied 2026-09-08",
+    skills: {
+      "1": {
+        name: "Dragon's Descent",
+        type: "Burst",
+        rageCost: 1000,
+        notes: "Death Drain siphons HP from up to 6 enemies in a circle around her and deals DMG; DMG to each target drops 5% per extra target hit. Also summons a Bone Dragon with 5x the siphoned HP for 4s - DMG dealt to Blackforged is not converted into Bone Dragon HP. The Bone Dragon inherits 40% of Ganglot's Troop's ATK and 50% of its DEF, and each second hits up to 2 targets in a frontal cone. Summoned units cannot be controlled by players.",
+        effects: [
+          { what: "DMG Factor", values: [4200, null, null, null, 14000], note: "level 1 read from the skill tooltip and level 5 from the awakened skill's Before Awakening block; the Upgrade Preview line was not captured, so the middle three levels are unknown" },
+          { what: "Bone Dragon DMG Factor", values: [360, null, null, null, 1200], note: "levels 1 and 5 only, same reason" },
+          { what: "Bone Dragon inherited ATK", unit: "%", values: [40], note: "fixed, not on the upgrade curve" },
+          { what: "Bone Dragon inherited DEF", unit: "%", values: [50], note: "fixed, not on the upgrade curve" }
+        ]
+      },
+      "2": {
+        name: "Merciless Pursuit",
+        type: "Passive",
+        notes: "applies to every summon in Ganglot's Troop, against units carrying the \"HP Reduction\" debuff",
+        effects: [
+          { what: "Increase DMG dealt by", unit: "%", values: [15, 20, 25, 35, 50] }
+        ]
+      },
+      "3": {
+        name: "Soul's Will",
+        type: "Passive",
+        notes: "requires a Troop of Berserkers only; fires whenever a nearby Troop or summon dies, leaves the field, or an ally leaves combat. Lasts 5s, stacks up to 3 times, and lifts both Ganglot and her Bone Dragon.",
+        effects: [
+          { what: "Increase DMG dealt by", unit: "%", values: [1, 2, 3, 4, 5] }
+        ]
+      },
+      "4": {
+        name: null,
+        missing: "tooltip not captured - the fourth skill icon still needs a screenshot"
+      },
+      "U": {
+        name: "Breath of Decay",
+        type: "Awakened",
+        buffs: "Dragon's Descent",
+        incomplete: "After Awakening block needs the tooltip scrolled",
+        toFill: true,
+        effects: [
+          { what: "DMG Factor before awakening", values: [14000] },
+          { what: "Bone Dragon DMG Factor before awakening", values: [1200] }
         ]
       }
     }
