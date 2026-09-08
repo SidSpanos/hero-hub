@@ -1,5 +1,19 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-08 14:41 — TIES ARE BROKEN BY THE KIT, NOT BY LUCK.
+     Ranking sorted on the total alone, so two heroes on the same
+     score were separated by whichever sat earlier in the roster
+     array. That is not a rule, it is an accident, and on a 36-hero
+     board scored 1-5 ties are constant: five heroes share 26, three
+     share 27. It cost Ganglot an S. Her meta score of 3 took her to
+     25, level with Amaterasu, and she lost the last S seat on array
+     order — with a kit of 22 against Amaterasu's 20. A tie now goes
+     to the better kit (the five skills, before skin, meta or your
+     adjustment), then to the name so the order is reproducible.
+     Skin, meta and your call are things ABOUT a hero; the five
+     skills are the hero, so the hero wins the tie.
+     This changes placement only. No score moved.
+
      2026-09-08 14:12 — EVERY HERO CARD NOW HAS A ✎ THAT OPENS THAT
      HERO ON THE HERO SCORE TAB. Tier board, roster, radar (both the
      legend and the small multiples), pairings, arena and the timeline
@@ -2820,11 +2834,27 @@ function worthOf(h){
    and Arthur on 29 gets told he is an S. Sorting everyone by score and handing
    out places in the sizes your board already uses cannot invert like that —
    the best score always lands in the best tier. */
+/* the raw kit on its own — no skin, no meta, no adjustment. Used to break
+   ties, because those three are all things ABOUT a hero and the five skills
+   are the hero. */
+function kitOf(h){
+  const per = ["1","2","3","4","U"].map(sl=>coreSkillValue(h.key, sl));
+  if(per.every(v=>v === null)) return null;
+  return per.reduce((a,v)=>a + (v||0), 0);
+}
 function suggestTier(h){
   const mine = worthOf(h); if(mine === null) return null;
-  const pool = HEROES.map(x=>({key:x.key, t:x.t, s:worthOf(x)}))
+  /* TIES USED TO BE BROKEN BY NOTHING — whoever sat earlier in the roster
+     array took the higher tier. That is not a rule, it is an accident, and
+     with a 36-hero board on a 1-5 scale ties are constant: five heroes share
+     26, three share 27. It cost Ganglot an S: her meta score took her to 25,
+     level with Amaterasu, and she lost the last S place on array order.
+     A tie now goes to the better KIT, then to the name so the order is at
+     least stable and reproducible. Skin, meta and your adjustment are all
+     things about a hero; the five skills are the hero. */
+  const pool = HEROES.map(x=>({key:x.key, t:x.t, n:x.n, s:worthOf(x), k:kitOf(x) || 0}))
                      .filter(x=>x.s !== null)
-                     .sort((a,b)=>b.s - a.s);
+                     .sort((a,b)=> b.s - a.s || b.k - a.k || a.n.localeCompare(b.n));
   const sizes = TIERS.map(t=>({k:t.k, n:HEROES.filter(x=>x.t === t.k).length}));
   let i = 0; const placed = {};
   sizes.forEach(({k,n})=>{ for(let j=0;j<n && i<pool.length;j++,i++) placed[pool[i].key] = k; });
