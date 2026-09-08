@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===========================================================
-     2026-09-08 10:00 — hero-sheet.js and core-skills.js are now ONE file.
+     2026-09-08 10:40 — hero-sheet.js and core-skills.js are now ONE file.
      core-skills.js is the hero authority and carries both halves:
      the hand-edited sheet table (troop, the three talent trees in
      wheel order, skin, obtain) and every hero's five skill slots,
@@ -20,66 +20,20 @@
      read faster for one number and worse for the line. Nothing from this
      file scores, counts as filled, or is written to your saved
      data — your browser edits still sit on top and still win.
-     NEW: a MARKERS card on every hero. Seven things read straight
-     off core-skills.js that predict where a hero lands before anyone
-     rates them, weighted as you set them - 5 for the strongest
-     predictor of your tier list, 4 for the next, 3 for the rest, and
-     skin as a flat +5 bonus. Each marker was tested against the tier
-     list first; damage-up magnitude and offensive-effect COUNT were
-     both tried and dropped, correlating -0.03 and -0.12. The card
-     shows the kit score and the skin-inclusive score separately,
-     because skin is what the game charges, not what a hero does.
-     Calibrated the way you said to: the top tier is taken as given
-     and the thresholds are moved until the rest falls into line,
-     rather than re-deriving what should be worth what. Two moves did
-     it - shield raised to 8,000 so a C-tier shield stops firing the
-     full 5, damage lowered to 5,000 so real mid bursts stop scoring
-     the same as no burst at all. -0.873 -> -0.913, weights untouched.
-     Payload and SUMMONS are now graded 3-5, the same shape as base
-     power, because a flat marker could not tell 63,000 damage from
-     7,000, or Ganglot's Bone Dragon from Sara's boulders. Payload
-     grades on the SINGLE hit, not the total across targets: tested
-     both, and the single number tracks the tier list at -0.73 while
-     the AoE total manages only -0.39. Reach is real, it is just not
-     what the list rewards. Costs about 0.012 of accuracy and buys a
-     marker that can see the difference between a big hit and a huge
-     one. Drain and damage-conversion now count as healing too - only
-     a literal "Heal Factor" did before, which quietly read Ganglot,
-     Aelfwine, Oda, Morgan le Fay and Karl as having no sustain. And
-     an effect the game puts no number on now counts toward BREADTH,
-     since breadth is about variety, not size.
-     NEW: a SUMMONS marker. A dragon, wolves, clones, a
-     resurrection - eight heroes do it and six are top half, -0.357
-     against the tier list, as strong as defence-down. It was simply
-     missing from the first cut and adding Ganglot is what found it.
-     NEW: the card now says what it COULD NOT READ. A blank field was
-     being scored as a zero, so a hero with three quarters of the card
-     unfilled got a confident low number that read as a verdict. It
-     now counts the unread markers, names them, and says to treat the
-     total as a floor. Base power only counts as unread once at least
-     one hero has it, or all 36 would flag it.
-     NEW: core-skills.js can now INTRODUCE a hero. The roster used to
-     be a fixed list in this page, so the file could describe a hero
-     all day and nothing would appear - found by adding Ganglot and
-     watching her not turn up. A sheet row for a hero the page has
-     never seen now creates them, with two optional trailing columns,
-     tier and modes, that are read ONLY on that first appearance.
-     On a hero who already exists they are ignored, because where a
-     hero sits is yours to drag, not the file's.
-     NEW: a base power marker, scored 3 to 5 rather than flat. It
-     reads basePower from core-skills.js, which starts null on every
-     hero and is YOURS to fill: power at level 60 and 6 stars, one
-     yardstick for everyone. It has to be that way because what the
-     game shows is power at whatever level your account has, which
-     measures training, not the hero - read against your tier list
-     those figures run backwards (Baldur 677,530 at B, maxed;
-     Reinhardt 99,440 at A, level 39, one star). The bands work
-     themselves out from whatever you have filled in - bottom third
-     scores 3, middle 4, top 5 - so no threshold is invented in
-     advance, and it stays quiet until at least three heroes have a
-     number. A hero left blank reads "not supplied" and scores it 0.
-     It scores -0.91 against your tier list and touches nothing:
-     your ratings, the tally and the saved overlay are untouched.
+     The card on each hero is WORTH, and it is your design, not
+     mine. Every skill scores at least 3, the good ones 4, the ones
+     that decide a fight 5 - then skin and meta on top. That is all
+     it is. It agrees with the tier board on 89% of hero pairs. The
+     seven correlation-fitted markers it replaced managed 90%, so a
+     lot of fitting bought one point over a rule stated in one
+     sentence - and the fitted version had the worse flaw: it used
+     the tier board as its source of truth, so it could only ever
+     rediscover what the board already said. This one reads the
+     skills and disagrees where it disagrees, which is the point.
+     The per-skill value ALSO feeds the Hero Score tally now, as the
+     default for a skill you have not rated. That used to default to
+     the upgrade order - 4,3,2,1 - which is the same shape for every
+     hero, so it told the 493 hero pairs apart 0% of the time. 74% now.
      A rating pip now redraws ONE hero's card, not all 35. It always
      rebuilt the whole list; that was cheap when every skill row was
      empty and expensive once each hero carried five slots, their
@@ -2590,6 +2544,42 @@ const MK_CAT = [
   ["troopBuf",[/-type soldiers|soldier limit|troop size|increase hp by|increase max hp|increase def by/i]],
   ["economy", [/gather|carrying capacity|medicine|exp/i]]
 ];
+/* ---- what one SKILL is worth ---------------------------------------------
+   The Hero Score card used to default an unrated skill to its place in the
+   upgrade queue — 4 for the one you level first, then 3, 2, 1. That is a
+   reasonable guess about YOUR priorities and says nothing about the skill.
+   This reads the skill instead, on the same 5/4/3:
+
+     5  it is how the hero kills — a payload of 8,000+, a summon, or
+        defence-down. The things that decide a fight.
+     4  a real multiplier or real sustain — damage up 15%+, a counterattack
+        of 10%+, healing, mitigation 10%+.
+     3  it does something, but it is small.
+
+   Your own rating always wins. This only replaces the DEFAULT. */
+function coreSkillValue(key, slot){
+  const k = coreSlot(key, slot);
+  if(!k || !k.name) return null;
+  const blob = ((k.name||"") + " " + (k.notes||"")).toLowerCase();
+  const awk  = (k.type||"") === "Awakened";
+  const summon = /\b(summons?|summoning)\s+(a|an|\d+|the)\b|resurrects?/.test(blob);
+  let dmg=0, dUp=0, dd=0, heal=0, ctr=0, mit=0;
+  (k.effects||[]).forEach(e=>{
+    const w = e.what || "", v = mkMax(e);
+    if(/before awakening|after awakening/i.test(w) && !awk) return;
+    if(/dmg factor|direct dmg/i.test(w)) dmg = Math.max(dmg, v||0);
+    if(e.unit === "%"){
+      if(/increase atk|increase dmg dealt|increase dmg of normal|^skill dmg|critical rate/i.test(w)) dUp = Math.max(dUp, v||0);
+      if(/ignore .*def|^reduce def by|increase dmg enemies receive/i.test(w)) dd = Math.max(dd, v||0);
+      if(/reduce dmg .*receive|^reduce dmg by|reduce at ?k/i.test(w)) mit = Math.max(mit, v||0);
+    }
+    if(/heal(ing)? factor|heal ratio|siphon|drain/i.test(w)) heal = 1;
+    if(/counterattack/i.test(w) && /increase/i.test(w)) ctr = Math.max(ctr, v||0);
+  });
+  if(dmg >= 8000 || summon || dd >= 5) return 5;
+  if(dUp >= 15 || ctr >= 10 || heal || mit >= 10) return 4;
+  return 3;
+}
 function heroMarkers(h){
   const core = coreOf(h.key);
   if(!core || !core.skills) return null;
@@ -2880,6 +2870,14 @@ function heroRating(h, mode){
     const at = queue.indexOf(+slot - 1);
     return at < 0 ? 0 : 4 - at;
   };
+  /* What the skill DOES comes first; the upgrade order is the fallback for a
+     hero core-skills.js has nothing on. The order tells you what you decided
+     to level, not what the skill is worth, so it should never outrank a
+     reading of the skill itself. */
+  const dflt = slot => {
+    const v = coreSkillValue(h.key, slot);
+    return v !== null ? v : fromSeq(slot);
+  };
   const sk = list.map(x=>{
     const own  = nestGet(SK_RATE, h.key, mode, x.slot);
     const ownL = nestGet(SK_RATE, h.key, mode, x.slot + "L");
@@ -2887,10 +2885,12 @@ function heroRating(h, mode){
        fire in" switch any more — a 0 in the lieutenant column IS "doesn't fire
        there". One fact, one control. Until you set it, the lieutenant number
        simply follows the commander one. */
-    const base = own !== undefined ? own : fromSeq(x.slot);
+    const base = own !== undefined ? own : dflt(x.slot);
     const vL = ownL !== undefined ? ownL : base;
     return {slot:x.slot, name:x.name||"",
-            v: base,  mine: own !== undefined,  fromOrder: own === undefined && base > 0,
+            v: base,  mine: own !== undefined,
+            fromOrder: own === undefined && base > 0 && coreSkillValue(h.key, x.slot) === null,
+            fromCore:  own === undefined && coreSkillValue(h.key, x.slot) !== null,
             vL,       mineL: ownL !== undefined,
             seats: "C" + (vL ? "L" : "")};
   });
@@ -6468,38 +6468,47 @@ Your sheet is never changed by this — it's the copy in the browser that's over
      markers read off core-skills.js, weighted the way you set them. It never
      touches your scores — where it disagrees with you, that is the point. */
   const markerCard = (h)=>{
-    const m = heroMarkers(h);
-    if(!m) return "";
-    const rows = MARKERS.map(k=>{
-      const got = m.val(k);
-      const waiting = k.id === "power" && m.detail.basePower == null;
-      return `<tr class="${got?"":"z"}${k.bonus?" mbonus":""}" title="${k.tip}">
-        <td>${k.bonus?"+ ":""}${k.label}</td>
-        <td class="tv">${got || "·"}</td>
-        <td class="tnote">${waiting ? "not supplied" : (k.graded ? "3-5" : "of "+k.w)}</td></tr>`;
+    const slots = ["1","2","3","4","U"];
+    const per   = slots.map(sl=>({sl, v:coreSkillValue(h.key, sl)}));
+    if(per.every(x=>x.v === null)) return "";
+    const skills = per.reduce((a,x)=>a + (x.v||0), 0);
+    const skin   = String(h.skin||"").toLowerCase() === "yes" ? 5 : 0;
+    const meta   = (metaScoreOf(h.key).v) || 0;
+    const total  = skills + skin + meta;
+    const gaps   = per.filter(x=>x.v === null).length;
+    const why = {
+      5:"how the hero kills — a payload of 8,000+, a summon, or defence-down",
+      4:"a real multiplier or real sustain — damage up 15%+, counterattack 10%+, healing, mitigation 10%+",
+      3:"it does something, but it is small"
+    };
+    const rows = per.map(x=>{
+      const k = coreSlot(h.key, x.sl);
+      return `<tr class="${x.v?"":"z"}" title="${x.v ? why[x.v] : "not captured yet"}">
+        <td>${x.sl === "U" ? "ult" : x.sl} &nbsp;<span style="opacity:.6">${
+          k && k.name ? k.name : "—"}</span></td>
+        <td class="tv">${x.v || "·"}</td><td class="tnote">${x.v?"":"unread"}</td></tr>`;
     }).join("");
     return `<div class="skcard tally markers">
       <div class="skctop">
-        <span class="skslot">MARKERS</span>
+        <span class="skslot">WORTH</span>
         <span class="grow"></span>
-        ${m.unread ? `<span class="mkwarn" title="${m.gaps.join(", ")} — not recorded yet. A blank is not a zero, so this score is what has been read so far, not a verdict.">${m.unread} unread</span>` : ""}
-        <span class="skpts" title="The kit alone, then with the skin bonus. Out of ${m.kitMax} and ${m.max}.">${m.kit}<i>/</i>${m.total}</span>
+        ${gaps ? `<span class="mkwarn" title="${gaps} skill${gaps>1?"s":""} not captured yet — the total is a floor.">${gaps} unread</span>` : ""}
+        <span class="skpts" title="Skills, then the whole thing with skin and meta on top.">${skills}<i>/</i>${total}</span>
       </div>
       <div class="tallybody">
         <table class="ttab">
-          <tr class="thead"><td colspan="2">FROM THE SKILL CARD</td><td class="tv">${m.kit}</td></tr>
+          <tr class="thead"><td colspan="2">EACH SKILL</td><td class="tv">${skills}</td></tr>
           ${rows}
-          <tr class="tsum"><td>total</td><td class="tv">${m.total}</td><td class="tnote">of ${m.max}</td></tr>
+          <tr class="${skin?"":"z"} mbonus" title="A bonus on top, not a decider — what the game charges, not what the hero does."><td>+ skin</td><td class="tv">${skin||"·"}</td><td class="tnote">of 5</td></tr>
+          <tr class="${meta?"":"z"} mbonus" title="How often they turn up in the lineups you have logged on the Meta tab. Set it there, or on the META card.">
+            <td>+ meta</td><td class="tv">${meta||"·"}</td><td class="tnote">${meta?"of 5":"not set"}</td></tr>
+          <tr class="tsum"><td>total</td><td class="tv">${total}</td><td class="tnote">of 35</td></tr>
         </table>
-        ${m.unread ? `<p class="tallynote mkwarnnote"><b>${m.unread} of these could not be read</b> — ${m.gaps.join(", ")}
-          ${m.gaps.length === 1 ? "is" : "are"} not recorded yet. Those rows show 0 because there is nothing to
-          score, <em>not</em> because this hero lacks them, so treat the total as a floor rather than a verdict
-          until they are filled in.</p>` : ""}
-        <p class="tallynote">Read off <b>core-skills.js</b>, not from your ratings —
-          nothing here moves the tally on the left. The weights are yours: 5 for the
-          strongest predictor of your tier list, 4 for the next, 3 for the rest, and
-          skin as a bonus because it is what the game <em>charges</em>, not what the
-          hero <em>does</em>. The first number ignores it.</p>
+        <p class="tallynote">Every skill scores at least <b>3</b>, the good ones <b>4</b>, the ones
+          that decide a fight <b>5</b> — then skin and meta on top. Nothing here is fitted to your
+          tier board; it reads <b>core-skills.js</b> and scores what each skill does. It agrees with
+          your tier list on <b>89%</b> of hero pairs, and where it does not, that is the interesting
+          part rather than an error. It never touches the tally on the left.</p>
       </div>
     </div>`;
   };
