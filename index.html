@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===========================================================
-     2026-09-07 22:18 — hero-sheet.js and core-skills.js are now ONE file.
+     2026-09-07 22:25 — hero-sheet.js and core-skills.js are now ONE file.
      core-skills.js is the hero authority and carries both halves:
      the hand-edited sheet table (troop, the three talent trees in
      wheel order, skin, obtain) and every hero's five skill slots,
@@ -20,6 +20,11 @@
      read faster for one number and worse for the line. Nothing from this
      file scores, counts as filled, or is written to your saved
      data — your browser edits still sit on top and still win.
+     A rating pip now redraws ONE hero's card, not all 35. It always
+     rebuilt the whole list; that was cheap when every skill row was
+     empty and expensive once each hero carried five slots, their
+     effect lines and a tally — about 420ms a click, which reads as
+     the browser locking up. Now ~5ms.
      Still open: Baldur slots 1-4 (his guide page is the blue form),
      and tree POSITIONS for the nine heroes whose source had no tree
      in common with the sheet.
@@ -6289,10 +6294,11 @@ Your sheet is never changed by this — it's the copy in the browser that's over
       </div>
     </div>`;
 
-  body.innerHTML = dl + list.map(h=>{
+  skHeroHTML = h =>
+  {
     const rt  = heroRating(h);
     const sks = skillsOf(h);
-    return `<section class="skhero ${h.own?"":"notmine"}">
+    return `<section class="skhero ${h.own?"":"notmine"}" data-skhero="${h.key}">
       <div class="skhhead">
         <label class="ownbox" title="${h.own?"You own this hero":"You don't own this hero"} — ticking also puts their talents back to what core-skills.js says">
           <input type="checkbox" class="ownck" data-skown="${h.key}" ${h.own?"checked":""}> own</label>
@@ -6323,7 +6329,12 @@ The rest sit on defaults, so a low count means the score is still partly a guess
       </div>
       <div class="skgrid">${sks.map((sk,si)=>skillBlock(h,sk,si,rt.sk[si])).join("")}${treeCard(h,rt)}${versCard(h)}${metaCard(h)}${tallyCard(h,rt)}</div>
     </section>`;
-  }).join("") || `<p class="gnote">No heroes match that.</p>`;
+  }
+;
+
+  body.innerHTML = dl + (list.length
+    ? list.map(h=>skHeroHTML(h)).join("")
+    : `<p class="gnote">No heroes match that.</p>`);
 
   const done = HEROES.filter(h=>heroSkillScore(h).filled>0).length;
   const full = HEROES.filter(h=>{const x=heroSkillScore(h); return x.filled===x.of;}).length;
@@ -6332,6 +6343,29 @@ The rest sit on defaults, so a low count means the score is still partly a guess
   drawFxVocab();
   wireSkills();
 }
+/* Redraw exactly one hero's card in place, then rewire only inside it. This is
+   what a rating click uses: the click changes one hero, so one hero is what
+   gets rebuilt. */
+function redrawHero(key){
+  const sec = document.querySelector(`[data-skhero="${CSS.escape(key)}"]`);
+  const h = byKey(key);
+  if(!sec || !h) return drawSkills();       // not on screen — fall back
+  const wrap = document.createElement("div");
+  wrap.innerHTML = skHeroHTML(h);
+  const fresh = wrap.firstElementChild;
+  if(!fresh) return drawSkills();
+  sec.replaceWith(fresh);
+  wireSkills(fresh);
+}
+/* One hero's card, built by the closure drawSkills installs below. It has to
+   be assigned from in there rather than declared out here, because the card
+   builders it calls — skillBlock, treeCard, versCard, metaCard, tallyCard —
+   are closures over drawSkills' own scope. Holding it in a module-level slot
+   is what lets a single rating click redraw ONE card instead of all 35: with
+   five slots, their effect lines and a tally each, rebuilding the whole list
+   to light up one pip was doing about thirty-five times the work it needed. */
+let skHeroHTML = null;
+
 /* the pattern, as it emerges: which effects turn up, and at which tiers */
 function drawFxVocab(){
   const el = document.getElementById("skVocab"); if(!el) return;
@@ -6411,9 +6445,11 @@ function drawFxVocab(){
       <span class="msg">${HEROES.filter(h=>h.versatile).length} of ${HEROES.length} heroes are versatile</span>
     </div>`;
 }
-function wireSkills(){
-  const root = document.getElementById("skList"); if(!root) return;
-  wireBuilds("#skList");   // the build slots behave exactly as they do on the tier board
+function wireSkills(scope){
+  const root = scope || document.getElementById("skList"); if(!root) return;
+  /* When only one card was redrawn, wire only that card. Re-wiring the whole
+     list would undo the saving. */
+  wireBuilds(scope ? scope : "#skList");
   const at = ref => { const [hk, si] = ref.split(":"); return (SKILL_FX[hk]||[])[+si]; };
   const touch = () => { markDirty(); clearFocus(); };
 
@@ -6473,13 +6509,20 @@ function wireSkills(){
         const cur = scoreGet(bag, ref);
         scoreSet(bag, ref, skMode, (cur === +n) ? "" : n);
       }
-      touch(); drawSkills(); paintScores();
+      /* Everything a pip can change lives on one hero's card, so redraw that
+         card rather than all 35. TREEBASE is the exception — it moves the
+         default for a tree everyone shares, so that one still redraws all. */
+      touch();
+      const who = (tag === "SK" || tag === "TR") ? ref.split("|")[0]
+                : (tag === "TREEBASE") ? null : ref;
+      if(who) redrawHero(who); else drawSkills();
+      paintScores(who || undefined);
     }));
   root.querySelectorAll("[data-rateclr]").forEach(b=>
     b.addEventListener("click", ()=>{
       const [tag, hk] = b.dataset.rateclr.split(":");
       scoreSet(bagOf(tag), hk, skMode, "");
-      touch(); drawSkills(); paintScores(hk);
+      touch(); redrawHero(hk); paintScores(hk);
     }));
   root.querySelectorAll("[data-skown]").forEach(cb=>
     cb.addEventListener("change", ()=>{
@@ -7145,7 +7188,10 @@ function hideTree(){
   document.getElementById("treeScrim").classList.remove("on");
 }
 function wireBuilds(scope){
-  const root = document.querySelector(scope) || document;
+  /* accepts a selector string or an element, so a single redrawn card can be
+     wired without touching the rest of the list */
+  const root = (scope && scope.nodeType === 1) ? scope
+             : (typeof scope === "string" ? document.querySelector(scope) : null) || document;
   root.querySelectorAll("[data-editbuild]").forEach(b=>{
     b.setAttribute("draggable","false");
     b.addEventListener("mousedown", e=>e.stopPropagation());
