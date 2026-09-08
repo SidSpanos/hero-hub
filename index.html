@@ -1,5 +1,28 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-08 16:52 — GANGLOT HAD NO MODES BECAUSE THE SHEET HEADER
+     DID NOT NAME THE COLUMN. Her row carried them all along. The
+     parser reads column ORDER off the "# hero | troop | ..." line
+     rather than assuming it, which is right — but that line stopped
+     at "obtain", so tier and modes were never read from any row, no
+     matter what a row held. Silent, too: a value in an unnamed column
+     is not wrong, it is invisible. Every one of the seven repeated
+     header lines in core-skills.js now names tier and modes, and the
+     comment block above them says what the two columns do and that a
+     column not in the header is not read.
+     No code changed — this was a data-file bug and the fix is in the
+     data file. That is the system working: the sheet is the authority
+     and the authority was incomplete.
+     Ganglot reads PvP, Arena, PvE and Rally. That is MY reading of her
+     kit, not something the game told us: a 14,000 burst and a Bone
+     Dragon that keeps swinging is a short-fight winner (PvP, Arena),
+     Death Drain hits six in a circle and the dragon cleaves a cone
+     (PvE), and one big payload is what a rally lead brings (Rally).
+     NOT Garrison — she has no shield, no mitigation, no defence-up;
+     her only sustain is drain and a heal that fires off debuffs. A
+     garrison hero absorbs, and she wants to be swinging. Change the
+     row if you read her differently.
+
      2026-09-08 16:24 — A NEW HERO'S PICTURE IS NOW A DROPPED FILE.
      Adding a portrait used to mean someone hand-encoding the image
      into this file as a base64 blob. That is not a workflow, it is a

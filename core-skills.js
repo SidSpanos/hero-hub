@@ -57,13 +57,23 @@
    troop   axe   bers   cav   beast
    trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr
            siege  hunt  gath  skill
-   obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any                  */
+   obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
+   tier    S+  S  A  B  C  D          modes  Rally Garrison PvP Arena PvE Gathering
+
+   TIER and MODES only do anything for a hero the app has never seen — that
+   is how a NEW hero arrives and lands somewhere. For the 35 originals both
+   are already set inside the page and these columns are ignored, so leaving
+   them off a row costs nothing.
+   The column ORDER is read off the "# hero | troop | ..." line below, not
+   assumed — so if a column is not named there it is not read at all, however
+   many values a row carries. Ganglot sat with no modes for exactly that
+   reason: her row had them, the header did not name the column. */
 window.HERO_SHEET = `
 # troop   axe   bers   cav   beast
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
 #         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
-# hero         | troop | trees             | skin | obtain
+# hero         | troop | trees             | skin | obtain | tier | modes
 # ---- S+ ----
 Arthur       | bers  | siege bal def     | yes  | chief
 Farad        | cav   | axe skill vers    | yes  | wheel   # Farhad
@@ -77,7 +87,7 @@ Shisunin     | bers  | bal garr def      | yes  | wheel   # Yi Sun-sin
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
 #         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
-# hero         | troop | trees             | skin | obtain
+# hero         | troop | trees             | skin | obtain | tier | modes
 # ---- S ----
 Amaterasu    | axe   | siege skill bal   | yes  | wheel
 Asuka        | cav   | cav vers field    | yes  | boxes   # Aska
@@ -87,13 +97,13 @@ Wukong       | bers  | cav skill vers    | yes  | p2p   # Wukon
 #   the last two columns are only read for a hero the app has never seen -
 #   they introduce them. On an existing hero they are ignored, because where
 #   a hero sits is yours to drag.
-Ganglot      | bers  | bers vers skill   | -    | -      | -    | -   # trees are PANEL order not wheel order - check on the wheel. Skin, obtain, tier and modes not yet known.
+Ganglot      | bers  | bers vers skill   | -    | -      | -    | PvP Arena PvE Rally   # trees are PANEL order not wheel order - check on the wheel. Skin, obtain, tier and modes not yet known.
 
 # troop   axe   bers   cav   beast
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
 #         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
-# hero         | troop | trees             | skin | obtain
+# hero         | troop | trees             | skin | obtain | tier | modes
 # ---- A ----
 Carl         | cav   | bers vers def     | no   | wheel   # Karl
 Held         | beast | axe siege skill   | no   | shift   # Helda
@@ -107,7 +117,7 @@ Silvin       | beast | vers skill bal    | no   | f2p   # Sylvan
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
 #         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
-# hero         | troop | trees             | skin | obtain
+# hero         | troop | trees             | skin | obtain | tier | modes
 # ---- B ----
 Balder       | bers  | bers hunt def     | no   | f2p   # Baldur
 Elfwine      | cav   | hunt supp bal     | no   | f2p   # Aelfwine
@@ -124,7 +134,7 @@ Voll         | bers  | hunt bers skill   | no   | f2p
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
 #         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
-# hero         | troop | trees             | skin | obtain
+# hero         | troop | trees             | skin | obtain | tier | modes
 # ---- C ----
 Linda        | axe   | cav vers skill    | no   | f2p
 Rex          | cav   | bers garr def     | no   | f2p
@@ -134,7 +144,7 @@ Vista        | beast | vers bal supp     | no   | f2p
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
 #         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
-# hero         | troop | trees             | skin | obtain
+# hero         | troop | trees             | skin | obtain | tier | modes
 # ---- D ----
 Elina        | axe   | gath bal supp     | no   | any   # Elena
 Ilia         | cav   | axe hunt supp     | no   | any   # Elia
