@@ -1112,7 +1112,7 @@ window.CORE_SKILLS = {
         notes: "Increase ATK of your Axethrower-type soldiers by 2.5% and their MOV SPD by 2.5%.",
         effects: [
           { what: "Increase ATK of Axethrower-type soldiers by", unit: "%", values: [2.5, 3.5, 4.5, 6.5, 9] },
-          { what: "Increase MOV SPD of Axethrower-type soldiers by", unit: "%", values: [2.5, 3.5, 4.5, 6.5, 9] }
+          { what: "Increase MOV SPD of Axethrower-type soldiers by", unit: "%", values: [2.5, null, 4.5, 6.5, 9] }
         ]
       },
       "3": {
@@ -1351,7 +1351,7 @@ window.CORE_SKILLS = {
         type: "Passive",
         notes: "Increase HP of your Berserker-type solders by 9%, and their DEF by 3%.",
         effects: [
-          { what: "Increase HP of Berserker-type soldiers by", unit: "%", values: [9, 12, 15, 21] },
+          { what: "Increase HP of Berserker-type soldiers by", unit: "%", values: [9, 12, 15, null] },
           { what: "Increase DEF of Berserker-type soldiers by", unit: "%", values: [3, 4, 5, 7, 10] }
         ]
       },
@@ -1369,7 +1369,7 @@ window.CORE_SKILLS = {
         type: "Passive",
         notes: "Reduce normal attack DMG your Troop receives by 9%. Increase your counterattack DMG by 7% when in Garrison.",
         effects: [
-          { what: "Reduce normal attack DMG received by", unit: "%", values: [9, 12, 15, 21] },
+          { what: "Reduce normal attack DMG received by", unit: "%", values: [9, 12, 15, null] },
           { what: "Increase counterattack DMG from Garrison Troops by", unit: "%", values: [7, 9, 11, 15, 22] }
         ]
       },
@@ -1529,7 +1529,7 @@ window.CORE_SKILLS = {
         type: "Burst",
         notes: "Deal DMG to the target (DMG Factor 1,260). Increase DEF of your Troop by 14% for 3 seconds.",
         effects: [
-          { what: "Direct DMG Factor", values: [1260, 1680, 2100, 2940, 420] },
+          { what: "Direct DMG Factor", values: [1260, 1680, 2100, 2940, 4200], note: "level 5 reads '420C' on the guide page - a stray character. 4200 is inferred: it fits the curve (2940 x 1.43, the same step the other four levels use) and the awakened skill's 5,040 is exactly 4200 x 1.2" },
           { what: "Increase DEF by", unit: "%", values: [14, 18, 23, 32, 45] }
         ]
       },
@@ -1587,7 +1587,7 @@ window.CORE_SKILLS = {
         notes: "Summon 3 giant waves to deal DMG to the target (DMG Factor 4,050), and randomly inflict 1-10 stacks of Flood, each stack reducing the target's defense by 1% for 5s.",
         effects: [
           { what: "DMG Factor", values: [4050, 5350, 6700, 9400, 13500] },
-          { what: "Reduce DEF by", unit: "%", values: [1, 1.5, 2, 2.5, 4] }
+          { what: "Reduce DEF by", unit: "%", values: [1, 1.5, 2, null, 4] }
         ]
       },
       "2": {
@@ -1604,7 +1604,7 @@ window.CORE_SKILLS = {
         notes: "Increase the HP of the Axe Throwers in this Hero's Troop by 8%, and their ATK by 6%.",
         effects: [
           { what: "Increase HP by", unit: "%", values: [8, 11, 13, 18, 26] },
-          { what: "Increase ATK by", unit: "%", values: [6, 7, 9, 12, 17] }
+          { what: "Increase ATK by", unit: "%", values: [6, null, 9, 12, 17] }
         ]
       },
       "4": {
@@ -1777,7 +1777,7 @@ window.CORE_SKILLS = {
         notes: "Increase HP of your Cavalry-type soldiers by 5%, and DMG they deal to Blackforged by 9%.",
         effects: [
           { what: "Increase HP of Cavalry-type soldiers by", unit: "%", values: [5, 6, 8, 11, 15] },
-          { what: "Increased DMG dealt to Blackforged by", unit: "%", values: [9, 12, 15, 30] }
+          { what: "Increased DMG dealt to Blackforged by", unit: "%", values: [9, 12, null, 30] }
         ]
       },
       "U": {
@@ -2058,7 +2058,7 @@ window.CORE_SKILLS = {
         type: "Passive",
         notes: "Reduce DMG you receive by 3% when you are in a Rally unit.",
         effects: [
-          { what: "Reduce DMG received by", unit: "%", values: [3, 3.6, 4.5, 6.5, 9] }
+          { what: "Reduce DMG received by", unit: "%", values: [3, 3.6, null, 6.5, 9] }
         ]
       },
       "3": {
