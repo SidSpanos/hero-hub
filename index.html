@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===========================================================
-     2026-09-08 10:40 — hero-sheet.js and core-skills.js are now ONE file.
+     2026-09-08 13:26 — hero-sheet.js and core-skills.js are now ONE file.
      core-skills.js is the hero authority and carries both halves:
      the hand-edited sheet table (troop, the three talent trees in
      wheel order, skin, obtain) and every hero's five skill slots,
@@ -30,6 +30,22 @@
      the tier board as its source of truth, so it could only ever
      rediscover what the board already said. This one reads the
      skills and disagrees where it disagrees, which is the point.
+     TRIFECTAS. Some skills are only worth what they are worth
+     because of the skill beside them. Four combinations, found by
+     testing every 3-way pairing across the roster: BREAKER (payload
+     + defence-down + counter, held only by Arthur and Freyja, both
+     S+), SURVIVOR (counter + defence/mitigation + heal), ENGINE
+     (payload + damage-up + summon/heal) and GRINDER (defence-down +
+     mitigation + heal). Eleven of the eighteen heroes in the top
+     half hold one; ONE of the seventeen below does; C and D hold
+     none. Arthur holds three, which nobody else does, and that is
+     the real reason he sits above everyone.
+     The bonus lands on the SKILLS, not the hero: a skill that is
+     part of a trifecta scores a point higher, and the test is that
+     removing its category breaks the combination. That is why Reid's
+     Heart of the Fortress reads 5 - alone it is a 4% mitigation, but
+     without it his counterattack has nothing keeping it alive. Every
+     per-effect model rated him near the bottom; the board has him A.
      The per-skill value ALSO feeds the Hero Score tally now, as the
      default for a skill you have not rated. That used to default to
      the upgrade order - 4,3,2,1 - which is the same shape for every
@@ -1512,6 +1528,8 @@
   .mkwarn{ font-size:10px; letter-spacing:.05em; color:#b4553c; border:1px solid #e2b6a8;
            border-radius:999px; padding:2px 7px; margin-right:6px; }
   .mkwarnnote{ color:#b4553c !important; }
+  .skcard.markers tr.mtri td{ color:#2f6f4f; }
+  .skcard.markers tr.mtri td:first-child{ font-weight:600; letter-spacing:.03em; }
   .skcard.markers .thead td{ letter-spacing:.06em; }
   .skcard.markers tr.z td{ opacity:.42; }
   .skcard.markers tr.mbonus td:first-child{ font-style:italic; }
@@ -2576,10 +2594,105 @@ function coreSkillValue(key, slot){
     if(/heal(ing)? factor|heal ratio|siphon|drain/i.test(w)) heal = 1;
     if(/counterattack/i.test(w) && /increase/i.test(w)) ctr = Math.max(ctr, v||0);
   });
-  if(dmg >= 8000 || summon || dd >= 5) return 5;
-  if(dUp >= 15 || ctr >= 10 || heal || mit >= 10) return 4;
-  return 3;
+  let v = 3;
+  if(dmg >= 8000 || summon || dd >= 5) v = 5;
+  else if(dUp >= 15 || ctr >= 10 || heal || mit >= 10) v = 4;
+  /* A skill that is part of one of this hero's trifectas is worth more than
+     it looks on its own, because the combination is the thing. Reid's
+     Shieldbearer is a small defence buff and scores 3 alone; it is also what
+     keeps his counterattack firing, so it earns a 4. Remove it and the
+     trifecta breaks — that is the test. */
+  if(v < 5){
+    const tc = trifectaCats(key), mine = skillCats(k);
+    for(const x of mine) if(tc.has(x)){ v = Math.min(5, v + 1); break; }
+  }
+  return v;
 }
+/* ---- trifectas -----------------------------------------------------------
+   Some skills are only worth what they are worth because of the skill next to
+   them. A counterattack with nothing keeping you alive gets you killed; the
+   defence and the heal are what let it keep firing. Scored one at a time none
+   of the three stands out, which is why every per-effect model rated Reid at
+   the bottom and your board has him at A.
+
+   Four combinations, found by testing every 3-way pairing across the roster:
+
+     BREAKER   payload + defence-down + counter        S+ ONLY - Arthur, Freyja
+     SURVIVOR  counter + (defence or mitigation) + heal
+     ENGINE    payload + damage-up + (summon or heal)
+     GRINDER   defence-down + mitigation + heal
+
+   11 of the 18 heroes in your top half hold at least one. One of the 17 in the
+   bottom half does. C and D hold none between them. Arthur holds THREE, which
+   nobody else does, and that is the real reason he sits above everyone. */
+const TRIFECTAS = [
+  {id:"BREAKER",  tip:"Payload, defence-down and a counterattack. Only Arthur and Freyja have it, and both are S+.",
+   has:c=>c.has("payload") && c.has("defdown") && c.has("counter")},
+  {id:"SURVIVOR", tip:"A counterattack with defence and healing behind it — the punish that stays alive to keep punishing.",
+   has:c=>c.has("counter") && (c.has("defup") || c.has("mit")) && c.has("heal")},
+  {id:"ENGINE",   tip:"A big payload, a damage multiplier, and a summon or a heal feeding it. The damage archetype.",
+   has:c=>c.has("payload") && c.has("dmgup") && (c.has("summon") || c.has("heal"))},
+  {id:"GRINDER",  tip:"Strips defence, soaks damage, heals it back. Wins the long fight.",
+   has:c=>c.has("defdown") && c.has("mit") && c.has("heal")}
+];
+function heroCats(key){
+  const sk = (coreOf(key) || {}).skills || {};
+  const c = new Set();
+  for(const slot in sk){
+    if(slot === "U") continue;
+    const k = sk[slot]; if(!k || !k.name) continue;
+    const blob = ((k.name||"") + " " + (k.notes||"")).toLowerCase();
+    if(/\b(summons?|summoning)\s+(a|an|\d+|the)\b|resurrects?/.test(blob)) c.add("summon");
+    (k.effects||[]).forEach(e=>{
+      const w = e.what || ""; if(/before awakening|after awakening/i.test(w)) return;
+      const v = mkMax(e);
+      if(/dmg factor|direct dmg/i.test(w) && (v||0) >= 8000) c.add("payload");
+      if(e.unit === "%"){
+        if(/ignore .*def|^reduce def by|increase dmg enemies receive/i.test(w) && (v||0) >= 5)  c.add("defdown");
+        if(/increase atk|increase dmg dealt|increase dmg of normal|^skill dmg|critical rate/i.test(w) && (v||0) >= 15) c.add("dmgup");
+        if(/reduce dmg .*receive|^reduce dmg by|damage taken reduced|reduce normal attack|reduce at ?k/i.test(w) && (v||0) >= 10) c.add("mit");
+        if(/increase def/i.test(w) && (v||0) >= 5) c.add("defup");
+      }
+      if(/heal(ing)? factor|heal ratio|siphon|drain/i.test(w)) c.add("heal");
+      if(/counterattack/i.test(w) && /increase/i.test(w) && (v||0) >= 10) c.add("counter");
+    });
+  }
+  return c;
+}
+const trifectasOf = key => { const c = heroCats(key); return TRIFECTAS.filter(t=>t.has(c)); };
+/* the categories ONE skill supplies, same tests as heroCats */
+function skillCats(k){
+  const c = new Set(); if(!k || !k.name) return c;
+  const blob = ((k.name||"") + " " + (k.notes||"")).toLowerCase();
+  if(/\b(summons?|summoning)\s+(a|an|\d+|the)\b|resurrects?/.test(blob)) c.add("summon");
+  (k.effects||[]).forEach(e=>{
+    const w = e.what || ""; if(/before awakening|after awakening/i.test(w)) return;
+    const v = mkMax(e);
+    if(/dmg factor|direct dmg/i.test(w) && (v||0) >= 8000) c.add("payload");
+    if(e.unit === "%"){
+      if(/ignore .*def|^reduce def by|increase dmg enemies receive/i.test(w) && (v||0) >= 5)  c.add("defdown");
+      if(/increase atk|increase dmg dealt|increase dmg of normal|^skill dmg|critical rate/i.test(w) && (v||0) >= 15) c.add("dmgup");
+      if(/reduce dmg .*receive|^reduce dmg by|damage taken reduced|reduce normal attack|reduce at ?k/i.test(w) && (v||0) >= 10) c.add("mit");
+      if(/increase def/i.test(w) && (v||0) >= 5) c.add("defup");
+    }
+    if(/heal(ing)? factor|heal ratio|siphon|drain/i.test(w)) c.add("heal");
+    if(/counterattack/i.test(w) && /increase/i.test(w) && (v||0) >= 10) c.add("counter");
+  });
+  return c;
+}
+/* every category that is doing work in one of this hero's trifectas */
+function trifectaCats(key){
+  const c = heroCats(key), out = new Set();
+  TRIFECTAS.filter(t=>t.has(c)).forEach(t=>{
+    ["payload","defdown","counter","defup","mit","heal","dmgup","summon"].forEach(x=>{
+      if(!c.has(x)) return;
+      const without = new Set([...c]); without.delete(x);
+      if(!t.has(without)) out.add(x);      // remove it and the trifecta breaks
+    });
+  });
+  return out;
+}
+
 function heroMarkers(h){
   const core = coreOf(h.key);
   if(!core || !core.skills) return null;
@@ -6474,6 +6587,7 @@ Your sheet is never changed by this — it's the copy in the browser that's over
     const skills = per.reduce((a,x)=>a + (x.v||0), 0);
     const skin   = String(h.skin||"").toLowerCase() === "yes" ? 5 : 0;
     const meta   = (metaScoreOf(h.key).v) || 0;
+    const tri    = trifectasOf(h.key);
     const total  = skills + skin + meta;
     const gaps   = per.filter(x=>x.v === null).length;
     const why = {
@@ -6493,12 +6607,13 @@ Your sheet is never changed by this — it's the copy in the browser that's over
         <span class="skslot">WORTH</span>
         <span class="grow"></span>
         ${gaps ? `<span class="mkwarn" title="${gaps} skill${gaps>1?"s":""} not captured yet — the total is a floor.">${gaps} unread</span>` : ""}
-        <span class="skpts" title="Skills, then the whole thing with skin and meta on top.">${skills}<i>/</i>${total}</span>
+        <span class="skpts" title="Skills alone, then the whole thing with trifectas, skin and meta on top.">${skills}<i>/</i>${total}</span>
       </div>
       <div class="tallybody">
         <table class="ttab">
           <tr class="thead"><td colspan="2">EACH SKILL</td><td class="tv">${skills}</td></tr>
           ${rows}
+          ${tri.map(t=>`<tr class="mtri" title="${t.tip}"><td colspan="3">${t.id} &nbsp;<span style="opacity:.65;font-weight:400">— the skills that build it score a point higher</span></td></tr>`).join("")}
           <tr class="${skin?"":"z"} mbonus" title="A bonus on top, not a decider — what the game charges, not what the hero does."><td>+ skin</td><td class="tv">${skin||"·"}</td><td class="tnote">of 5</td></tr>
           <tr class="${meta?"":"z"} mbonus" title="How often they turn up in the lineups you have logged on the Meta tab. Set it there, or on the META card.">
             <td>+ meta</td><td class="tv">${meta||"·"}</td><td class="tnote">${meta?"of 5":"not set"}</td></tr>
