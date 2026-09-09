@@ -1,5 +1,37 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-09 — AN OVERVIEW TAB, LAST IN THE ROW. The project read
+     as an intelligence board: what it holds, how the scoring works,
+     the whole roster ranked with their faces, and the four things
+     the app admits it does not know.
+     EVERY FIGURE ON IT IS COMPUTED, not typed. Hero count, skills
+     read, warbands, trifectas, quadfectas, unread slots, how many
+     heroes have a power figure, the tier rows, the scatter and even
+     which hero is called out as alone in the top-right corner — all
+     from what core-skills.js holds right now. A showcase that has to
+     be hand-edited goes stale in a week and then lies quietly for
+     months. Add a hero and this page says so too.
+     GETTING BACK OUT, four ways, because a page you cannot leave is
+     a trap: the tab row and toolbar never go anywhere, an EXIT sits
+     pinned top-right, there is a BACK TO THE TIER BOARD at the foot,
+     and clicking any of the 37 faces jumps to that hero on the board
+     and flashes their card.
+     Its look is Sid's call — Ghost in the Shell, so the section is a
+     Section 9 readout: near-black with a blue bias, cyan for the
+     live read, amber only where something needs attention, a 3px
+     scan grid, corner brackets, portraits clipped at the corner like
+     a target box. The game's own gold hero art against cyan chrome
+     is the whole trick: complementary, so the heroes read as the
+     subject and the interface as the instrument around them.
+     Every class is prefixed ov- and every rule scoped under
+     #viewOverview. The app already owns .card, .tier, .board, .hero
+     and .row — an unscoped stylesheet would have quietly rewritten
+     the tier board. Its palette is its own token set on the section,
+     and it follows the app's existing data-theme switch rather than
+     bringing a second one. NO WEB FONT is loaded: this page opens
+     from a double-click with no network, and a landing section is
+     not worth breaking that for.
+
      2026-09-09 — POWER, NEXT TO THE NAME. The fist figure off the
      hero's card in the game. It was designed once and then orphaned:
      basePower sat on all 37 heroes as null, powerScore() fed the old
@@ -1268,6 +1300,170 @@
   .peer b{color:var(--fg);font-weight:800;font-variant-numeric:tabular-nums}
   .peer.alone{border-style:dashed;font-style:italic}
   .peer.more{border:0;background:none;padding-left:0}
+
+  /* ============================================================
+     OVERVIEW — the project, read as an intelligence board
+     ============================================================
+     Every class here is prefixed ov- and every rule is scoped under
+     #viewOverview. The app already owns .card, .tier, .board, .hero
+     and .row; an unscoped showcase stylesheet would have quietly
+     rewritten the tier board. Its palette is its own set of tokens
+     declared on the section, so it never touches the app's.
+     No web font is loaded: this page works from a double-click with
+     no network, and a landing section is not worth breaking that for.
+     ============================================================ */
+  #viewOverview{
+    --ov-void:#05080b; --ov-deep:#080d12; --ov-panel:#0b131a;
+    --ov-edge:#173039; --ov-edge2:#22505c;
+    --ov-cy:#5fe3d8; --ov-cy2:#2a9d96; --ov-amber:#ffb020;
+    --ov-tx:#d8e9ea; --ov-tx2:#8fa8ad; --ov-dim:#5d777d;
+    --ov-scan:rgba(95,227,216,.045);
+    --ov-disp:"Barlow Condensed","Oswald","Arial Narrow",system-ui,sans-serif;
+    --ov-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  :root[data-theme="light"] #viewOverview{
+    --ov-void:#dfe8e9; --ov-deep:#e9f0f0; --ov-panel:#f3f8f8;
+    --ov-edge:#bdd0d2; --ov-edge2:#8fb3b6;
+    --ov-cy:#0d6d68; --ov-cy2:#31948d; --ov-amber:#9a5f06;
+    --ov-tx:#08181c; --ov-tx2:#3d5459; --ov-dim:#6a8085;
+    --ov-scan:rgba(13,109,104,.03);
+  }
+  #viewOverview{
+    background:var(--ov-void);color:var(--ov-tx);
+    margin:14px -14px 0;padding:0;border-radius:12px;overflow:hidden;position:relative;
+    border:1px solid var(--ov-edge);
+  }
+  #viewOverview::before{
+    content:"";position:absolute;inset:0;z-index:4;pointer-events:none;
+    background:repeating-linear-gradient(to bottom,var(--ov-scan) 0 1px,transparent 1px 3px);
+  }
+  #viewOverview .ovwrap{max-width:1000px;margin:0 auto;padding:0 26px;position:relative;z-index:2}
+  #viewOverview .ovmono{font-family:var(--ov-mono);font-variant-numeric:tabular-nums}
+
+  #viewOverview .ovkeep{position:relative;overflow:hidden;border-bottom:1px solid var(--ov-edge)}
+  #viewOverview .ovwall{position:absolute;inset:0;display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:4px;padding:10px;
+    opacity:.22;filter:saturate(.7)}
+  :root[data-theme="light"] #viewOverview .ovwall{opacity:.12;filter:saturate(.5)}
+  #viewOverview .ovwall img{width:100%;aspect-ratio:5/8;object-fit:cover;border-radius:2px;display:block}
+  #viewOverview .ovkeep::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 80% at 50% -10%,color-mix(in srgb,var(--ov-cy) 14%,transparent),transparent 62%),
+               linear-gradient(to bottom,transparent 50%,var(--ov-void) 97%)}
+  #viewOverview .ovkeepin{position:relative;z-index:2;padding:52px 0 36px;text-align:center}
+  #viewOverview .ovstat{display:inline-block;font-family:var(--ov-mono);font-size:10.5px;
+    letter-spacing:.22em;text-transform:uppercase;color:var(--ov-cy);
+    border:1px solid var(--ov-cy2);padding:5px 13px;margin-bottom:16px;
+    background:color-mix(in srgb,var(--ov-cy) 7%,transparent)}
+  #viewOverview .ovmark{font-family:var(--ov-disp);font-weight:700;
+    font-size:clamp(42px,9vw,96px);line-height:.9;letter-spacing:.02em;text-transform:uppercase;
+    background:linear-gradient(178deg,#e9fffd 4%,var(--ov-cy) 46%,var(--ov-cy2) 96%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;margin:0}
+  :root[data-theme="light"] #viewOverview .ovmark{
+    background:linear-gradient(178deg,#0c4f4b 6%,#127a72 96%);
+    -webkit-background-clip:text;background-clip:text}
+  #viewOverview .ovtag{font-family:var(--ov-disp);font-weight:600;font-size:clamp(13px,2vw,17px);
+    letter-spacing:.16em;text-transform:uppercase;color:var(--ov-tx2);margin:8px 0 18px}
+  #viewOverview .ovblurb{max-width:56ch;margin:0 auto;color:var(--ov-tx2);font-size:15px;
+    background:color-mix(in srgb,var(--ov-void) 70%,transparent);padding:12px 18px}
+  #viewOverview .ovblurb b{color:var(--ov-tx);font-weight:600}
+
+  #viewOverview .ovcounts{display:flex;justify-content:center;flex-wrap:wrap;
+    border-bottom:1px solid var(--ov-edge);background:var(--ov-deep)}
+  #viewOverview .ovct{padding:16px 26px;text-align:center;border-right:1px solid var(--ov-edge);min-width:112px}
+  #viewOverview .ovct:last-child{border-right:0}
+  #viewOverview .ovct .n{font-family:var(--ov-disp);font-weight:700;font-size:32px;line-height:1;
+    color:var(--ov-cy);font-variant-numeric:tabular-nums}
+  #viewOverview .ovct .l{font-family:var(--ov-mono);font-size:9.5px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--ov-dim);margin-top:6px}
+
+  #viewOverview .ovsec{padding:46px 0}
+  #viewOverview .ovsec.alt{background:var(--ov-deep);border-top:1px solid var(--ov-edge);
+    border-bottom:1px solid var(--ov-edge)}
+  #viewOverview .ovkick{font-family:var(--ov-mono);font-size:10.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--ov-cy)}
+  #viewOverview .ovkick::before{content:"// ";opacity:.5}
+  #viewOverview .ovh2{font-family:var(--ov-disp);font-weight:700;font-size:clamp(24px,4.4vw,40px);
+    line-height:1.04;text-transform:uppercase;margin:6px 0 0;color:var(--ov-tx)}
+  #viewOverview .ovlede{color:var(--ov-tx2);max-width:62ch;font-size:15px;margin:12px 0 0}
+  #viewOverview .ovlede b{color:var(--ov-tx);font-weight:600}
+
+  #viewOverview .ovbrk{position:relative}
+  #viewOverview .ovbrk::before,#viewOverview .ovbrk::after{content:"";position:absolute;
+    width:10px;height:10px;pointer-events:none;border-color:var(--ov-cy);border-style:solid;opacity:.85}
+  #viewOverview .ovbrk::before{top:-1px;left:-1px;border-width:1px 0 0 1px}
+  #viewOverview .ovbrk::after{bottom:-1px;right:-1px;border-width:0 1px 1px 0}
+
+  #viewOverview .ovboard{margin-top:26px;display:grid;gap:8px}
+  #viewOverview .ovtier{display:grid;grid-template-columns:64px 1fr;gap:12px;align-items:center;
+    background:var(--ov-panel);border:1px solid var(--ov-edge);padding:9px 11px}
+  #viewOverview .ovbadge{font-family:var(--ov-disp);font-weight:700;font-size:23px;text-align:center;
+    padding:9px 0 7px;line-height:1;color:var(--ov-void)}
+  #viewOverview .ovt-Sp .ovbadge{background:linear-gradient(160deg,#a9f4ec,#5fe3d8)}
+  #viewOverview .ovt-S  .ovbadge{background:linear-gradient(160deg,#8fe6dd,#2a9d96)}
+  #viewOverview .ovt-A  .ovbadge{background:linear-gradient(160deg,#6fc9d8,#2a9d96)}
+  #viewOverview .ovt-B  .ovbadge{background:linear-gradient(160deg,#4d7f8c,#2e5560);color:#dff}
+  #viewOverview .ovt-C  .ovbadge{background:#24424b;color:#cfe}
+  #viewOverview .ovt-D  .ovbadge{background:#1a3037;color:#bde}
+  #viewOverview .ovt-Sp{border-color:var(--ov-cy2)}
+  #viewOverview .ovrow{display:flex;flex-wrap:wrap;gap:6px}
+  #viewOverview .ovhero{position:relative;width:46px;display:block;cursor:pointer;padding:0;
+    border:1px solid var(--ov-edge2);background:var(--ov-panel);overflow:hidden;
+    clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));
+    transition:transform .15s,border-color .15s,box-shadow .15s}
+  #viewOverview .ovhero img{width:100%;aspect-ratio:5/8;object-fit:cover;display:block}
+  #viewOverview .ovhero .ini{aspect-ratio:5/8;display:grid;place-items:center;
+    color:var(--ov-dim);font-weight:700;font-size:15px}
+  #viewOverview .ovhero .nm{position:absolute;left:0;right:0;bottom:0;font-family:var(--ov-disp);
+    font-weight:600;font-size:8.5px;text-align:center;padding:7px 1px 1px;color:#fff;
+    background:linear-gradient(transparent,rgba(3,8,11,.92) 62%);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #viewOverview .ovhero .kt{position:absolute;top:1px;right:1px;font-family:var(--ov-mono);
+    font-size:8px;font-weight:700;color:var(--ov-cy);background:rgba(3,8,11,.82);padding:0 3px}
+  #viewOverview .ovhero:hover,#viewOverview .ovhero:focus-visible{
+    transform:translateY(-3px);border-color:var(--ov-cy);
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--ov-cy) 35%,transparent),
+               0 0 22px -6px color-mix(in srgb,var(--ov-cy) 60%,transparent);z-index:3}
+
+  #viewOverview .ovgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:9px;margin-top:26px}
+  #viewOverview .ovcard{border:1px solid var(--ov-edge);padding:14px 16px;background:var(--ov-panel)}
+  #viewOverview .ovcard h4{font-family:var(--ov-disp);font-weight:700;font-size:14px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--ov-cy);margin:0 0 5px}
+  #viewOverview .ovcard p{margin:0;font-size:13.5px;color:var(--ov-tx2)}
+  #viewOverview .ovcard.warn{border-left:3px solid var(--ov-amber)}
+  #viewOverview .ovcard.warn h4{color:var(--ov-amber)}
+
+  #viewOverview .oveq{margin-top:26px;border:1px solid var(--ov-edge);background:var(--ov-panel);
+    padding:20px 22px;overflow-x:auto}
+  #viewOverview .oveq .line{font-family:var(--ov-disp);font-weight:700;
+    font-size:clamp(17px,3vw,28px);white-space:nowrap;text-transform:uppercase;line-height:1.1;
+    color:var(--ov-tx)}
+  #viewOverview .oveq .line .k{color:var(--ov-cy)}
+  #viewOverview .oveq .line .o{color:var(--ov-dim)}
+  #viewOverview .oveq p{margin:12px 0 0;color:var(--ov-dim);font-size:13px;max-width:66ch}
+  #viewOverview .ovgrades{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:8px;margin-top:14px}
+  #viewOverview .ovgr{border:1px solid var(--ov-edge);padding:12px 14px;background:var(--ov-panel)}
+  #viewOverview .ovgr .v{font-family:var(--ov-disp);font-weight:700;font-size:26px;line-height:1;color:var(--ov-cy)}
+  #viewOverview .ovgr .t{font-size:12.5px;color:var(--ov-tx2);margin-top:5px}
+
+  #viewOverview .ovfoot{border-top:1px solid var(--ov-edge);background:var(--ov-deep);
+    padding:20px 0 26px;font-family:var(--ov-mono);font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ov-dim)}
+  #viewOverview .ovfoot .fl{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+  #viewOverview .ovback{font-family:var(--ov-mono);font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ov-cy);background:transparent;cursor:pointer;
+    border:1px solid var(--ov-cy2);padding:7px 14px}
+  #viewOverview .ovback:hover{background:color-mix(in srgb,var(--ov-cy) 12%,transparent)}
+  /* the way out, always in reach at the top of the section */
+  #viewOverview .ovexit{position:absolute;top:12px;right:14px;z-index:6}
+  @media (max-width:640px){
+    #viewOverview{margin:14px -14px 0}
+    #viewOverview .ovwrap{padding:0 14px}
+    #viewOverview .ovsec{padding:34px 0}
+    #viewOverview .ovtier{grid-template-columns:48px 1fr;gap:9px}
+    #viewOverview .ovhero{width:40px}
+  }
   /* ---------- VERSUS ---------- */
   .vspick{display:flex;gap:8px;align-items:center;margin:14px 0 4px;flex-wrap:wrap}
   .vspick select{flex:1 1 220px;max-width:340px;padding:7px 9px;border-radius:9px;
@@ -2117,6 +2313,7 @@
     <button class="tab" id="tabSkills" role="tab" aria-selected="false">Hero Score</button>
     <button class="tab" id="tabRoster" role="tab" aria-selected="false">Roster</button>
     <button class="tab" id="tabNew" role="tab" aria-selected="false">New hero</button>
+    <button class="tab" id="tabOverview" role="tab" aria-selected="false">Overview</button>
   </div>
 
   <div class="bar">
@@ -2462,6 +2659,10 @@ The middle word is loose — skill, skillicon, skiicon, icon, or nothing.
       <div class="tray" id="heroTray5"></div>
     </div>
     <div id="vsBody"></div>
+  </section>
+
+  <section id="viewOverview" class="hidden">
+    <div id="ovBody"></div>
   </section>
 
   <section id="viewNew" class="hidden">
@@ -5982,6 +6183,7 @@ const VIEW_DRAW = {
   arena:  ()=>{ drawArena(); drawTrayInto("heroTray4","trayQ4"); },
   skills: ()=>{ drawSkills(); },
   vs:     ()=>{ if(typeof drawVs === "function"){ drawVs(); drawTrayInto("heroTray5","trayQ5"); } },
+  overview: ()=>{ if(typeof drawOverview === "function") drawOverview(); },
   roster: ()=>{ drawRoster(); },
   new:    ()=>{ if(typeof drawNewHero === "function") drawNewHero(); }
 };
@@ -6286,6 +6488,210 @@ function drawVs(){
     compare the pair to each other, not to the board. A dash means not captured, which is not the same as zero.</p>`;
 
   wireVsDrops();
+}
+
+
+/* ============================================================
+   OVERVIEW — what this project is, drawn from what it holds
+   ============================================================
+   Every figure on it is COMPUTED, not typed: hero count, skills
+   read, warbands, trifectas, the tier rows, the scatter. Write a
+   new hero into core-skills.js and this page says so too. A
+   showcase that has to be edited by hand goes stale the first
+   week and then lies quietly for months.
+   Getting back out: the tabs never leave, there is an EXIT button
+   pinned top-right, a "back to the tier board" at the foot, and
+   every portrait on it jumps to that hero on the board.
+   ============================================================ */
+function ovFigures(){
+  let skills = 0, unread = 0;
+  HEROES.forEach(h=>["1","2","3","4","U"].forEach(sl=>{
+    const k = coreSlot(h.key, sl);
+    if(k && k.name) skills++; else unread++;
+  }));
+  const tri = HEROES.map(h=>trifectasOf(h.key)[0]).filter(Boolean);
+  const wb  = new Set(HEROES.map(h=>warbandOf(h.key)).filter(Boolean));
+  const withPower = HEROES.filter(h=>powerOf(h)).length;
+  return { heroes:HEROES.length, skills, unread, warbands:wb.size,
+           tri:tri.length, tri4:tri.filter(t=>t.n>=4).length, withPower };
+}
+function drawOverview(){
+  const body = document.getElementById("ovBody"); if(!body) return;
+  const F = ovFigures();
+  const esc = x => String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+  const face = h => portraitOf(h)
+    ? `<img src="${portraitOf(h)}" alt="${esc(h.n)}">`
+    : `<div class="ini">${esc(h.n[0])}</div>`;
+
+  const wall = HEROES.filter(h=>portraitOf(h));
+  const wallHTML = wall.concat(wall).slice(0, 64)
+    .map(h=>`<img src="${portraitOf(h)}" alt="">`).join("");
+
+  const rows = TIERS.map(t=>{
+    const list = HEROES.filter(h=>h.t === t.k);
+    if(!list.length) return "";
+    return `<div class="ovtier ovbrk ovt-${t.k === "S+" ? "Sp" : t.k}">
+      <div class="ovbadge">${t.k}</div>
+      <div class="ovrow">${list.map(h=>`
+        <button class="ovhero" data-ovhero="${h.key}"
+          title="${esc(h.n)} — kit ${kitOf(h)||"?"} of 25 · worth ${worthOf(h)??"?"} · click to find them on the board">
+          ${face(h)}<span class="kt">${kitOf(h)||"·"}</span><span class="nm">${esc(h.n)}</span>
+        </button>`).join("")}</div>
+    </div>`;
+  }).join("");
+
+  /* the scatter, off the live numbers */
+  const pts = HEROES.map(h=>{
+    let dmg=0, dd=0;
+    ["1","2","3","4","U"].forEach(sl=>{
+      const k = coreSlot(h.key, sl); if(!k || !k.name) return;
+      const awk = (k.type||"") === "Awakened";
+      (k.effects||[]).forEach(e=>{
+        const w = e.what || "";
+        if(/before awakening/i.test(w) && !awk) return;
+        const v = mkMax(awk ? (awakenedPref(k.effects,w)||e) : e) || 0;
+        if(/dmg factor|direct dmg/i.test(w)) dmg = Math.max(dmg, v);
+        if(e.unit === "%" && /ignore .*def|^reduce def by|increase dmg enemies receive/i.test(w)) dd = Math.max(dd, v);
+      });
+    });
+    return {n:h.n, t:h.t, dmg, dd};
+  });
+  const XMAX = Math.max(20000, ...pts.map(p=>p.dmg));
+  const YMAX = Math.max(52, ...pts.map(p=>p.dd) ) + 2;
+  const W=860,H=380,L=54,R=18,T=26,BB=44;
+  const x0=L,x1=W-R,y0=H-BB,y1=T;
+  const px = v => x0 + (v/XMAX)*(x1-x0), py = v => y0 - (v/YMAX)*(y0-y1);
+  const cl = t => (t==="S+"||t==="S") ? "#5fe3d8" : t==="A" ? "#7fd4c8" : "#5d777d";
+  const best = pts.reduce((a,b)=> (b.dd>a.dd || (b.dd===a.dd && b.dmg>a.dmg)) ? b : a, pts[0]);
+  let g = "";
+  for(let v=0; v<=YMAX-2; v+=10){
+    g += `<line x1="${x0}" y1="${py(v).toFixed(1)}" x2="${x1}" y2="${py(v).toFixed(1)}" stroke="var(--ov-edge)"/>`;
+    g += `<text x="${x0-9}" y="${(py(v)+4).toFixed(1)}" text-anchor="end" fill="var(--ov-dim)" font-family="ui-monospace,monospace" font-size="10.5">${v}%</text>`;
+  }
+  for(let v=0; v<=XMAX; v+=5000)
+    g += `<text x="${px(v).toFixed(1)}" y="${y0+20}" text-anchor="middle" fill="var(--ov-dim)" font-family="ui-monospace,monospace" font-size="10.5">${v?(v/1000)+"k":"0"}</text>`;
+  g += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y0}" stroke="var(--ov-edge2)"/>`;
+  g += `<text x="${x1}" y="${y0+37}" text-anchor="end" fill="var(--ov-dim)" font-family="ui-monospace,monospace" font-size="10" letter-spacing="1.3">PAYLOAD AT MAX</text>`;
+  g += `<text x="${x0}" y="${y1-8}" fill="var(--ov-dim)" font-family="ui-monospace,monospace" font-size="10" letter-spacing="1.3">DEF IGNORED</text>`;
+  pts.forEach(p=>{
+    const big = p === best && p.dd > 0;
+    const cx = px(p.dmg), cy = py(p.dd), c = cl(p.t);
+    if(big) g += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="13" fill="${c}" opacity=".16"/>`;
+    g += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${big?6.5:4}" fill="${big?c:"none"}" stroke="${c}" stroke-width="${big?2:1.5}" opacity="${(p.dd||p.dmg)?1:.4}"><title>${esc(p.n)} — ${p.t} · payload ${p.dmg.toLocaleString()} · ignores ${p.dd}% DEF</title></circle>`;
+    if(big) g += `<text x="${(cx-11).toFixed(1)}" y="${(cy-11).toFixed(1)}" text-anchor="end" fill="${c}" font-family="ui-monospace,monospace" font-size="12" font-weight="700">${esc(p.n)}</text>`;
+  });
+
+  const VIEWS = [
+    ["Tier board","Where everyone sits. Drag to move; a hero nobody has placed follows their own score."],
+    ["Hero Score","Every slot, every effect line, and the pips where you overrule the reading."],
+    ["Versus","Two heroes, every number facing each other, the gap as a percentage on whoever leads."],
+    ["Radar","Three heroes across six modes — the shape of a kit rather than its size."],
+    ["Pairings","Who answers whom, and which of yours covers the gap."],
+    ["Arena","Enemy lineups you keep meeting, tallied, with a proposed answer."],
+    ["Timeline","Fortnightly windows — what to level next, and when."],
+    ["Roster","The editing grid. Names, tiers, troops, talents, power, ownership."],
+    ["New hero","Everything the app needs, and the exact lines to paste."]
+  ];
+
+  body.innerHTML = `
+    <button class="ovback ovexit" data-ovback title="Back to the tier board">&#8592; EXIT</button>
+    <div class="ovkeep">
+      <div class="ovwall" aria-hidden="true">${wallHTML}</div>
+      <div class="ovkeepin ovwrap">
+        <div class="ovstat">FATE WAR &nbsp;//&nbsp; HERO INTELLIGENCE &nbsp;//&nbsp; ${F.heroes} UNITS INDEXED</div>
+        <h2 class="ovmark">Hero Hub</h2>
+        <div class="ovtag">Every skill. Every number. Read off the screen.</div>
+        <p class="ovblurb">${F.heroes} heroes, ${F.skills} of their skills transcribed from the game
+          itself, and a scoring rule blunt enough to argue with. <b>It disagrees with the tier list
+          where it disagrees</b> &mdash; which is the whole point of having it.</p>
+      </div>
+    </div>
+
+    <div class="ovcounts">
+      <div class="ovct"><div class="n">${F.heroes}</div><div class="l">Heroes</div></div>
+      <div class="ovct"><div class="n">${F.skills}</div><div class="l">Skills read</div></div>
+      <div class="ovct"><div class="n">${F.warbands}</div><div class="l">Warbands</div></div>
+      <div class="ovct"><div class="n">${F.tri}</div><div class="l">Trifectas</div></div>
+      <div class="ovct"><div class="n">${F.tri4}</div><div class="l">Quadfectas</div></div>
+      <div class="ovct"><div class="n">9</div><div class="l">Views</div></div>
+    </div>
+
+    <div class="ovsec"><div class="ovwrap">
+      <div class="ovkick">The board</div>
+      <h3 class="ovh2">${F.heroes} ranked</h3>
+      <p class="ovlede">Click any face to find them on the tier board. The number in the corner is
+        their <b>kit</b> &mdash; the five skills added up, out of 25, before skin or meta.</p>
+      <div class="ovboard">${rows}</div>
+    </div></div>
+
+    <div class="ovsec alt"><div class="ovwrap">
+      <div class="ovkick">The rule</div>
+      <h3 class="ovh2">Every skill scores at least 3</h3>
+      <p class="ovlede">The good ones score 4. The ones that decide a fight score 5. Then skin and
+        meta on top. That is the entire model.</p>
+      <div class="oveq ovbrk">
+        <div class="line"><span class="k">WORTH</span> <span class="o">=</span> 5 SKILLS <span class="o">+</span> SKIN <span class="o">+</span> META <span class="o">+</span> YOUR CALL</div>
+        <p>Everyone sorts by it and the tiers fill in the sizes your board already uses, so the best
+          score always lands in the best tier. A tie goes to the better kit &mdash; the five skills
+          alone &mdash; because skin and meta are things <em>about</em> a hero, and the skills are the hero.</p>
+        <div class="ovgrades">
+          <div class="ovgr"><div class="v">5</div><div class="t">How the hero kills. An 8,000+ payload, a summon, or defence-down.</div></div>
+          <div class="ovgr"><div class="v">4</div><div class="t">A real multiplier or real sustain. Damage-up 15%+, counter 10%+, healing, mitigation 10%+.</div></div>
+          <div class="ovgr"><div class="v">3</div><div class="t">It does something, but it is small. A 3 has not been missed &mdash; it has been weighed.</div></div>
+          <div class="ovgr"><div class="v" style="color:var(--ov-amber)">+1</div><div class="t">Each skill inside a trifecta. Three of a side is a trifecta, four a quadfecta.</div></div>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="ovsec"><div class="ovwrap">
+      <div class="ovkick">A finding</div>
+      <h3 class="ovh2">Hit hard, or strip armour</h3>
+      <p class="ovlede">Payload against defence ignored, all ${F.heroes} plotted. The two multiply, so
+        the top-right is where any hero would want to be. <b>${esc(best.n)} is alone up there.</b></p>
+      <div class="oveq ovbrk" style="padding:16px 14px 8px">
+        <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto" role="img"
+          aria-label="Payload against percentage of enemy defence ignored, ${F.heroes} heroes.">${g}</svg>
+      </div>
+    </div></div>
+
+    <div class="ovsec alt"><div class="ovwrap">
+      <div class="ovkick">Nine ways in</div>
+      <h3 class="ovh2">Same data, different questions</h3>
+      <div class="ovgrid">${VIEWS.map(([t,d])=>`
+        <div class="ovcard"><h4>${t}</h4><p>${d}</p></div>`).join("")}</div>
+    </div></div>
+
+    <div class="ovsec"><div class="ovwrap">
+      <div class="ovkick">Kept honest</div>
+      <h3 class="ovh2">What it admits</h3>
+      <p class="ovlede">A card that pretends is worse than a card that owns up. All of these are on
+        the face of the app, not buried in a comment.</p>
+      <div class="ovgrid">
+        <div class="ovcard warn"><h4>${F.unread} unread slots</h4>
+          <p>A tooltip never opened scores nothing, and the card says so. A low total can mean a thin
+            kit or an unshot one &mdash; the app will not pretend to know which.</p></div>
+        <div class="ovcard warn"><h4>Blank is not zero</h4>
+          <p>Power is recorded only at level 60 and 6 stars, so it is one yardstick.
+            ${F.withPower} of ${F.heroes} are in; the rest are not there yet, which is not the same as weak.</p></div>
+        <div class="ovcard warn"><h4>A ceiling, not a scale</h4>
+          <p>Ignoring 50% of a target's defence and ignoring 7% both score 5, because 5 is the top.
+            The COMPANY card prints the real magnitudes beside the score.</p></div>
+        <div class="ovcard warn"><h4>Not everything is read</h4>
+          <p>Rage, movement, proc chances and troop buffs fall to 3 by design. The model reads a short
+            list of things that decide fights, and treats the rest as small.</p></div>
+      </div>
+    </div></div>
+
+    <div class="ovfoot"><div class="ovwrap"><div class="fl">
+      <button class="ovback" data-ovback>&#8592; BACK TO THE TIER BOARD</button>
+      <span>${F.heroes} heroes &middot; ${F.skills} skills &middot; one file</span>
+      <span>Built for one player's board, and it argues back</span>
+    </div></div></div>`;
+
+  body.querySelectorAll("[data-ovback]").forEach(b=>
+    b.addEventListener("click", ()=>{ switchView("board"); window.scrollTo({top:0, behavior:"smooth"}); }));
+  body.querySelectorAll("[data-ovhero]").forEach(b=>
+    b.addEventListener("click", ()=> revealOnBoard(b.dataset.ovhero)));
 }
 
 /* ============================================================
@@ -6846,6 +7252,7 @@ function switchView(v){
   document.getElementById("viewArena").classList.toggle("hidden", v!=="arena");
   document.getElementById("viewSkills").classList.toggle("hidden", v!=="skills");
   document.getElementById("viewVs").classList.toggle("hidden", v!=="vs");
+  document.getElementById("viewOverview").classList.toggle("hidden", v!=="overview");
   document.getElementById("viewNew").classList.toggle("hidden", v!=="new");
   document.getElementById("tabBoard").setAttribute("aria-selected", String(v==="board"));
   document.getElementById("tabRadar").setAttribute("aria-selected", String(v==="radar"));
@@ -6855,12 +7262,13 @@ function switchView(v){
   document.getElementById("tabArena").setAttribute("aria-selected", String(v==="arena"));
   document.getElementById("tabSkills").setAttribute("aria-selected", String(v==="skills"));
   document.getElementById("tabVs").setAttribute("aria-selected", String(v==="vs"));
+  document.getElementById("tabOverview").setAttribute("aria-selected", String(v==="overview"));
   document.getElementById("tabNew").setAttribute("aria-selected", String(v==="new"));
   /* catch this view up if it fell behind while it was hidden. The radar and
      Hero Score are always redrawn on arrival regardless: ratings are edited on
      one tab and the radar is drawn from them, so neither should ever be showing
      yesterday's shapes. */
-  if(viewStale[v] || v === "radar" || v === "skills" || v === "new" || v === "vs") drawView(v);
+  if(viewStale[v] || v === "radar" || v === "skills" || v === "new" || v === "vs" || v === "overview") drawView(v);
   paintScores();
 }
 function revealOnBoard(key){
@@ -11279,6 +11687,7 @@ document.getElementById("skIconFiles").addEventListener("change", ev=>{
 document.getElementById("tabPlan").addEventListener("click", ()=>switchView("plan"));
 document.getElementById("tabArena").addEventListener("click", ()=>switchView("arena"));
 document.getElementById("tabVs").addEventListener("click", ()=>switchView("vs"));
+document.getElementById("tabOverview").addEventListener("click", ()=>switchView("overview"));
 document.getElementById("vsA").addEventListener("change", e=>{ vsA = e.target.value; drawVs(); });
 document.getElementById("vsB").addEventListener("change", e=>{ vsB = e.target.value; drawVs(); });
 document.getElementById("vsSwap").addEventListener("click", ()=>{ const t = vsA; vsA = vsB; vsB = t; drawVs(); });
