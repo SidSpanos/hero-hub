@@ -26,6 +26,23 @@
      thing reads "neither", not "tie" — a tie implies they both do it
      equally, which is a lie dressed as a fact. And a dash means NOT
      CAPTURED, which is not the same as zero.
+     THE HERO TRAY IS ON IT, with drag and drop. Both sides are always
+     drawn — an empty one is a dashed DROP SLOT rather than a message,
+     so there is somewhere to aim from the very first hero. Drop a
+     hero onto the side the other one already holds and they SWAP
+     rather than appearing twice. The tray has its own search, and it
+     reuses the same drag plumbing the Pairings and Arena trays use,
+     so a chip is dragged the same way everywhere in the app.
+     THE FOUR CARD BUTTONS NOW HAVE THEIR OWN STRIP. vs, edit, radar
+     and duplicate were laid over the hero's NAME — fine at two
+     buttons, unreadable at four, with "Odysseus" rendering as
+     "Ody...s". Every card reserves 13px at the top for them
+     instead. They also sit at half opacity all the time now rather
+     than appearing on hover: hiding them was a way of living with
+     the overlap, and there is no overlap any more.
+     And the button says "vs", not a crossed-swords glyph. The glyph
+     did not render in this font stack — it fell back to something
+     that read as a close button, which is the opposite of inviting.
      Odysseus against Reid is the demonstration: every row in "what
      they actually do" reads ONLY, alternating sides, because one is a
      pure attacker and the other a pure defender and they do not
@@ -499,7 +516,11 @@
   }
   .card{
     position:relative;background:var(--surface-1);border:1px solid var(--border);border-radius:10px;
-    padding:9px 11px 8px;width:200px;cursor:grab;transition:.12s;
+    /* the top strip is RESERVED for the four action buttons - vs, edit, radar,
+       duplicate. They used to be laid over the hero's name, which was fine at
+       two buttons and unreadable at four. 13px of empty space at the top of
+       every card is cheaper than a name you cannot read. */
+    padding:22px 11px 8px;width:200px;cursor:grab;transition:.12s;
     display:flex;flex-direction:column;                 /* so the troop row can anchor to the bottom */
   }
   .card:hover{border-color:var(--axis)}
@@ -614,40 +635,43 @@
     background:var(--plane);color:var(--text-primary);
     border:1px solid var(--accent);border-radius:6px;padding:2px 6px;
   }
-  .name{font-weight:650;font-size:14px;display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-right:26px}
+  .name{font-weight:650;font-size:14px;display:flex;align-items:center;gap:6px;margin-bottom:6px}
   .alias{color:var(--text-secondary);font-weight:400;font-size:12px}
   .epic{font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 5px;border-radius:4px;
     border:1px solid var(--border);color:var(--text-secondary)}
   .card.iscopy{border-style:dashed}
   .copytag{
-    position:absolute;top:-7px;left:9px;font-size:8.5px;font-weight:700;letter-spacing:.08em;
+    position:absolute;top:5px;left:9px;font-size:8.5px;font-weight:700;letter-spacing:.08em;
     text-transform:uppercase;background:var(--surface-1);border:1px solid var(--border);
     border-radius:4px;padding:1px 5px;color:var(--muted);
   }
   .dupBtn,.delCopy{
-    position:absolute;top:7px;width:19px;height:19px;border-radius:50%;padding:0;
+    position:absolute;top:4px;width:19px;height:19px;border-radius:50%;padding:0;
     border:1px solid var(--border);background:var(--surface-1);color:var(--muted);
     font-size:11px;line-height:1;cursor:pointer;opacity:0;transition:.12s;
   }
   .dupBtn{right:76px}
   .delCopy{right:99px}
+  .card .dupBtn,.card .delCopy{opacity:.5}
   .card:hover .dupBtn,.card:hover .delCopy,.dupBtn:focus,.delCopy:focus{opacity:1}
   .dupBtn:hover,.delCopy:hover{color:var(--text-primary);border-color:var(--axis)}
   .goRadar{
-    position:absolute;top:7px;right:53px;width:19px;height:19px;border-radius:50%;
+    position:absolute;top:4px;right:53px;width:19px;height:19px;border-radius:50%;
     border:1px solid var(--border);background:var(--surface-1);color:var(--muted);
     font-size:11px;line-height:1;cursor:pointer;opacity:0;transition:.12s;padding:0;
   }
+  .card .goRadar{opacity:.5}
   .card:hover .goRadar,.goRadar:focus{opacity:1}
   .goRadar:hover{color:var(--text-primary);border-color:var(--axis)}
   /* ✎ — jump to this hero's card on the Hero Score tab and edit it there.
      Same button on every view that draws a hero, so wherever you spot
      something wrong you are one click from the place you fix it. */
   .goScore{
-    position:absolute;top:7px;right:30px;width:19px;height:19px;border-radius:50%;
+    position:absolute;top:4px;right:30px;width:19px;height:19px;border-radius:50%;
     border:1px solid var(--border);background:var(--surface-1);color:var(--muted);
     font-size:10px;line-height:1;cursor:pointer;opacity:0;transition:.12s;padding:0;
   }
+  .card .goScore{opacity:.5}
   .card:hover .goScore,.cell:hover .goScore,.pcard:hover .goScore,.goScore:focus{opacity:1}
   .goScore:hover{color:var(--accent);border-color:var(--accent)}
   .cell .goScore{top:4px;right:4px;z-index:3}
@@ -1213,6 +1237,14 @@
     border:1px solid var(--border);border-radius:13px;background:var(--surface-1)}
   .vsside.b{flex-direction:row-reverse;text-align:right}
   .vsside .avatar{width:46px;aspect-ratio:5/8;height:auto;border-radius:10px;font-size:16px}
+  .vsside.empty{justify-content:center;border-style:dashed;background:var(--surface-2);min-height:78px}
+  .vsghost{font-size:11px;color:var(--muted);opacity:.7;letter-spacing:.03em}
+  .vsside.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface-1));
+    box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
+  .vswho{min-width:0}
+  .vsverdict.empty .vsw{font-size:13px;color:var(--muted);font-weight:600}
+  .vsverdict.empty .vswsub{text-transform:none;letter-spacing:0;font-size:9.5px;line-height:1.5}
+  #vsTray{margin:8px 0 2px}
   .vsside.a{border-left:3px solid var(--series-1)}
   .vsside.b{border-right:3px solid var(--series-2)}
   .vsname{font-weight:750;font-size:16px}
@@ -1271,18 +1303,20 @@
   }
   /* the ⚔ button, alongside ✎ */
   .goVs{
-    position:absolute;top:7px;right:7px;width:19px;height:19px;border-radius:50%;
+    position:absolute;top:4px;right:7px;height:19px;min-width:19px;border-radius:999px;
     border:1px solid var(--border);background:var(--surface-1);color:var(--muted);
-    font-size:10px;line-height:1;cursor:pointer;opacity:0;transition:.12s;padding:0;
+    font-size:9px;font-weight:800;letter-spacing:.04em;line-height:1;cursor:pointer;
+    opacity:0;transition:.12s;padding:0 5px;
   }
+  .card .goVs{opacity:.5}
   .card:hover .goVs,.cell:hover .goVs,.goVs:focus{opacity:1}
   .goVs:hover{color:var(--series-2);border-color:var(--series-2)}
-  .cell .goVs{top:4px;right:26px;z-index:3}
+  .cell .goVs{top:4px;right:24px;z-index:3}
   .goVsInline{
     display:inline-flex;align-items:center;justify-content:center;
-    width:18px;height:18px;border-radius:50%;padding:0;vertical-align:middle;margin-left:3px;
+    height:18px;min-width:18px;border-radius:999px;padding:0 5px;vertical-align:middle;margin-left:3px;
     border:1px solid var(--border);background:var(--surface-1);color:var(--muted);
-    font-size:10px;line-height:1;cursor:pointer;transition:.12s;
+    font-size:9px;font-weight:800;letter-spacing:.04em;line-height:1;cursor:pointer;transition:.12s;
   }
   .goVsInline:hover{color:var(--series-2);border-color:var(--series-2)}
   .cfirst{font-size:8.5px;font-weight:800;letter-spacing:.06em;color:var(--series-3);
@@ -2378,6 +2412,13 @@ The middle word is loose — skill, skillicon, skiicon, icon, or nothing.
       <select id="vsB" aria-label="Second hero"></select>
       <div class="grow"></div>
       <button class="btn" id="vsClear">Clear</button>
+    </div>
+    <div class="traybox" id="vsTray">
+      <div class="trayhead">
+        <span class="glabel">Hero tray — drag a hero onto either side</span>
+        <input type="search" id="trayQ5" placeholder="Find a hero…" aria-label="Find a hero">
+      </div>
+      <div class="tray" id="heroTray5"></div>
     </div>
     <div id="vsBody"></div>
   </section>
@@ -5855,7 +5896,7 @@ const VIEW_DRAW = {
   plan:   ()=>{ syncPlanControls(); drawPhases(); drawShifts(); },
   arena:  ()=>{ drawArena(); drawTrayInto("heroTray4","trayQ4"); },
   skills: ()=>{ drawSkills(); },
-  vs:     ()=>{ if(typeof drawVs === "function") drawVs(); },
+  vs:     ()=>{ if(typeof drawVs === "function"){ drawVs(); drawTrayInto("heroTray5","trayQ5"); } },
   roster: ()=>{ drawRoster(); },
   new:    ()=>{ if(typeof drawNewHero === "function") drawNewHero(); }
 };
@@ -5962,6 +6003,67 @@ function vsMeasures(key){
   });
   return out;
 }
+/* where a hero stands in the ranking, used on the Versus headers */
+function vsRank(key){
+  const pool = HEROES.map(x=>({key:x.key, s:worthOf(x), k:kitOf(x)||0, n:x.n}))
+    .filter(x=>x.s !== null).sort((a,b)=>b.s-a.s || b.k-a.k || a.n.localeCompare(b.n));
+  const i = pool.findIndex(x=>x.key===key);
+  return i < 0 ? null : {at:i+1, of:pool.length};
+}
+function vsSideHTML(h, side){
+  const r = vsRank(h.key);
+  const tri = trifectasOf(h.key)[0];
+  return `<div class="vsside ${side} filled" data-vsside="${side}">
+      <span class="avatar" title="Open ${h.n} on the Hero Score tab">${
+        portraitOf(h)?`<img src="${portraitOf(h)}" alt="">`:h.n[0]}</span>
+      <div class="vswho">
+        <div class="vsname">${h.n}${h.a?` <span class="alias">${h.a}</span>`:""}</div>
+        <div class="vsmeta"><span class="pill p-${h.t==="S+"?"Sp":h.t}">${h.t}</span>
+          ${r?`<span class="t">#${r.at} of ${r.of}</span>`:""}
+          ${h.troop?troopBadge(h.troop,false):""}
+          ${tri ? `<span class="trichip ${tri.id==="OFFENSIVE"?"off":"def"}" style="opacity:1">${
+             tri.id==="OFFENSIVE"?"OFF":"DEF"}<b>${tri.short}</b></span>` : ""}
+        </div>
+      </div>
+      <button class="btn tiny vsdrop" data-vsdrop="${side}" title="Take ${h.n} off this side">&times;</button>
+    </div>`;
+}
+function vsSlotHTML(side){
+  return `<div class="vsside ${side} empty" data-vsside="${side}">
+      <span class="vsghost">drop a hero here</span>
+    </div>`;
+}
+/* Both sides accept a hero dragged out of the tray. The tray chips already
+   carry the drag plumbing the Pairings and Arena tabs use — pairDrag holds
+   whoever is in flight — so this only has to provide somewhere to land. */
+function wireVsDrops(){
+  document.querySelectorAll("#vsBody [data-vsside]").forEach(zone=>{
+    zone.addEventListener("dragover", e=>{
+      if(!pairDrag) return;
+      e.preventDefault(); e.dataTransfer.dropEffect = "copy"; zone.classList.add("over");
+    });
+    zone.addEventListener("dragleave", ()=> zone.classList.remove("over"));
+    zone.addEventListener("drop", e=>{
+      if(!pairDrag) return;
+      e.preventDefault(); e.stopPropagation(); zone.classList.remove("over");
+      const key = pairDrag.key; pairDrag = null;
+      if(!byKey(key)) return;
+      const side = zone.dataset.vsside;
+      /* dropping a hero onto the side the OTHER one already holds swaps them
+         rather than putting the same hero on both sides */
+      if(side === "a"){ if(vsB === key) vsB = vsA; vsA = key; }
+      else            { if(vsA === key) vsA = vsB; vsB = key; }
+      drawVs();
+    });
+  });
+  document.querySelectorAll("#vsBody [data-vsdrop]").forEach(b=>
+    b.addEventListener("click", ()=>{ if(b.dataset.vsdrop === "a") vsA = ""; else vsB = ""; drawVs(); }));
+  document.querySelectorAll("#vsBody .vsside.filled .avatar").forEach(el=>
+    el.addEventListener("click", ()=>{
+      const side = el.closest("[data-vsside]").dataset.vsside;
+      editOnScore(side === "a" ? vsA : vsB);
+    }));
+}
 function drawVs(){
   const body = document.getElementById("vsBody"); if(!body) return;
   const opts = h => HEROES.slice().sort((a,b)=>a.n.localeCompare(b.n))
@@ -5971,10 +6073,18 @@ function drawVs(){
   if(selB) selB.innerHTML = `<option value="">— pick a hero —</option>` + opts(vsB);
 
   const A = byKey(vsA), B = byKey(vsB);
+  /* An empty side is a DROP SLOT, not a message. Both sides are always drawn,
+     so there is somewhere to aim a dragged hero from the very first one — and
+     the instructions sit in the empty slot itself rather than replacing the
+     whole view. */
   if(!A || !B){
-    body.innerHTML = `<p class="note vsempty">Pick two heroes above — or press <b>&#9876;</b> on any hero card
-      anywhere in the app and they are sent here. First press fills the left, second the right, and after
-      that each new hero pushes the last one across, so you can walk a whole tier past one champion.</p>`;
+    body.innerHTML = `<div class="vstop">
+        ${A ? vsSideHTML(A,"a") : vsSlotHTML("a")}
+        <div class="vsverdict empty"><div class="vsw">Two heroes<br>side by side</div>
+          <div class="vswsub">drag from the tray, use the dropdowns,<br>or press <b>vs</b> on any hero card</div></div>
+        ${B ? vsSideHTML(B,"b") : vsSlotHTML("b")}
+      </div>`;
+    wireVsDrops();
     return;
   }
 
@@ -6032,20 +6142,7 @@ function drawVs(){
   /* the verdict — worth is what places a hero, so that is the headline */
   const lead = wA === wB ? null : (wA > wB ? A : B);
   const by   = Math.abs(wA - wB);
-  const sideHTML = (h, side)=>`
-    <div class="vsside ${side}">
-      <span class="avatar">${portraitOf(h)?`<img src="${portraitOf(h)}" alt="">`:h.n[0]}</span>
-      <div>
-        <div class="vsname">${h.n}${h.a?` <span class="alias">${h.a}</span>`:""}</div>
-        <div class="vsmeta"><span class="pill p-${h.t==="S+"?"Sp":h.t}">${h.t}</span>
-          <span class="t">#${rankOf(h.key)} of ${pool.length}</span>
-          ${h.troop?troopBadge(h.troop,false):""}
-          ${(trifectasOf(h.key)[0]||{}).id ? `<span class="trichip ${trifectasOf(h.key)[0].id==="OFFENSIVE"?"off":"def"}" style="opacity:1">${
-             trifectasOf(h.key)[0].id==="OFFENSIVE"?"OFF":"DEF"}<b>${trifectasOf(h.key)[0].short}</b></span>` : ""}
-        </div>
-      </div>
-      <button class="btn tiny vsdrop" data-vsdrop="${side}" title="Take ${h.n} off this side">&times;</button>
-    </div>`;
+  const sideHTML = vsSideHTML;
 
   const skillRows = ["1","2","3","4","U"].map(sl=>{
     const ka = coreSlot(A.key, sl), kb = coreSlot(B.key, sl);
@@ -6100,10 +6197,7 @@ function drawVs(){
     one the rest of the app uses — nothing is computed specially for this tab, and nothing on it scores. Percentages
     compare the pair to each other, not to the board. A dash means not captured, which is not the same as zero.</p>`;
 
-  body.querySelectorAll("[data-vsdrop]").forEach(b=>
-    b.addEventListener("click", ()=>{ if(b.dataset.vsdrop === "a") vsA = ""; else vsB = ""; drawVs(); }));
-  body.querySelectorAll(".vsside .avatar").forEach((el,i)=>
-    el.addEventListener("click", ()=> editOnScore(i === 0 ? vsA : vsB)));
+  wireVsDrops();
 }
 
 /* ============================================================
@@ -6721,7 +6815,7 @@ function scoreJumpBtn(h, cls){
   return `<button class="${cls||"goScoreInline"}" data-scoreedit="${h.key}"
     title="Edit ${h.n}'s ratings on the Hero Score tab">✎</button>`
    + `<button class="${cls ? "goVs" : "goVsInline"}" data-vsadd="${h.key}"
-    title="Send ${h.n} to the Versus tab">⚔</button>`;
+    title="Send ${h.n} to the Versus tab — compare them against another hero">vs</button>`;
 }
 /* wired the same way everywhere — pass an element or a selector */
 function wireScoreJump(scope){
@@ -11055,6 +11149,7 @@ document.getElementById("vsA").addEventListener("change", e=>{ vsA = e.target.va
 document.getElementById("vsB").addEventListener("change", e=>{ vsB = e.target.value; drawVs(); });
 document.getElementById("vsSwap").addEventListener("click", ()=>{ const t = vsA; vsA = vsB; vsB = t; drawVs(); });
 document.getElementById("vsClear").addEventListener("click", ()=>{ vsA = ""; vsB = ""; drawVs(); });
+document.getElementById("trayQ5").addEventListener("input", ()=> drawTrayInto("heroTray5","trayQ5"));
 document.getElementById("tabSkills").addEventListener("click", ()=>switchView("skills"));
 document.getElementById("skQ").addEventListener("input", e=>{ skQuery = e.target.value; drawSkills(); });
 document.getElementById("skFilter").addEventListener("change", e=>{ skFilter = e.target.value; drawSkills(); });
