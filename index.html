@@ -1,5 +1,30 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-09 — POWER, NEXT TO THE NAME. The fist figure off the
+     hero's card in the game. It was designed once and then orphaned:
+     basePower sat on all 37 heroes as null, powerScore() fed the old
+     seven-marker model, and when WORTH replaced that model nothing
+     drew it any more. There was no field to type it into and it
+     would have done nothing if there had been. My miss, not raised.
+     Now it is a real field. It shows as a PWR chip directly under
+     the name on every card, in the Hero Score header, in the Roster
+     as its own column and as a row on Versus. Type it on the Hero
+     Score card or in the Roster; your figure wins over anything in
+     core-skills.js, and it saves with the rest of your edits.
+     IT DOES NOT SCORE, and that is Sid's call, not a shortcut.
+     Damage is a percentage of what the hero brings, so two heroes
+     200 power apart are doing genuinely different damage — but only
+     once both are maxed, and none of them are. So the number is
+     recorded and shown, ready for the day it tells, and worthOf()
+     does not look at it. The card says "does not score" on its face
+     so nobody has to wonder.
+     ONE FIELD, ONE MEANING: power at level 60 and 6 stars. Sid fills
+     these in as heroes actually reach it, so a BLANK MEANS NOT YET,
+     not zero, and a hero short of 60/6 stays blank rather than
+     putting a number in that cannot be compared to the others. The
+     card carries a count — "2 of 37 recorded" — so the gap is
+     visible instead of being mistaken for data.
+
      2026-09-09 — A VERSUS TAB: TWO HEROES, EVERY NUMBER, FACING
      EACH OTHER. The Radar compares three heroes on six MODE scores,
      which is a shape. This is the other question — what are the
@@ -1104,6 +1129,22 @@
   /* the placement score — kit, then worth. Deliberately styled apart from
      .hscore so the two are never read as one number: this one is points,
      that one is a percentage. */
+  /* POWER — the fist figure, beside the name. Deliberately quiet: it does not
+     score, so it must not look like the chips that do. */
+  .pwr{display:inline-flex;align-items:baseline;gap:3px;padding:1px 6px;border-radius:999px;
+    font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;
+    border:1px solid var(--border);background:var(--surface-2);color:var(--fg)}
+  .pwr i{font-style:normal;font-size:8px;font-weight:800;letter-spacing:.06em;color:var(--muted)}
+  .pwr.none{color:var(--muted);border-style:dashed}
+  .pwr.mine{border-color:color-mix(in srgb,var(--series-3) 45%,var(--border))}
+  .pwrfield{display:flex;flex-direction:column;gap:4px;font-size:9px;font-weight:800;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .pwrfield input{padding:7px 9px;border-radius:9px;border:1px solid var(--border);
+    background:var(--surface-1);color:var(--fg);font:inherit;font-size:14px;font-weight:800;
+    font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none}
+  .rpwr{width:76px;padding:4px 6px;border-radius:7px;border:1px solid var(--border);
+    background:var(--surface-1);color:var(--fg);font:inherit;font-size:11px;
+    font-variant-numeric:tabular-nums;text-align:right}
   .kitscore{display:inline-flex;align-items:baseline;gap:3px;padding:1px 6px;margin-left:4px;
     border:1px solid color-mix(in srgb,var(--accent) 40%,var(--border));border-radius:999px;
     background:color-mix(in srgb,var(--accent) 8%,transparent)}
@@ -3010,6 +3051,49 @@ const SKILL_FX = {};
    toward the total and therefore toward where an unplaced hero lands, and it
    is saved with the rest of your edits. */
 const WORTH_ADJ = {};
+/* ============================================================
+   POWER — the hero's own power number, off the fist on their card
+   ============================================================
+   It does NOT score, and that is deliberate. Two heroes 200 power
+   apart are doing meaningfully different damage once both are maxed,
+   because damage is a percentage of what the hero brings — but that
+   only bites at the top, and nobody here is maxed yet. So the number
+   is RECORDED and SHOWN next to the name, ready for the day it
+   matters, and worthOf() does not look at it.
+   Your typed value wins; core-skills.js basePower is the fallback,
+   so a published figure can be overridden per account without
+   touching the file.
+   ============================================================ */
+const POWER = {};                       // heroKey -> number, yours
+function powerOf(h){
+  if(!h) return null;
+  const own = POWER[h.key];
+  if(typeof own === "number" && own > 0) return own;
+  const base = (coreOf(h.key) || {}).basePower;
+  return (typeof base === "number" && base > 0) ? base : null;
+}
+const powerIsMine = h => h && typeof POWER[h.key] === "number" && POWER[h.key] > 0;
+function setPower(key, v){
+  const n = Math.round(Number(String(v).replace(/[,\s]/g, "")));
+  if(!isFinite(n) || n <= 0) delete POWER[key]; else POWER[key] = n;
+  markDirty();
+  return POWER[key];
+}
+/* the badge, wherever a hero's name is drawn */
+function powerBadge(h){
+  const p = powerOf(h);
+  const mine = powerIsMine(h);
+  return `<span class="pwr ${p?(mine?"mine":"pub"):"none"}" title="${h.n} — ${
+    p ? `power ${fmtNum(p)}${mine?" (yours)":" (from core-skills.js)"}` : "power not recorded yet"}.
+
+The fist on their card in the game, read AT LEVEL 60 AND 6 STARS — one yardstick, or the numbers do not
+compare. A hero who is not there yet stays blank; blank means NOT YET, not zero.
+
+It does not score. Two heroes 200 apart are doing different damage once both are maxed, because damage is
+a percentage of what the hero brings — but that only bites at the top and nobody is there yet. Set it on
+the Hero Score tab or in the Roster.">
+    <i>PWR</i>${p ? fmtNum(p) : "—"}</span>`;
+}
 /* ---- core-skills.js, as a layer underneath -------------------------------
    CORE_SKILLS is keyed by the internal hero id — the same key SKILL_FX uses —
    and within a hero by slot. A row that came from there is flagged core:true
@@ -4338,7 +4422,7 @@ const MAP_SECTIONS = ["RENAMES","TIERS","TROOPS","SKINS","OBTAIN","SKILLS","SIZE
                       "BUILDS","BUILD_IMAGES","PAIR_LINKS","MODE_INFO","TROOP_ICONS","PORTRAITS","OWNED",
                       "SKIN_OWNED","SKILLSEQ","SKILL_ICONS"];
 const WHOLE_SECTIONS = ["ROSTER","OBTAIN_TYPES","PAIRINGS","PHASES","FORMATIONS","COPIES","PLAN_START","META",
-                        "SKILL_FX","WARBANDS","WORTH_ADJ","FX_W","TRAIT_W","TREE_W","TREE_OVERRIDE","TREE_SCORE",
+                        "SKILL_FX","WARBANDS","WORTH_ADJ","POWER","FX_W","TRAIT_W","TREE_W","TREE_OVERRIDE","TREE_SCORE",
                         "VERS_SCORE","META_SCORE","SK_MODE",
                         "SK_RATE","TR_RATE","TREE_RATE","SHIFTS"];
 const sameVal = (a,b)=> JSON.stringify(a===undefined?null:a) === JSON.stringify(b===undefined?null:b);
@@ -4842,6 +4926,7 @@ let SHEET_DATA = null;
   if(Array.isArray(D.META)) META_DATA = D.META;
   if(D.SKILL_FX) Object.assign(SKILL_FX, JSON.parse(JSON.stringify(D.SKILL_FX)));
   if(D.WORTH_ADJ) Object.assign(WORTH_ADJ, D.WORTH_ADJ);
+  if(D.POWER) Object.assign(POWER, D.POWER);
   if(D.WARBANDS) Object.assign(WARBANDS, D.WARBANDS);
   if(D.FX_W)     Object.assign(FX_W, D.FX_W);
   if(D.TRAIT_W)  Object.assign(TRAIT_W, D.TRAIT_W);
@@ -5388,7 +5473,7 @@ function cardHTML(h, copy, phaseId, slotId){
         </span>
       </div>
       <div style="min-width:0">
-        <div class="name"><span class="hname" data-edit="${h.key}" title="Double-click to fix this name">${h.n}</span>${h.a?`<span class="alias">${h.a}</span>`:''}${h.epic?'<span class="epic">EPIC</span>':''}${scoreBadge(h)}</div>
+        <div class="name"><span class="hname" data-edit="${h.key}" title="Double-click to fix this name">${h.n}</span>${h.a?`<span class="alias">${h.a}</span>`:''}${h.epic?'<span class="epic">EPIC</span>':''}${powerBadge(h)}${scoreBadge(h)}</div>
         <div class="tags">${tags}</div>
       </div>
     </div>
@@ -6175,6 +6260,9 @@ function drawVs(){
     ${skillRows}
 
     ${head("What they actually do")}
+    ${row("POWER", powerOf(A)||0, powerOf(B)||0, v=>fmtNum(v),
+      "The fist figure, at level 60 and 6 stars. It does NOT score. A dash means that hero is not there yet — not that they are weak.",
+      "does not score")}
     ${row("PAYLOAD", mA.payload, mB.payload, v=>fmtNum(v), "The biggest DMG Factor in the kit, read awakened.")}
     ${row("DEFENCE DOWN", mA.defdown, mB.defdown, v=>v+"%", "How much of the target's DEF is ignored or stripped. It multiplies everything else they land.")}
     ${row("DAMAGE UP", mA.dmgup, mB.dmgup, v=>v+"%", "The largest damage or attack buff in the kit.")}
@@ -8032,6 +8120,34 @@ percentage of what this hero could carry in ${skMode} (skills + talents
       off?"offensive":"defensive"} ${fectaName(n).toLowerCase()}, so it scores a point higher than it would alone.">${
       off?"OFF":"DEF"} +1</span>`;
   };
+  /* Typed here and in the Roster. One field, one meaning: power at level 60
+     and 6 stars. Sid fills these in as heroes actually get there, so a blank
+     is "not yet" and the card says which of the 37 are in. */
+  const powerCard = (h)=>{
+    const p = powerOf(h), mine = powerIsMine(h);
+    const have = HEROES.filter(x=>powerOf(x)).length;
+    return `<div class="skcard rate ${p?"":"empty"}">
+      <div class="skctop">
+        <span class="skslot">POWER</span>
+        <span class="skseats"><span class="seatbtn on" title="Does not score - recorded for later.">—</span></span>
+        <span class="grow"></span>
+        <span class="skpts" title="${p ? (mine?"Your figure.":"From core-skills.js.") : "Not recorded yet."}">${p ? fmtNum(p) : "·"}</span>
+      </div>
+      <div class="ratebody">
+        <label class="pwrfield">at level 60 &amp; 6&#9733;
+          <input type="text" inputmode="numeric" data-pwr="${h.key}" value="${p ? fmtNum(p) : ""}"
+                 placeholder="not there yet"></label>
+        <p class="ratehint">The fist on ${h.n}'s card in the game. <b>Only fill this in at 60 and 6 stars</b> —
+        it is one yardstick or the numbers do not compare, so a hero short of that stays blank.
+        Blank means not yet, not zero.</p>
+      </div>
+      <div class="skcfoot">
+        ${mine ? `<button class="btn tiny" data-pwrclr="${h.key}" title="Clear your figure">&#8635; clear</button>` : ""}
+        <span class="grow"></span>
+        <span class="trnote" title="It is not part of the score. Damage is a percentage of what the hero brings, so a 200-point gap tells once everyone is maxed - which is not yet.">${have} of ${HEROES.length} recorded &middot; does not score</span>
+      </div>
+    </div>`;
+  };
   const skillBlock = (h, sk, si, skR)=>`
     <div class="skcard ${sk.name||(sk.fx||[]).length?"":"empty"}">
       <div class="skctop">
@@ -8105,6 +8221,7 @@ percentage of what this hero could carry in ${skMode} (skills + talents
             : `Not versatile — only their own troop${h.troop?`, ${troopName(h.troop)}`:""}.`}
 Trees: ${(h.treeSet||[]).filter(Boolean).map(t=>treeById(t)?.name||t).join(" · ") || "none recorded"}
 Both come from core-skills.js.">${h.versatile ? "ANY TROOP" : "own troop only"}</span>
+        ${powerBadge(h)}
         <label class="skwb" title="Which warband they belong to — type it and it's remembered">warband
           <input list="wbNames" data-wb="${h.key}" value="${warbandOf(h.key).replace(/"/g,"&quot;")}"
                  placeholder="—"></label>
@@ -8119,7 +8236,7 @@ ${rt.outOf} = ${rt.sk.length} skills + 3 talents + meta${h.versatile ? " + any t
 A hero with the Balanced tree has 10 to rate; one without has 9, because there is no any-troop to score.
 The rest sit on defaults, so a low count means the score is still partly a guess.">R ${rt.done}/${rt.outOf}</span>
       </div>
-      <div class="skgrid">${sks.map((sk,si)=>skillBlock(h,sk,si,rt.sk[si])).join("")}${treeCard(h,rt)}${versCard(h)}${metaCard(h)}${tallyCard(h,rt)}${markerCard(h)}${companyCard(h)}</div>
+      <div class="skgrid">${sks.map((sk,si)=>skillBlock(h,sk,si,rt.sk[si])).join("")}${treeCard(h,rt)}${versCard(h)}${metaCard(h)}${powerCard(h)}${tallyCard(h,rt)}${markerCard(h)}${companyCard(h)}</div>
     </section>`;
   }
 ;
@@ -8334,6 +8451,15 @@ function wireSkills(scope){
       if(flag) flag.classList.toggle("on", custom);
       touch(); renderAll();
     }));
+  root.querySelectorAll("[data-pwr]").forEach(inp=>{
+    inp.addEventListener("change", ()=>{
+      setPower(inp.dataset.pwr, inp.value);
+      heroChanged(inp.dataset.pwr);
+    });
+    inp.addEventListener("keydown", e=>{ if(e.key === "Enter") inp.blur(); });
+  });
+  root.querySelectorAll("[data-pwrclr]").forEach(b=>
+    b.addEventListener("click", ()=>{ delete POWER[b.dataset.pwrclr]; markDirty(); heroChanged(b.dataset.pwrclr); }));
   root.querySelectorAll("[data-skown]").forEach(cb=>
     cb.addEventListener("change", ()=>{
       const h = setOwn(cb.dataset.skown, cb.checked); if(!h) return;
@@ -8512,6 +8638,9 @@ function drawRoster(){
         <td><input class="ralias" data-ra="${h.key}" value="${(h.a||"").replace(/"/g,"&quot;")}" placeholder="alias"></td>
         <td class="owncell"><input type="checkbox" class="ownck" data-hown="${h.key}" ${h.own?"checked":""}
               title="${h.own?"You own this hero":"You don't own this hero"}"></td>
+        <td><input class="rpwr" data-rpwr="${h.key}" inputmode="numeric"
+              value="${powerOf(h) ? fmtNum(powerOf(h)) : ""}" placeholder="—"
+              title="Power at level 60 and 6 stars. Blank means not there yet. It does not score."></td>
         <td>${focusCellHTML(h)}</td>
         <td><select class="rtier" data-rt="${h.key}">${
           TIERS.map(t=>`<option value="${t.k}" ${t.k===h.t?"selected":""}>${t.k}</option>`).join("")}</select></td>
@@ -8568,7 +8697,7 @@ total ${f.score}">focus #${f.rank}</span>`; })()}
     return;
   }
   document.getElementById("rosterWrap").innerHTML = `<table>
-    <thead><tr><th></th><th>Hero</th><th>Alias</th><th title="Tick the heroes you own">Own</th><th title="Where your levels, stars, skills and gear pay back most — hover a row for the reasons">Focus</th><th>Tier</th><th>Modes</th><th>Troops</th><th>Skin</th><th>Obtain</th><th title="Levels for skills 1-4 — the order you train them in">Skills</th><th>Talents</th><th></th></tr></thead>
+    <thead><tr><th></th><th>Hero</th><th>Alias</th><th title="Tick the heroes you own">Own</th><th title="The fist on their card in the game, at level 60 and 6 stars. Blank means not there yet. It does not score.">Power</th><th title="Where your levels, stars, skills and gear pay back most — hover a row for the reasons">Focus</th><th>Tier</th><th>Modes</th><th>Troops</th><th>Skin</th><th>Obtain</th><th title="Levels for skills 1-4 — the order you train them in">Skills</th><th>Talents</th><th></th></tr></thead>
     <tbody>${rows}</tbody></table>`;
   wireRosterBits();
   drawMergeSelects();
@@ -8635,6 +8764,11 @@ function wireRosterBits(){
       const h = byKey(inp.dataset.rn); if(!h) return;
       h.n = inp.value.trim() || h.key; renderAll();
     }));
+  document.querySelectorAll("#rosterWrap [data-rpwr]").forEach(inp=>
+    inp.addEventListener("change", ()=>{ setPower(inp.dataset.rpwr, inp.value);
+      const p = powerOf(byKey(inp.dataset.rpwr));
+      inp.value = p ? fmtNum(p) : "";
+      setTimeout(()=>heroChanged(inp.dataset.rpwr), 0); }));
   document.querySelectorAll("#rosterWrap .ralias").forEach(inp=>
     inp.addEventListener("change", ()=>{
       const h = byKey(inp.dataset.ra); if(!h) return;
@@ -11631,6 +11765,7 @@ function buildDataObject(){
       }); return out; })(),
     WARBANDS: {...WARBANDS},
     WORTH_ADJ: {...WORTH_ADJ},
+    POWER: {...POWER},
     FX_W: {...FX_W},
     TRAIT_W: {...TRAIT_W},
     TREE_W: {...TREE_W},
@@ -11910,7 +12045,7 @@ const OV_LABEL = {TIERS:"tier", RENAMES:"name", TROOPS:"troop type", SKINS:"skin
   BUILD_IMAGES:"build screenshot", PAIR_LINKS:"pairing link", MODE_INFO:"mode note",
   TROOP_ICONS:"troop icon", ROSTER:"the roster", PAIRINGS:"the pairings", PHASES:"the timeline",
   COPIES:"extra cards", OBTAIN_TYPES:"obtain methods", FORMATIONS:"arena layouts",
-  PLAN_START:"the start date", META:"the arena meta", SKILL_FX:"skill effects", WORTH_ADJ:"your worth adjustments",
+  PLAN_START:"the start date", META:"the arena meta", SKILL_FX:"skill effects", WORTH_ADJ:"your worth adjustments", POWER:"hero power",
   WARBANDS:"warbands", FX_W:"effect weights", TRAIT_W:"reach weights", TREE_W:"talent values",
   TREE_OVERRIDE:"talents set on the Hero Score tab", TREE_SCORE:"talent scores",
   VERS_SCORE:"any-troop scores", META_SCORE:"meta frequency scores", SK_MODE:"the mode you were scoring",
