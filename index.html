@@ -1,5 +1,33 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-09 — A "COMPANY" CARD ON EVERY HERO: THE MAGNITUDES,
+     AND WHO ELSE HAS THEM. The 1-5 scale cannot say how MUCH.
+     Odysseus ignores 50% of a target's DEF and Reinhardt ignores
+     7.2%; both score 5, because 5 is the ceiling and both cleared
+     it. That is the right call for keeping the scoring simple — but
+     it meant the card was hiding the most interesting thing about
+     the hero, that his defence strip is the biggest on the board by
+     a factor of two over the next real contender.
+     So each hero now carries a card that prints, for every measure
+     they actually have: their number in the game's own units, where
+     it ranks across everyone, and the three or four heroes nearest
+     them on it. Payload, defence-down, damage-up, counterattack,
+     mitigation, defence-up; then the yes/no ones — summons, healing,
+     shields — which show how big a club it is and the strongest four
+     in it. Anything a hero leads outright is called out at the top.
+     NONE OF IT SCORES. It is for reading a hero against the ones
+     they compete with, which is a judgement, not a sum.
+     Six heroes lead something: Oda payload, Odysseus defence-down,
+     Petra counterattack, Aelfwine defence-up, Voll damage-up, Vista
+     mitigation. Arthur leads nothing and carries EIGHT measures,
+     which is its own kind of answer to why he is S+.
+     It also made drawSkills FASTER than before the card existed —
+     360ms against 522ms. Ranking the roster per measure per hero is
+     37 x 9 = 333 sorts; the order is the same for everyone and only
+     the reader's place in it changes, so it is worked out once per
+     draw. The naive version cost 225ms; caching it paid that back
+     and more.
+
      2026-09-09 — ODYSSEUS, added as a test of the whole pipeline,
      and it held: one sheet row plus one skills block in
      core-skills.js and a file in portraits/, no code touched. He
@@ -1126,6 +1154,29 @@
   .ttab tr.thead .tv{font-size:13px;color:var(--fg)}
   .ttab tr.thead.gap td{padding-top:9px}
   .ttab tr.tsum td{border-top:1px solid var(--border);padding-top:3px;font-weight:700}
+  /* COMPANY card - magnitudes and who else has them */
+  /* fixed layout, or the peer chips widen the table past the card and push
+     the hero's own number and rank off the right-hand edge */
+  .ctab{table-layout:fixed;width:100%}
+  .ctab .clab{font-size:9px;font-weight:800;letter-spacing:.06em;color:var(--muted);
+    text-transform:uppercase;overflow:hidden;text-overflow:ellipsis}
+  .ctab .cval{text-align:right;font-weight:800;font-size:12px;font-variant-numeric:tabular-nums;
+    white-space:nowrap;padding-left:8px}
+  .ctab .crank{text-align:right;font-size:9px;color:var(--muted);width:64px;padding-left:8px;white-space:nowrap}
+  .ctab .crank.top{color:var(--series-3);font-weight:800}
+  .ctab tr.cmeas td{padding-top:8px;border-top:1px solid var(--border)}
+  .ctab tr.cmeas:first-child td{border-top:0;padding-top:0}
+  .ctab tr.cpeers td{padding:3px 0 1px;white-space:normal;word-break:break-word}
+  .peer{display:inline-block;font-size:9.5px;color:var(--muted);background:var(--surface-2);
+    border:1px solid var(--border);border-radius:999px;padding:1px 7px;margin:2px 4px 0 0;white-space:nowrap}
+  .peer b{color:var(--fg);font-weight:800;font-variant-numeric:tabular-nums}
+  .peer.alone{border-style:dashed;font-style:italic}
+  .peer.more{border:0;background:none;padding-left:0}
+  .cfirst{font-size:8.5px;font-weight:800;letter-spacing:.06em;color:var(--series-3);
+    line-height:1.3;text-align:right;
+    border:1px solid color-mix(in srgb,var(--series-3) 45%,transparent);
+    background:color-mix(in srgb,var(--series-3) 12%,transparent);
+    border-radius:999px;padding:2px 8px}
   .tallynote{margin:8px 0 2px;font-size:9.5px;line-height:1.45;color:var(--muted)}
   .tallynote b{color:var(--fg)}
   .skrate{padding:0 10px 8px;display:flex;flex-direction:column;gap:4px}
@@ -7265,6 +7316,167 @@ percentage of what this hero could carry in ${skMode} (skills + talents
   /* What the game itself says about this hero, before you rate anything. Seven
      markers read off core-skills.js, weighted the way you set them. It never
      touches your scores — where it disagrees with you, that is the point. */
+  /* ============================================================
+     COMPANY — what this hero does that others do, and who else does it
+     ============================================================
+     The 1-5 scale cannot say how MUCH. Odysseus ignores 50% of a
+     target's DEF and Reinhardt ignores 7.2%; both score 5, because 5
+     is the ceiling and both cleared it. That is the right call for
+     keeping the scoring simple, but it means the card was hiding the
+     most interesting fact about a hero — that his defence strip is
+     the biggest on the board by a factor of two.
+     So this card carries the MAGNITUDES, unscored. For every measure
+     a hero actually has, it prints their number, where that ranks
+     across everyone, and the three or four heroes nearest them on it.
+     Nothing here feeds the score. It is for reading a hero against
+     the ones they compete with, which is a judgement, not a sum.
+     ============================================================ */
+  const ordinal = n => {
+    const t = n % 100;
+    if(t >= 11 && t <= 13) return n + "th";
+    return n + (["th","st","nd","rd"][n % 10] || "th");
+  };
+  /* every measurable a hero carries, in the units the game states */
+  function heroMeasures(key){
+    const out = {payload:0, defdown:0, dmgup:0, counter:0, mit:0, defup:0,
+                 heal:false, shield:false, summon:false};
+    ["1","2","3","4","U"].forEach(sl=>{
+      const k = coreSlot(key, sl); if(!k || !k.name) return;
+      const awk = (k.type||"") === "Awakened";
+      const blob = ((k.name||"") + " " + (k.notes||"")).toLowerCase();
+      if(/\b(summons?|summoning)\s+(a|an|\d+|the)\b|resurrects?/.test(blob)) out.summon = true;
+      (k.effects||[]).forEach(e=>{
+        const w = e.what || "";
+        if(/before awakening|after awakening/i.test(w) && !awk) return;
+        const v = mkMax(awk ? (awakenedPref(k.effects, w) || e) : e) || 0;
+        if(/dmg factor|direct dmg/i.test(w)) out.payload = Math.max(out.payload, v);
+        if(e.unit === "%"){
+          if(/ignore .*def|^reduce def by|increase dmg enemies receive/i.test(w)) out.defdown = Math.max(out.defdown, v);
+          if(/increase atk|increase dmg dealt|increase dmg of normal|^skill dmg|critical rate/i.test(w)) out.dmgup = Math.max(out.dmgup, v);
+          if(/reduce dmg .*receive|^reduce dmg by|damage taken reduced|reduce normal attack|reduce at ?k/i.test(w)) out.mit = Math.max(out.mit, v);
+          if(/increase def/i.test(w)) out.defup = Math.max(out.defup, v);
+        }
+        if(/counterattack/i.test(w) && /increase/i.test(w)) out.counter = Math.max(out.counter, v);
+        if(/heal(ing)? factor|heal ratio|siphon|drain/i.test(w)) out.heal = true;
+        if(/shield factor/i.test(w)) out.shield = true;
+      });
+    });
+    return out;
+  }
+  /* Built once per draw, not once per hero: 37 heroes x 5 slots is cheap,
+     doing it 37 times over is not. It lives inside drawSkills on purpose —
+     every full draw gets a fresh one, so there is nothing to invalidate. */
+  let MEASURE_CACHE = null;
+  function allMeasures(){
+    if(MEASURE_CACHE) return MEASURE_CACHE;
+    MEASURE_CACHE = HEROES.map(h=>({key:h.key, n:h.n, t:h.t, m:heroMeasures(h.key)}));
+    return MEASURE_CACHE;
+  }
+  /* The LEAGUE TABLES, built once per draw as well. Sorting the roster for
+     every measure on every hero is 37 heroes x 9 measures = 333 sorts, and
+     it put 225ms on drawSkills. The order is the same for everyone — only
+     the reader's position in it changes — so it is worked out once. */
+  let RANK_CACHE = null;
+  function measureRanks(){
+    if(RANK_CACHE) return RANK_CACHE;
+    const all = allMeasures();
+    RANK_CACHE = {};
+    MEASURES.forEach(M=>{
+      RANK_CACHE[M.id] = all.filter(x=>x.m[M.id]).sort((a,b)=>b.m[M.id] - a.m[M.id]);
+    });
+    FLAGS.forEach(F=>{
+      RANK_CACHE[F.id] = all.filter(x=>x.m[F.id])
+        .sort((a,b)=>tierIndex(a.t)-tierIndex(b.t) || a.n.localeCompare(b.n));
+    });
+    return RANK_CACHE;
+  }
+  const MEASURES = [
+    {id:"payload", label:"PAYLOAD",       unit:"",  fmt:v=>fmtNum(v),
+     tip:"The biggest DMG Factor in the kit, read awakened."},
+    {id:"defdown", label:"DEFENCE DOWN",  unit:"%", fmt:v=>v+"%",
+     tip:"How much of the target's DEF is ignored or stripped. It multiplies everything else the hero lands."},
+    {id:"dmgup",   label:"DAMAGE UP",     unit:"%", fmt:v=>v+"%",
+     tip:"The largest damage or attack buff in the kit."},
+    {id:"counter", label:"COUNTERATTACK", unit:"%", fmt:v=>v+"%",
+     tip:"Counterattack damage increase."},
+    {id:"mit",     label:"MITIGATION",    unit:"%", fmt:v=>v+"%",
+     tip:"Damage reduction taken by the hero or their Troop."},
+    {id:"defup",   label:"DEFENCE UP",    unit:"%", fmt:v=>v+"%",
+     tip:"The largest DEF buff in the kit."}
+  ];
+  const FLAGS = [
+    {id:"summon", label:"SUMMONS",  tip:"Puts an extra unit on the field."},
+    {id:"heal",   label:"HEALING",  tip:"Any healing, drain or conversion in the kit."},
+    {id:"shield", label:"SHIELDS",  tip:"Absorbs damage outright."}
+  ];
+  const companyCard = (h)=>{
+    const all = allMeasures();
+    const me  = all.find(x=>x.key === h.key);
+    if(!me) return "";
+    const rows = [];
+
+    MEASURES.forEach(M=>{
+      const mine = me.m[M.id];
+      if(!mine) return;                                   // they do not do this
+      const have = measureRanks()[M.id];
+      const at   = have.findIndex(x=>x.key === h.key);
+      /* the ones nearest on this measure - two above and two below, so the
+         hero is read in the company they actually keep rather than against
+         the whole board */
+      const from = Math.max(0, at - 2);
+      const near = have.slice(from, from + 5).filter(x=>x.key !== h.key).slice(0, 4);
+      const ord  = ordinal(at + 1);
+      rows.push(`<tr class="cmeas" title="${M.tip}">
+          <td class="clab">${M.label}</td>
+          <td class="cval">${M.fmt(mine)}</td>
+          <td class="crank ${at===0?"top":""}">${ord} of ${have.length}</td>
+        </tr>
+        <tr class="cpeers"><td colspan="3">${
+          near.length ? near.map(x=>`<span class="peer" title="${x.n} — ${x.t}">${x.n} <b>${M.fmt(x.m[M.id])}</b></span>`).join("")
+                      : `<span class="peer alone">nobody else does this</span>`}</td></tr>`);
+    });
+
+    FLAGS.forEach(F=>{
+      if(!me.m[F.id]) return;
+      const have = measureRanks()[F.id];
+      /* no magnitude to sort on, so show the company they keep by tier -
+         the strongest four, since that is what tells you whether the thing
+         is a mark of the top of the board or something everybody has */
+      const others = have.filter(x=>x.key !== h.key);
+      const near = others.slice(0, 4);
+      rows.push(`<tr class="cmeas" title="${F.tip}">
+          <td class="clab">${F.label}</td>
+          <td class="cval">yes</td>
+          <td class="crank">${have.length} of ${all.length}</td>
+        </tr>
+        <tr class="cpeers"><td colspan="3">${
+          near.length ? near.map(x=>`<span class="peer" title="${x.n} — ${x.t}">${x.n}</span>`).join("")
+                        + (others.length > near.length ? `<span class="peer more">+${others.length - near.length} more</span>` : "")
+                      : `<span class="peer alone">nobody else does this</span>`}</td></tr>`);
+    });
+
+    if(!rows.length) return "";
+    /* anything they lead the board on, said plainly at the top */
+    const firsts = MEASURES.filter(M=>{
+      if(!me.m[M.id]) return false;
+      const lead = measureRanks()[M.id][0];
+      return lead && lead.m[M.id] === me.m[M.id];
+    }).map(M=>M.label);
+
+    return `<div class="skcard tally company">
+      <div class="skctop">
+        <span class="skslot">COMPANY</span>
+        <span class="grow"></span>
+        ${firsts.length ? `<span class="cfirst" title="No hero on the board does more of this: ${firsts.join(", ")}.">BEST ON THE BOARD<br>${firsts.join(" · ")}</span>` : ""}
+      </div>
+      <div class="tallybody">
+        <table class="ttab ctab">${rows.join("")}</table>
+        <p class="tallynote">What the hero DOES, in the game's own numbers, and who else does it.
+        None of this scores — the 1-5 scale cannot say how much, only whether. ${h.n} and a hero
+        with a fraction of the same effect both read 5 there. Here they do not.</p>
+      </div>
+    </div>`;
+  };
   const markerCard = (h)=>{
     const slots = ["1","2","3","4","U"];
     const per   = slots.map(sl=>({sl, v:coreSkillValue(h.key, sl)}));
@@ -7475,7 +7687,7 @@ ${rt.outOf} = ${rt.sk.length} skills + 3 talents + meta${h.versatile ? " + any t
 A hero with the Balanced tree has 10 to rate; one without has 9, because there is no any-troop to score.
 The rest sit on defaults, so a low count means the score is still partly a guess.">R ${rt.done}/${rt.outOf}</span>
       </div>
-      <div class="skgrid">${sks.map((sk,si)=>skillBlock(h,sk,si,rt.sk[si])).join("")}${treeCard(h,rt)}${versCard(h)}${metaCard(h)}${tallyCard(h,rt)}${markerCard(h)}</div>
+      <div class="skgrid">${sks.map((sk,si)=>skillBlock(h,sk,si,rt.sk[si])).join("")}${treeCard(h,rt)}${versCard(h)}${metaCard(h)}${tallyCard(h,rt)}${markerCard(h)}${companyCard(h)}</div>
     </section>`;
   }
 ;
