@@ -98,7 +98,7 @@ Wukong       | bers  | cav skill vers    | yes  | p2p   # Wukon
 #   they introduce them. On an existing hero they are ignored, because where
 #   a hero sits is yours to drag.
 Ganglot      | bers  | bers vers skill   | -    | -      | -    | PvP Arena PvE Rally   # trees are PANEL order not wheel order - check on the wheel. Skin, obtain, tier and modes not yet known.
-Odysseus     | axe   | axe hunt skill    | -    | -      | -    | PvP Arena Rally   # trees are PANEL order not wheel order. Troop from Armor Piercer ("consists entirely of Axethrowers"). Skin, obtain, warband and tier not yet known. Slot U never opened.
+Odysseus     | axe   | axe hunt skill    | -    | -      | -    | PvP Arena Rally   # trees are PANEL order not wheel order. Troop from Armor Piercer ("consists entirely of Axethrowers"). All five slots read. Skin, obtain, warband and tier not yet known.
 
 # troop   axe   bers   cav   beast
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
@@ -2327,8 +2327,7 @@ window.CORE_SKILLS = {
     sourceKind: "game",
     owned: false,
     note: "unowned - Recruit showing, Memento 10/10, level 1. Tooltip figures are level 1; the Upgrade Preview line carries the rest.",
-    source: "game screenshots supplied 2026-09-09 (slots 1-4; the fifth icon was not opened)",
-    incomplete: "slot U never opened - no tooltip in the set",
+    source: "game screenshots supplied 2026-09-09 - all five slots",
     skills: {
       "1": {
         name: "Searing Flame Arrow",
@@ -2367,8 +2366,17 @@ window.CORE_SKILLS = {
         ]
       },
       "U": {
-        name: null,
-        missing: "the fifth skill icon was not opened - no tooltip in the set"
+        name: "Crimson Arrow Storm",
+        type: "Awakened",
+        buffs: "Searing Flame Arrow",
+        notes: "Odysseus burns 5% of his current HP to deal DMG to the current target and inflicts Burn, dealing continuous DMG equal to a share of the HP he burned over the next 3 seconds. Awakening raises both the payload and the burn share.",
+        effects: [
+          { what: "DMG Factor before awakening", values: [16250] },
+          { what: "DMG Factor after awakening", values: [18000] },
+          { what: "Blood Burn DMG Ratio before awakening", unit: "%", values: [10] },
+          { what: "Blood Burn DMG Ratio after awakening", unit: "%", values: [20] }
+        ],
+        capture: "the After Awakening paragraph was cut off after 'the HP burned by Odysseus' - both figures are legible, the trailing 'over the next 3 seconds' is assumed from the Before block"
       }
     }
   }
