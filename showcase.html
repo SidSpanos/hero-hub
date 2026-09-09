@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- ===========================================================
+     Hero Hub - showcase page. 2026-09-09.
+     Standalone: open it from the folder or serve it from Pages.
+     It does not touch index.html and the app does not read it.
+     Palette is the app's own talent-wheel brass on verdigris.
+     Every figure on it is real and current at the time of writing:
+     37 heroes, 181 skills, 16 warbands, 18 trifectas, 4 quadfectas.
+     =========================================================== -->
+<title>Hero Hub - Fate War</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ─────────────────────────────────────────────────────────────
+   Palette lifted from the app's own talent wheel, which is drawn
+   in brass on deep verdigris: #c8a24e strokes over #0a2320 and
+   #123a34, with #9dc0ba axis text. The page wears the colours the
+   project already draws in.
+   ───────────────────────────────────────────────────────────── */
+:root{
+  --ink:#11161a;
+  --panel:#181f22;
+  --panel-2:#1e2629;
+  --rule:#2b3639;
+  --rule-soft:#222c2f;
+  --brass:#c8a24e;
+  --brass-dim:#8f7336;
+  --verd:#7fb3a6;
+  --verd-deep:#3d6f64;
+  --text:#e7e4da;
+  --text-2:#a8b0aa;
+  --muted:#7c8781;
+  --hot:#d97b56;
+  --shadow:0 1px 0 rgba(255,255,255,.03) inset;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --ink:#e9ece7;
+    --panel:#f4f6f1;
+    --panel-2:#eceff0;
+    --rule:#ccd4cf;
+    --rule-soft:#dbe1dc;
+    --brass:#8a6a22;
+    --brass-dim:#b09449;
+    --verd:#2f6b5e;
+    --verd-deep:#8ab4a9;
+    --text:#141b1e;
+    --text-2:#3f4b4d;
+    --muted:#6a7672;
+    --hot:#a8482a;
+    --shadow:none;
+  }
+}
+:root[data-theme="light"]{
+  --ink:#e9ece7; --panel:#f4f6f1; --panel-2:#eceff0; --rule:#ccd4cf; --rule-soft:#dbe1dc;
+  --brass:#8a6a22; --brass-dim:#b09449; --verd:#2f6b5e; --verd-deep:#8ab4a9;
+  --text:#141b1e; --text-2:#3f4b4d; --muted:#6a7672; --hot:#a8482a; --shadow:none;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ink);
+  color:var(--text);
+  font:400 16px/1.62 Barlow,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  margin:0;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+h1,h2,h3{text-wrap:balance;margin:0}
+b,strong{font-weight:600;color:var(--text)}
+a{color:var(--brass);text-decoration:none;border-bottom:1px solid var(--brass-dim)}
+a:hover{border-bottom-color:var(--brass)}
+:focus-visible{outline:2px solid var(--brass);outline-offset:3px}
+
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+.eyebrow{
+  font-family:Cinzel,Georgia,serif;font-weight:700;font-size:11px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--brass);margin:0 0 6px
+}
+
+/* ── masthead ─────────────────────────────────────────────── */
+header{border-bottom:1px solid var(--rule);padding:52px 0 0}
+.mark{
+  font-family:Cinzel,Georgia,serif;font-weight:700;
+  font-size:clamp(40px,7.4vw,76px);line-height:.98;letter-spacing:.06em;
+  color:var(--text);margin:0 0 14px;
+}
+.mark span{color:var(--brass)}
+.thesis{
+  font-size:clamp(17px,2.1vw,21px);line-height:1.5;color:var(--text-2);
+  max-width:60ch;font-weight:300;margin:0 0 8px
+}
+.thesis em{font-style:normal;color:var(--text);font-weight:500}
+.sub{color:var(--muted);font-size:13.5px;max-width:62ch;margin:14px 0 34px}
+
+/* ── the figure strip ─────────────────────────────────────── */
+.strip{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));
+  border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+}
+.fig{padding:18px 20px 16px;border-right:1px solid var(--rule-soft)}
+.fig:last-child{border-right:0}
+.fig .n{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+  font-size:30px;font-weight:500;color:var(--brass);line-height:1}
+.fig .l{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-top:7px}
+
+/* ── sections ─────────────────────────────────────────────── */
+section{padding:64px 0;border-bottom:1px solid var(--rule)}
+.h2{font-size:clamp(24px,3.2vw,33px);font-weight:500;letter-spacing:-.01em;line-height:1.15;margin-bottom:14px}
+.lede{color:var(--text-2);max-width:64ch;font-size:16.5px;font-weight:300}
+
+/* ── pipeline: numbered because it genuinely is a sequence ── */
+.pipe{display:grid;gap:0;margin-top:34px;border-top:1px solid var(--rule-soft)}
+.step{
+  display:grid;grid-template-columns:56px 1fr;gap:20px;
+  padding:22px 0;border-bottom:1px solid var(--rule-soft);align-items:start
+}
+.step .no{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;color:var(--brass);
+  border:1px solid var(--brass-dim);border-radius:2px;padding:3px 0;text-align:center;letter-spacing:.06em
+}
+.step h3{font-size:17px;font-weight:600;margin-bottom:5px}
+.step p{margin:0;color:var(--text-2);font-size:14.5px;font-weight:300;max-width:62ch}
+.step code{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--verd)}
+
+/* ── the rule ─────────────────────────────────────────────── */
+.formula{
+  margin-top:30px;border:1px solid var(--rule);background:var(--panel);
+  padding:26px 28px;box-shadow:var(--shadow);overflow-x:auto
+}
+.formula .eq{
+  font-family:"IBM Plex Mono",monospace;font-size:clamp(14px,2vw,19px);
+  white-space:nowrap;letter-spacing:-.01em;color:var(--text)
+}
+.formula .eq .k{color:var(--brass)}
+.formula .eq .o{color:var(--muted)}
+.formula .note{color:var(--muted);font-size:13px;margin:16px 0 0;max-width:66ch}
+.grades{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:0;margin-top:28px;
+  border-top:1px solid var(--rule-soft)}
+.grade{padding:16px 20px 16px 0;border-bottom:1px solid var(--rule-soft)}
+.grade .v{font-family:"IBM Plex Mono",monospace;font-size:22px;font-weight:600;color:var(--verd)}
+.grade .t{font-size:13.5px;color:var(--text-2);margin-top:4px;font-weight:300}
+
+/* ── chart ────────────────────────────────────────────────── */
+.chartbox{margin-top:30px;border:1px solid var(--rule);background:var(--panel);padding:22px 20px 12px;overflow-x:auto}
+.chartbox svg{display:block;width:100%;height:auto;min-width:560px}
+.legend{display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;padding:0 4px 8px;
+  font-size:11.5px;color:var(--muted);letter-spacing:.04em}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+/* ── views table ──────────────────────────────────────────── */
+.views{width:100%;border-collapse:collapse;margin-top:30px;font-size:14.5px}
+.views th{
+  text-align:left;font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  padding:0 14px 9px 0;border-bottom:1px solid var(--rule)
+}
+.views td{padding:14px 14px 14px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.views td:first-child{
+  font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--brass);
+  white-space:nowrap;font-size:13.5px
+}
+.views td:last-child{color:var(--text-2);font-weight:300}
+
+/* ── gaps ─────────────────────────────────────────────────── */
+.gaps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;
+  margin-top:30px;background:var(--rule-soft);border:1px solid var(--rule-soft)}
+.gap{background:var(--ink);padding:20px}
+.gap h3{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--hot);margin-bottom:8px}
+.gap p{margin:0;font-size:14px;color:var(--text-2);font-weight:300}
+
+/* ── footer ───────────────────────────────────────────────── */
+footer{padding:44px 0 64px;color:var(--muted);font-size:13.5px}
+footer .fl{display:flex;gap:26px;flex-wrap:wrap;align-items:baseline}
+footer .mono{color:var(--text-2)}
+
+@media (max-width:640px){
+  .wrap{padding:0 18px}
+  section{padding:46px 0}
+  .step{grid-template-columns:40px 1fr;gap:14px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1 class="mark">HERO<span>·</span>HUB</h1>
+    <p class="thesis">A reading instrument for <em>Fate War</em>. Thirty-seven heroes, every skill
+      transcribed off the game screen, and a scoring rule simple enough to argue with.</p>
+    <p class="sub">One HTML file. It opens from a double-click or from a web address, keeps your edits
+      in your browser, and never asks the internet for anything.</p>
+  </div>
+  <div class="wrap">
+    <div class="strip">
+      <div class="fig"><div class="n">37</div><div class="l">heroes</div></div>
+      <div class="fig"><div class="n">181</div><div class="l">skills read</div></div>
+      <div class="fig"><div class="n">16</div><div class="l">warbands</div></div>
+      <div class="fig"><div class="n">9</div><div class="l">views</div></div>
+      <div class="fig"><div class="n">1</div><div class="l">file</div></div>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">The record</p>
+    <h2 class="h2">Nothing here is guessed at</h2>
+    <p class="lede">Every number comes off a screenshot of the game and lands in one file that the
+      whole app reads from. When a figure is missing, the card says so rather than filling the hole.</p>
+
+    <div class="pipe">
+      <div class="step">
+        <div class="no">01</div>
+        <div>
+          <h3>Shoot the tooltip</h3>
+          <p>Each hero has five slots — four skills and an awakened ultimate. Every tooltip carries a
+            DMG&nbsp;Factor, an upgrade preview across five levels, and the conditions it fires under.
+            Ninety-three screenshots started this; new heroes arrive the same way.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="no">02</div>
+        <div>
+          <h3>Transcribe into the sheet</h3>
+          <p>One block per hero in <code>core-skills.js</code> — the authority. It holds both halves:
+            a hand-kept table of troop, talents, skin and warband, and every skill's effect lines with
+            all five upgrade values. Two files used to claim to know a hero's talents; they disagreed
+            on 31 rows of 35 before anyone noticed. Now there is one.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="no">03</div>
+        <div>
+          <h3>The app reads, and places</h3>
+          <p>Add a hero to that file and they appear on all nine views, score themselves, and drop into
+            the tier their score earns. Drop <code>portraits/Ganglot.png</code> in a folder and they have
+            a face. No code is edited to add a hero.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">The rule</p>
+    <h2 class="h2">Every skill scores at least 3</h2>
+    <p class="lede">The good ones score 4, the ones that decide a fight score 5 — then skin and meta on
+      top. That is the whole model. It reads the skills and disagrees with the tier board where it
+      disagrees, which is the point of having it.</p>
+
+    <div class="formula">
+      <div class="eq mono"><span class="k">WORTH</span> <span class="o">=</span> five skills <span class="o">(</span>1–5 each<span class="o">)</span>
+        <span class="o">+</span> skin <span class="o">(</span>5<span class="o">)</span>
+        <span class="o">+</span> meta <span class="o">(</span>0–5<span class="o">)</span>
+        <span class="o">+</span> your call <span class="o">(</span>±<span class="o">)</span></div>
+      <p class="note">Everyone is sorted by it and the tiers fill in the sizes the board already uses,
+        so the best score always lands in the best tier. A tie goes to the better kit — the five skills
+        alone, before skin or meta — because those are things <em>about</em> a hero and the skills are
+        the hero.</p>
+    </div>
+
+    <div class="grades">
+      <div class="grade">
+        <div class="v mono">5</div>
+        <div class="t">How the hero kills. A payload of 8,000+, a summon, or defence-down.</div>
+      </div>
+      <div class="grade">
+        <div class="v mono">4</div>
+        <div class="t">A real multiplier or real sustain. Damage-up 15%+, counterattack 10%+, healing, mitigation 10%+.</div>
+      </div>
+      <div class="grade">
+        <div class="v mono">3</div>
+        <div class="t">It does something, but it is small. A 3 has not been missed — it has been weighed.</div>
+      </div>
+      <div class="grade">
+        <div class="v mono">+1</div>
+        <div class="t">Each skill inside a trifecta. Three of a side is a trifecta, four a quadfecta — 18 heroes hold one, 4 hold the larger.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">A finding</p>
+    <h2 class="h2">Hit hard, or strip armour. Almost nobody does both</h2>
+    <p class="lede">Payload against defence ignored, every hero plotted. The two multiply — a big hit
+      into stripped armour lands for far more than the same hit into a full set — so the top-right
+      corner is where a hero would want to be. It is empty except for one.</p>
+
+    <div class="chartbox">
+      <svg id="scatter" viewBox="0 0 880 430" role="img"
+           aria-label="Scatter chart of hero payload against percentage of enemy defence ignored. Most heroes sit on the zero line for defence; Odysseus alone combines a large payload with a 50 percent defence strip.">
+      </svg>
+      <div class="legend">
+        <span><i style="background:#c8a24e"></i>S+ and S</span>
+        <span><i style="background:#7fb3a6"></i>A</span>
+        <span><i style="background:#7c8781"></i>B, C and D</span>
+        <span>Read at max level, awakened.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Nine ways in</p>
+    <h2 class="h2">The same data, asked different questions</h2>
+    <table class="views">
+      <thead><tr><th>View</th><th>What it answers</th></tr></thead>
+      <tbody>
+        <tr><td>Tier board</td><td>Where everyone sits. Drag to move a hero; one you have never placed follows their score until you do.</td></tr>
+        <tr><td>Hero Score</td><td>Every slot, every effect line, and the pips where you overrule the reading. Also carries WORTH, POWER and COMPANY.</td></tr>
+        <tr><td>Versus</td><td>Two heroes, every number facing each other, with the gap as a percentage on whoever leads.</td></tr>
+        <tr><td>Radar</td><td>Three heroes at once across six modes — the shape of a kit rather than its size.</td></tr>
+        <tr><td>Pairings</td><td>Who answers whom, and which of your heroes covers the gap.</td></tr>
+        <tr><td>Arena</td><td>Enemy lineups you keep meeting, tallied, with a proposed answer.</td></tr>
+        <tr><td>Timeline</td><td>Fortnightly windows — what to level next and when.</td></tr>
+        <tr><td>Roster</td><td>The editing grid. Names, tiers, troops, talents, power, ownership.</td></tr>
+        <tr><td>New hero</td><td>Everything the app needs about a hero, and the exact lines to paste.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Kept honest</p>
+    <h2 class="h2">What it does not know</h2>
+    <p class="lede">A card that pretends is worse than a card that admits. These are on the face of the
+      app, not buried in a comment.</p>
+    <div class="gaps">
+      <div class="gap">
+        <h3>Unread slots</h3>
+        <p>A hero whose tooltip was never opened scores nothing for it and the card says <em>unread</em>.
+          Baldur sits on 8 because four of his five have never been shot — not because his kit is poor.</p>
+      </div>
+      <div class="gap">
+        <h3>Blank is not zero</h3>
+        <p>Power is recorded only at level 60 and 6 stars, so it is one yardstick. A hero short of that
+          stays blank, and the card counts how many of the 37 are actually in.</p>
+      </div>
+      <div class="gap">
+        <h3>A ceiling, not a scale</h3>
+        <p>Ignoring 50% of a target's defence and ignoring 7% both score 5, because 5 is the top. The
+          COMPANY card prints the real magnitudes beside the score, where the scale cannot reach.</p>
+      </div>
+      <div class="gap">
+        <h3>Not everything is read</h3>
+        <p>67 of the 181 skills carry effects no marker looks at — rage, movement, proc chances — and
+          fall to 3 by design. The model reads a short list of things that decide fights.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="fl">
+      <span class="mono">Hero Hub</span>
+      <span>Built for one player's board, and it argues back.</span>
+      <span class="mono">37 heroes · 181 skills · 1 file</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* Real figures from the app: payload read awakened, and the largest
+   percentage of enemy DEF each hero ignores or strips. */
+const DATA = [
+["Arthur","S+",13000,10],["Farhad","S+",12500,0],["Freyja","S+",10500,20],["Erin","S+",8000,24],
+["Oda Nobunaga","S+",19000,0],["Joan","S+",14000,0],["Yi Sun-sin","S+",14000,0],
+["Amaterasu","S",14000,10],["Aska","S",15000,0],["Roro","S",14000,4],["Wukon","S",16000,0],
+["Karl","A",12500,0],["Helda","A",13200,0],["Morgan Lefe","A",16400,10],["Petra","A",17000,0],
+["Reinhardt","A",9500,24],["Sylvan","A",15500,15],["Ganglot","A",14000,0],["Odysseus","A",18000,50],
+["Reid","A",0,0],
+["Baldur","B",11500,0],["Voll","B",6000,0],["Aelfwine","B",8400,0],["Iris","B",0,0],
+["Kaira","B",11500,0],["Kiana","B",5800,0],["Kalthas","B",9000,48],["Sara","B",4600,0],
+["Selena","B",7800,0],["Reynald","B",5040,0],
+["Linda","C",4000,0],["Rex","C",0,0],["Vista","C",0,0],
+["Elena","D",4200,0],["Elia","D",0,0],["Skerne","D",4200,0],["Sigrid","D",0,0]
+];
+/* labels only where the point carries the argument */
+const CALL = {"Odysseus":[-13,-11],"Kalthas":[11,-12],"Oda Nobunaga":[-7,-15],"Erin":[-9,-13],
+              "Reinhardt":[-9,17],"Freyja":[11,5],"Sylvan":[12,-11]};
+
+const W=880,H=430, L=58, R=22, T=22, B=48;
+const x0=L, x1=W-R, y0=H-B, y1=T;
+const XMAX=20000, YMAX=52;
+const px = v => x0 + (v/XMAX)*(x1-x0);
+const py = v => y0 - (v/YMAX)*(y0-y1);
+const col = t => (t==="S+"||t==="S") ? "#c8a24e" : t==="A" ? "#7fb3a6" : "#7c8781";
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+
+let s = "";
+/* grid + axes, drawn to the same scale the marks use */
+for(let v=0; v<=YMAX-2; v+=10){
+  s += `<line x1="${x0}" y1="${py(v).toFixed(1)}" x2="${x1}" y2="${py(v).toFixed(1)}"
+        stroke="var(--rule-soft)" stroke-width="1"/>`;
+  s += `<text x="${x0-10}" y="${(py(v)+4).toFixed(1)}" text-anchor="end" fill="var(--muted)"
+        font-family="IBM Plex Mono, monospace" font-size="11">${v}%</text>`;
+}
+for(let v=0; v<=XMAX; v+=5000){
+  s += `<text x="${px(v).toFixed(1)}" y="${y0+22}" text-anchor="middle" fill="var(--muted)"
+        font-family="IBM Plex Mono, monospace" font-size="11">${v ? (v/1000)+"k" : "0"}</text>`;
+}
+s += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y0}" stroke="var(--rule)" stroke-width="1"/>`;
+s += `<text x="${x1}" y="${y0+40}" text-anchor="end" fill="var(--muted)"
+      font-family="IBM Plex Mono, monospace" font-size="10.5" letter-spacing="1.4">PAYLOAD - DMG FACTOR AT MAX</text>`;
+s += `<text x="${x0}" y="${y1-6}" text-anchor="start" fill="var(--muted)"
+      font-family="IBM Plex Mono, monospace" font-size="10.5" letter-spacing="1.4">DEF IGNORED</text>`;
+
+/* the empty quadrant, named */
+s += `<rect x="${px(15500).toFixed(1)}" y="${py(YMAX).toFixed(1)}"
+      width="${(x1-px(15500)).toFixed(1)}" height="${(py(28)-py(YMAX)).toFixed(1)}"
+      fill="none" stroke="var(--verd-deep)" stroke-width="1" stroke-dasharray="3 4"/>`;
+s += `<text x="${(px(15500)+9).toFixed(1)}" y="${(py(28)-9).toFixed(1)}" fill="var(--verd-deep)"
+      font-family="IBM Plex Mono, monospace" font-size="10.5" letter-spacing="1.2">BIG HIT + BIG STRIP</text>`;
+
+DATA.forEach(([n,t,d,dd])=>{
+  const cx = px(d), cy = py(dd);
+  const c = col(t);
+  const big = n === "Odysseus";
+  s += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${big?7:4.5}"
+        fill="${big ? c : "none"}" stroke="${c}" stroke-width="${big?2:1.6}"
+        opacity="${dd||d ? 1 : .45}"><title>${esc(n)} — ${t} · payload ${d.toLocaleString()} · ignores ${dd}% DEF</title></circle>`;
+  const off = CALL[n];
+  if(off){
+    s += `<text x="${(cx+off[0]).toFixed(1)}" y="${(cy+off[1]).toFixed(1)}"
+          text-anchor="${off[0]<0?"end":"start"}" fill="${big?c:"var(--text-2)"}"
+          font-family="IBM Plex Mono, monospace" font-size="${big?12.5:11}"
+          font-weight="${big?600:400}">${esc(n)}</text>`;
+  }
+});
+document.getElementById("scatter").innerHTML = s;
+</script>
+</body>
+</html>
