@@ -98,6 +98,7 @@ Wukong       | bers  | cav skill vers    | yes  | p2p   # Wukon
 #   they introduce them. On an existing hero they are ignored, because where
 #   a hero sits is yours to drag.
 Ganglot      | bers  | bers vers skill   | -    | -      | -    | PvP Arena PvE Rally   # trees are PANEL order not wheel order - check on the wheel. Skin, obtain, tier and modes not yet known.
+Odysseus     | axe   | axe hunt skill    | -    | -      | -    | PvP Arena Rally   # trees are PANEL order not wheel order. Troop from Armor Piercer ("consists entirely of Axethrowers"). Skin, obtain, warband and tier not yet known. Slot U never opened.
 
 # troop   axe   bers   cav   beast
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
@@ -2312,6 +2313,62 @@ window.CORE_SKILLS = {
           { what: "DMG Factor after awakening", values: [16000] },
           { what: "Increase ATK by", unit: "%", values: [20], note: "same before and after awakening, 5s" }
         ]
+      }
+    }
+  },
+
+  "Odysseus": {
+    name: "Odysseus",
+    title: "The Voyager",
+    warband: "",
+    warbandNote: "not in the shots supplied - the line above his name reads 'The Voyager', an epithet, where Ganglot's read 'Oath of Decay', a warband. Left unset rather than guessed.",
+    basePower: null,
+    rarity: "S",
+    sourceKind: "game",
+    owned: false,
+    note: "unowned - Recruit showing, Memento 10/10, level 1. Tooltip figures are level 1; the Upgrade Preview line carries the rest.",
+    source: "game screenshots supplied 2026-09-09 (slots 1-4; the fifth icon was not opened)",
+    incomplete: "slot U never opened - no tooltip in the set",
+    skills: {
+      "1": {
+        name: "Searing Flame Arrow",
+        type: "Burst",
+        rageCost: 1000,
+        notes: "Rage gain limit per round 160. Odysseus burns 5% of his current HP to deal DMG to the current target and inflicts Burn, dealing continuous DMG equal to a share of the HP he burned, over the next 3 seconds. Single target.",
+        effects: [
+          { what: "DMG Factor", values: [4875, 6500, 8125, 11375, 16250] },
+          { what: "Blood Burn DMG Ratio", unit: "%", values: [3, 4, 5, 7, 10], note: "share of the HP Odysseus burned, dealt to the target over 3s" },
+          { what: "own HP burned to fire it", unit: "%", values: [5], note: "fixed - a cost, not a gain" }
+        ]
+      },
+      "2": {
+        name: "Scorching Resolve",
+        type: "Passive",
+        notes: "for every 10% of Max HP lost, lasts 5 seconds and stacks up to 3 times - so at full stacks it is three times the listed figures",
+        effects: [
+          { what: "Increase DMG dealt by", unit: "%", values: [1.1, 1.4, 1.8, 2.5, 3.5] },
+          { what: "Rage Recovery Speed", unit: "%", values: [3, 4, 5, 7, 10] }
+        ]
+      },
+      "3": {
+        name: "Armor Piercer",
+        type: "Passive",
+        notes: "requires a Troop of Axethrowers only",
+        effects: [
+          { what: "Ignore target's DEF", unit: "%", values: [10, 20, 25, 35, 50] }
+        ]
+      },
+      "4": {
+        name: "Bloodflame Recovery",
+        type: "Passive",
+        notes: "for every 15% of Max HP lost, Odysseus gains First Aid, healing a share of his Max HP every second for 3 seconds. Can only trigger once every 8 seconds.",
+        effects: [
+          { what: "Heal Ratio", unit: "%", values: [1, 1.2, 1.5, 2.1, 3], note: "of Max HP, per second, for 3 seconds" }
+        ]
+      },
+      "U": {
+        name: null,
+        missing: "the fifth skill icon was not opened - no tooltip in the set"
       }
     }
   }
