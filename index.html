@@ -1,5 +1,30 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-12 — SEVEN S+ HEROES, SEVEN DIFFERENT REASONS. The
+     Odysseus finding asked one question of the whole board. This one
+     asks the same eight questions of everyone in the TOP TIER and
+     puts the answers side by side, each bar drawn as a fraction of
+     the board's best at that measure — so the shapes compare without
+     anyone having to read the numbers.
+     They do not rhyme. ODA is a spike: the biggest payload on the
+     board and almost nothing else. ARTHUR is the opposite — eight
+     kinds of effect, more than anyone, and not the biggest at any of
+     them, which is breadth and is why a per-measure model never
+     explained him. FREYJA is third for counterattack and summons.
+     ERIN is third for defence-down on a payload that ranks 23rd of
+     31. JOAN and YI SUN-SIN are solid and nowhere first.
+     And FARHAD is the honest anomaly, called out in amber: two kinds
+     of effect, nothing in the top third of anything, and the score
+     cannot explain why the board has him S+. That card is the most
+     useful one on the page. A model that never disagrees with the
+     board is not telling you anything.
+     Read whatever tier sits at the top and whoever is in it — move a
+     hero into S+ and their profile appears beside the others.
+     The verdict line names the measure a hero actually places on,
+     with its rank. A first cut counted their kinds of effect instead
+     and four of the seven cards came out word for word identical,
+     which is true and useless.
+
      2026-09-09 — AN OVERVIEW TAB, LAST IN THE ROW. The project read
      as an intelligence board: what it holds, how the scoring works,
      the whole roster ranked with their faces, and the four things
@@ -1424,6 +1449,40 @@
     box-shadow:0 0 0 1px color-mix(in srgb,var(--ov-cy) 35%,transparent),
                0 0 22px -6px color-mix(in srgb,var(--ov-cy) 60%,transparent);z-index:3}
 
+
+  /* profiles: one column per top-tier hero, the same eight bars each, so the
+     SHAPES compare at a glance rather than the numbers having to be read */
+  #viewOverview .ovprof{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:8px;margin-top:26px}
+  #viewOverview .ovpc{border:1px solid var(--ov-edge);background:var(--ov-panel);padding:12px 12px 10px}
+  #viewOverview .ovpc.flat{border-color:var(--ov-amber)}
+  #viewOverview .ovph{display:flex;gap:8px;align-items:center;margin-bottom:9px}
+  #viewOverview .ovph img{width:30px;aspect-ratio:5/8;object-fit:cover;display:block;
+    border:1px solid var(--ov-edge2)}
+  #viewOverview .ovph{min-height:42px}
+  #viewOverview .ovph .nm{font-family:var(--ov-disp);font-weight:700;font-size:13.5px;
+    text-transform:uppercase;line-height:1.05;color:var(--ov-tx)}
+  #viewOverview .ovflags{min-height:32px;align-content:flex-start}
+  #viewOverview .ovph .kt{font-family:var(--ov-mono);font-size:9.5px;color:var(--ov-dim)}
+  #viewOverview .ovbar{display:grid;grid-template-columns:52px 1fr;gap:6px;align-items:center;
+    margin-bottom:3px}
+  #viewOverview .ovbar .bl{font-family:var(--ov-mono);font-size:8px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ov-dim);text-align:right}
+  #viewOverview .ovbar .bt{height:7px;background:color-mix(in srgb,var(--ov-edge) 70%,transparent);
+    position:relative;overflow:hidden}
+  #viewOverview .ovbar .bf{position:absolute;inset:0 auto 0 0;background:var(--ov-cy2)}
+  #viewOverview .ovbar.top .bf{background:var(--ov-cy);
+    box-shadow:0 0 10px -1px color-mix(in srgb,var(--ov-cy) 70%,transparent)}
+  #viewOverview .ovbar.top .bl{color:var(--ov-cy)}
+  #viewOverview .ovflags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+  #viewOverview .ovflag{font-family:var(--ov-mono);font-size:8px;letter-spacing:.08em;
+    border:1px solid var(--ov-edge2);padding:1px 5px;color:var(--ov-dim)}
+  #viewOverview .ovflag.on{border-color:var(--ov-cy2);color:var(--ov-cy);
+    background:color-mix(in srgb,var(--ov-cy) 10%,transparent)}
+  #viewOverview .ovverd{font-size:11.5px;color:var(--ov-tx2);margin:9px 0 0;line-height:1.4;
+    border-top:1px solid var(--ov-edge);padding-top:8px}
+  #viewOverview .ovverd b{color:var(--ov-tx)}
+  #viewOverview .ovpc.flat .ovverd b{color:var(--ov-amber)}
   #viewOverview .ovgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
     gap:9px;margin-top:26px}
   #viewOverview .ovcard{border:1px solid var(--ov-edge);padding:14px 16px;background:var(--ov-panel)}
@@ -6540,6 +6599,74 @@ function drawOverview(){
     </div>`;
   }).join("");
 
+  /* ------------------------------------------------------------------
+     TOP-TIER PROFILES — the same eight measures for every hero in the
+     best tier, each bar drawn as a fraction of the BOARD'S BEST at that
+     measure. That makes the shapes directly comparable: a full bar means
+     nobody does more of it. Read the seven side by side and the finding
+     is plain — a spike, a wide low fan and a flat card are three
+     different ways to be S+.
+     Nothing is hand-written: it reads whatever tier sits at the top and
+     whoever is in it. ------------------------------------------------ */
+  const BARS = [["payload","PAYLOAD"],["defdown","DEF DOWN"],["dmgup","DMG UP"],
+                ["counter","COUNTER"],["mit","MITIG"],["defup","DEF UP"]];
+  const FLAGS = [["summon","SUMMON"],["heal","HEAL"],["shield","SHIELD"]];
+  const allM = HEROES.map(h=>({h, m:vsMeasures(h.key)}));
+  const MAXM = {};
+  BARS.forEach(([id])=> MAXM[id] = Math.max(1, ...allM.map(x=>x.m[id])));
+  const topTier = TIERS.find(t=>HEROES.some(h=>h.t===t.k));
+  const topList = topTier ? allM.filter(x=>x.h.t === topTier.k) : [];
+  /* how many of the eight a hero registers at all - the breadth number */
+  const kindsOf = x => BARS.filter(([id])=>x.m[id]).length + FLAGS.filter(([id])=>x.m[id]).length;
+  const profHTML = topList.map(x=>{
+    const h = x.h, kinds = kindsOf(x);
+    const leads = BARS.filter(([id])=> x.m[id] && x.m[id] === MAXM[id]).map(([,l])=>l);
+    const flat  = kinds <= 2;
+    const bars = BARS.map(([id,label])=>{
+      const v = x.m[id], pct = v ? Math.max(4, Math.round(v/MAXM[id]*100)) : 0;
+      const top = v && v === MAXM[id];
+      return `<div class="ovbar ${top?"top":""}" title="${label}: ${v ? (id==="payload"?fmtNum(v):v+"%") : "none"}${
+        top ? " — best on the board" : MAXM[id] ? ` · board best ${id==="payload"?fmtNum(MAXM[id]):MAXM[id]+"%"}` : ""}">
+        <span class="bl">${label}</span>
+        <span class="bt"><span class="bf" style="width:${pct}%"></span></span></div>`;
+    }).join("");
+    const flags = FLAGS.map(([id,l])=>`<span class="ovflag ${x.m[id]?"on":""}">${l}</span>`).join("");
+    /* where they place on each measure they actually have, best first - so the
+       verdict can say WHAT they are good at rather than just how many things
+       they do, which four of the seven would otherwise share word for word */
+    const placed = BARS.filter(([id])=>x.m[id]).map(([id,label])=>{
+      const have = allM.filter(y=>y.m[id]).sort((a,b)=>b.m[id]-a.m[id]);
+      return {label, at: have.findIndex(y=>y.h.key===h.key)+1, of: have.length};
+    }).sort((a,b)=>a.at-b.at);
+    const ord = n => n + (["th","st","nd","rd"][(n%100>=11&&n%100<=13) ? 0 : (n%10)] || "th");
+    const flagsOn = FLAGS.filter(([id])=>x.m[id]).map(([,l])=>l.toLowerCase());
+    const best = placed[0];
+    let verd;
+    if(flat)
+      verd = `<b>Nothing stands out.</b> ${kinds} kinds of effect and nothing in the top third — the score cannot explain this one.`;
+    else if(leads.length)
+      verd = `<b>Best on the board</b> for ${leads.join(" and ").toLowerCase()}${
+        flagsOn.length ? `, and ${flagsOn.join(" + ")}` : ""}.`;
+    else if(kinds >= 6)
+      verd = `<b>Breadth.</b> ${kinds} kinds of effect, more than anyone — and not the biggest at any of them.`;
+    else if(best && best.at <= 3)
+      verd = `<b>${ord(best.at)} ${best.label.toLowerCase()}</b> on the board${
+        flagsOn.length ? `, plus ${flagsOn.join(" + ")}` : ""}. No single number leading.`;
+    else if(flagsOn.length)
+      verd = `<b>${flagsOn.join(" + ")}</b>, and ${best ? `${ord(best.at)} of ${best.of} for ${best.label.toLowerCase()}` : "little else"}.`;
+    else
+      verd = `<b>${best ? ord(best.at)+" for "+best.label.toLowerCase() : "Nothing"}</b> and ${kinds} kinds of effect — solid, nowhere first.`;
+    return `<div class="ovpc ${flat?"flat":""}">
+      <div class="ovph">
+        ${portraitOf(h)?`<img src="${portraitOf(h)}" alt="">`:""}
+        <div><div class="nm">${esc(h.n)}</div><div class="kt">KIT ${kitOf(h)||"?"} · ${kinds} KINDS</div></div>
+      </div>
+      ${bars}
+      <div class="ovflags">${flags}</div>
+      <p class="ovverd">${verd}</p>
+    </div>`;
+  }).join("");
+
   /* the scatter, off the live numbers */
   const pts = HEROES.map(h=>{
     let dmg=0, dd=0;
@@ -6655,13 +6782,23 @@ function drawOverview(){
     </div></div>
 
     <div class="ovsec alt"><div class="ovwrap">
+      <div class="ovkick">The same question, seven times</div>
+      <h3 class="ovh2">${topList.length} ${topTier?topTier.k:""} heroes, ${topList.length} different reasons</h3>
+      <p class="ovlede">The same eight measures for everyone at the top, each bar drawn as a fraction
+        of the best on the board. Read the shapes rather than the numbers: <b>a spike, a wide low fan
+        and a flat card are three different ways to be ${topTier?topTier.k:"top"}</b> — and the last of
+        those is one the score cannot account for.</p>
+      <div class="ovprof">${profHTML}</div>
+    </div></div>
+
+    <div class="ovsec"><div class="ovwrap">
       <div class="ovkick">Nine ways in</div>
       <h3 class="ovh2">Same data, different questions</h3>
       <div class="ovgrid">${VIEWS.map(([t,d])=>`
         <div class="ovcard"><h4>${t}</h4><p>${d}</p></div>`).join("")}</div>
     </div></div>
 
-    <div class="ovsec"><div class="ovwrap">
+    <div class="ovsec alt"><div class="ovwrap">
       <div class="ovkick">Kept honest</div>
       <h3 class="ovh2">What it admits</h3>
       <p class="ovlede">A card that pretends is worse than a card that owns up. All of these are on
