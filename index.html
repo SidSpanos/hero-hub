@@ -1,5 +1,30 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-12 — THE FINDING NOW ROTATES. One hero at a time, the
+     chart re-aimed at what THEY do. Payload stays on the horizontal
+     every turn, because 31 of the 37 have one and it is the axis
+     anybody can be read against; the VERTICAL is chosen per hero —
+     whichever measure they place highest on — so the chart always
+     points at the thing that hero is actually good at. A crosshair
+     drops onto the featured point.
+     Who gets a turn: the top tier, PLUS anyone who leads the board
+     at something outright. That is how Odysseus keeps his slot at A,
+     and it brings in Petra (counterattack 50%), Voll (damage-up
+     100%), Aelfwine (defence-up 48%) and Vista (mitigation 60%) —
+     four heroes whose whole case is one number nobody else gets
+     near. Twelve in the cast, all computed.
+     It advances on its own every 7 seconds, because "a different
+     hero" was the ask — but content that moves while you are reading
+     it is a nuisance, so the FIRST interaction stops it for good:
+     click a chip, or just put the pointer on the panel, and it
+     holds, with the label saying so. Anyone who has asked their
+     system not to animate never gets a moving one. Leaving the tab
+     clears the timer; it has no business ticking on another view.
+     The verdict weighs BOTH axes. A first cut read only the vertical
+     and told Oda Nobunaga his case was thin — the man with the
+     biggest payload on the board.
+     The seven S+ profiles stay exactly where they were, underneath.
+
      2026-09-12 — SEVEN S+ HEROES, SEVEN DIFFERENT REASONS. The
      Odysseus finding asked one question of the whole board. This one
      asks the same eight questions of everyone in the TOP TIER and
@@ -1452,6 +1477,23 @@
 
   /* profiles: one column per top-tier hero, the same eight bars each, so the
      SHAPES compare at a glance rather than the numbers having to be read */
+
+  /* the spotlight: one hero at a time, the chart re-aimed at what THEY do */
+  #viewOverview .ovpick{display:flex;gap:6px;flex-wrap:wrap;margin-top:18px}
+  #viewOverview .ovchip{display:flex;gap:6px;align-items:center;cursor:pointer;padding:4px 9px 4px 4px;
+    border:1px solid var(--ov-edge);background:var(--ov-panel);color:var(--ov-tx2);
+    font-family:var(--ov-disp);font-weight:600;font-size:11.5px;letter-spacing:.08em;
+    text-transform:uppercase;transition:border-color .15s,color .15s}
+  #viewOverview .ovchip img{width:20px;aspect-ratio:5/8;object-fit:cover;display:block}
+  #viewOverview .ovchip:hover{border-color:var(--ov-cy2);color:var(--ov-tx)}
+  #viewOverview .ovchip[aria-pressed="true"]{border-color:var(--ov-cy);color:var(--ov-cy);
+    background:color-mix(in srgb,var(--ov-cy) 10%,transparent)}
+  #viewOverview .ovrot{font-family:var(--ov-mono);font-size:9.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ov-dim);align-self:center;margin-left:4px}
+  #viewOverview .ovspot{margin-top:14px}
+  #viewOverview .ovspotline{font-size:15px;color:var(--ov-tx2);margin:0 0 12px;max-width:64ch;min-height:44px}
+  #viewOverview .ovspotline b{color:var(--ov-tx);font-weight:600}
+  #viewOverview .ovspotline .au{color:var(--ov-cy);font-weight:600}
   #viewOverview .ovprof{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
     gap:8px;margin-top:26px}
   #viewOverview .ovpc{border:1px solid var(--ov-edge);background:var(--ov-panel);padding:12px 12px 10px}
@@ -6309,6 +6351,7 @@ function heroChanged(key){
    two cards in your head.
    ============================================================ */
 let vsA = "", vsB = "";
+let ovSpot = 0, ovTimer = null;
 /* the ⚔ button, wherever a hero is drawn. First press fills the left
    side, second fills the right, and after that each press pushes the
    old right-hand hero left — so hammering it walks a challenger down
@@ -6667,46 +6710,110 @@ function drawOverview(){
     </div>`;
   }).join("");
 
-  /* the scatter, off the live numbers */
-  const pts = HEROES.map(h=>{
-    let dmg=0, dd=0;
-    ["1","2","3","4","U"].forEach(sl=>{
-      const k = coreSlot(h.key, sl); if(!k || !k.name) return;
-      const awk = (k.type||"") === "Awakened";
-      (k.effects||[]).forEach(e=>{
-        const w = e.what || "";
-        if(/before awakening/i.test(w) && !awk) return;
-        const v = mkMax(awk ? (awakenedPref(k.effects,w)||e) : e) || 0;
-        if(/dmg factor|direct dmg/i.test(w)) dmg = Math.max(dmg, v);
-        if(e.unit === "%" && /ignore .*def|^reduce def by|increase dmg enemies receive/i.test(w)) dd = Math.max(dd, v);
-      });
-    });
-    return {n:h.n, t:h.t, dmg, dd};
-  });
-  const XMAX = Math.max(20000, ...pts.map(p=>p.dmg));
-  const YMAX = Math.max(52, ...pts.map(p=>p.dd) ) + 2;
-  const W=860,H=380,L=54,R=18,T=26,BB=44;
-  const x0=L,x1=W-R,y0=H-BB,y1=T;
-  const px = v => x0 + (v/XMAX)*(x1-x0), py = v => y0 - (v/YMAX)*(y0-y1);
-  const cl = t => (t==="S+"||t==="S") ? "#5fe3d8" : t==="A" ? "#7fd4c8" : "#5d777d";
-  const best = pts.reduce((a,b)=> (b.dd>a.dd || (b.dd===a.dd && b.dmg>a.dmg)) ? b : a, pts[0]);
-  let g = "";
-  for(let v=0; v<=YMAX-2; v+=10){
-    g += `<line x1="${x0}" y1="${py(v).toFixed(1)}" x2="${x1}" y2="${py(v).toFixed(1)}" stroke="var(--ov-edge)"/>`;
-    g += `<text x="${x0-9}" y="${(py(v)+4).toFixed(1)}" text-anchor="end" fill="var(--ov-dim)" font-family="ui-monospace,monospace" font-size="10.5">${v}%</text>`;
+  /* ------------------------------------------------------------------
+     THE SPOTLIGHT — the same chart, re-aimed at one hero at a time.
+     Payload is always the horizontal, because 31 of the 37 have one and
+     it is the axis everybody can be read against. The VERTICAL is
+     chosen per hero: whichever measure they place highest on, so the
+     chart is always pointed at the thing that hero is actually good at.
+     Rotates through the top tier plus anyone who leads the board at
+     something outright — which is how Odysseus stays in it at A.
+     ------------------------------------------------------------------ */
+  const AX = {payload:"PAYLOAD", defdown:"DEF IGNORED", dmgup:"DAMAGE UP",
+              counter:"COUNTERATTACK", mit:"MITIGATION", defup:"DEFENCE UP"};
+  const fmtAx = (id,v) => id === "payload" ? fmtNum(v) : v + "%";
+  const rankIn = (id,key) => {
+    const have = allM.filter(y=>y.m[id]).sort((a,b)=>b.m[id]-a.m[id]);
+    const i = have.findIndex(y=>y.h.key===key);
+    return i < 0 ? null : {at:i+1, of:have.length};
+  };
+  const ordN = n => n + (["th","st","nd","rd"][(n%100>=11&&n%100<=13) ? 0 : (n%10)] || "th");
+  /* who gets a turn: the top tier, plus anyone leading a measure outright */
+  const leadsAny = allM.filter(x=>Object.keys(AX).some(id=>x.m[id] && x.m[id] === MAXM[id]));
+  const cast = [];
+  topList.concat(leadsAny).forEach(x=>{ if(!cast.some(y=>y.h.key===x.h.key)) cast.push(x); });
+
+  function spotFor(x){
+    const key = x.h.key;
+    /* the vertical: their best-placed measure that is not the payload */
+    const others = Object.keys(AX).filter(id=>id !== "payload" && x.m[id])
+      .map(id=>({id, ...rankIn(id,key)})).sort((a,b)=>a.at-b.at);
+    const yId = (others[0] || {}).id || "dmgup";
+    const pr  = rankIn("payload", key);
+    const yr  = rankIn(yId, key);
+    return {x, yId, pr, yr};
   }
-  for(let v=0; v<=XMAX; v+=5000)
-    g += `<text x="${px(v).toFixed(1)}" y="${y0+20}" text-anchor="middle" fill="var(--ov-dim)" font-family="ui-monospace,monospace" font-size="10.5">${v?(v/1000)+"k":"0"}</text>`;
-  g += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y0}" stroke="var(--ov-edge2)"/>`;
-  g += `<text x="${x1}" y="${y0+37}" text-anchor="end" fill="var(--ov-dim)" font-family="ui-monospace,monospace" font-size="10" letter-spacing="1.3">PAYLOAD AT MAX</text>`;
-  g += `<text x="${x0}" y="${y1-8}" fill="var(--ov-dim)" font-family="ui-monospace,monospace" font-size="10" letter-spacing="1.3">DEF IGNORED</text>`;
-  pts.forEach(p=>{
-    const big = p === best && p.dd > 0;
-    const cx = px(p.dmg), cy = py(p.dd), c = cl(p.t);
-    if(big) g += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="13" fill="${c}" opacity=".16"/>`;
-    g += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${big?6.5:4}" fill="${big?c:"none"}" stroke="${c}" stroke-width="${big?2:1.5}" opacity="${(p.dd||p.dmg)?1:.4}"><title>${esc(p.n)} — ${p.t} · payload ${p.dmg.toLocaleString()} · ignores ${p.dd}% DEF</title></circle>`;
-    if(big) g += `<text x="${(cx-11).toFixed(1)}" y="${(cy-11).toFixed(1)}" text-anchor="end" fill="${c}" font-family="ui-monospace,monospace" font-size="12" font-weight="700">${esc(p.n)}</text>`;
-  });
+  function spotChart(sel){
+    const {x, yId, pr, yr} = sel;
+    const key = x.h.key;
+    const XMAX = Math.max(1, ...allM.map(y=>y.m.payload));
+    const YMAX = Math.max(1, ...allM.map(y=>y.m[yId])) * 1.08;
+    const W=860,H=380,L=62,R=18,T=26,BB=44;
+    const x0=L,x1=W-R,y0=H-BB,y1=T;
+    const px = v => x0 + (v/XMAX)*(x1-x0), py = v => y0 - (v/YMAX)*(y0-y1);
+    const cl = t => (t==="S+"||t==="S") ? "#5fe3d8" : t==="A" ? "#7fd4c8" : "#5d777d";
+    const ySteps = yId === "payload" ? 5000 : Math.max(5, Math.round(YMAX/5/5)*5);
+    let g = "";
+    for(let v=0; v<=YMAX; v+=ySteps){
+      g += `<line x1="${x0}" y1="${py(v).toFixed(1)}" x2="${x1}" y2="${py(v).toFixed(1)}" stroke="var(--ov-edge)"/>`;
+      g += `<text x="${x0-9}" y="${(py(v)+4).toFixed(1)}" text-anchor="end" fill="var(--ov-dim)" font-family="ui-monospace,monospace" font-size="10.5">${fmtAx(yId,v)}</text>`;
+    }
+    for(let v=0; v<=XMAX; v+=5000)
+      g += `<text x="${px(v).toFixed(1)}" y="${y0+20}" text-anchor="middle" fill="var(--ov-dim)" font-family="ui-monospace,monospace" font-size="10.5">${v?(v/1000)+"k":"0"}</text>`;
+    g += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y0}" stroke="var(--ov-edge2)"/>`;
+    g += `<text x="${x1}" y="${y0+37}" text-anchor="end" fill="var(--ov-dim)" font-family="ui-monospace,monospace" font-size="10" letter-spacing="1.3">PAYLOAD AT MAX</text>`;
+    g += `<text x="${x0}" y="${y1-8}" fill="var(--ov-dim)" font-family="ui-monospace,monospace" font-size="10" letter-spacing="1.3">${AX[yId]}</text>`;
+    /* crosshair on the featured hero - a readout marks its target */
+    const cx = px(x.m.payload), cy = py(x.m[yId]);
+    g += `<line x1="${x0}" y1="${cy.toFixed(1)}" x2="${cx.toFixed(1)}" y2="${cy.toFixed(1)}" stroke="var(--ov-cy)" stroke-width="1" stroke-dasharray="2 4" opacity=".55"/>`;
+    g += `<line x1="${cx.toFixed(1)}" y1="${y0}" x2="${cx.toFixed(1)}" y2="${cy.toFixed(1)}" stroke="var(--ov-cy)" stroke-width="1" stroke-dasharray="2 4" opacity=".55"/>`;
+    allM.forEach(y=>{
+      const on = y.h.key === key;
+      const ax = px(y.m.payload), ay = py(y.m[yId]), c = on ? "#5fe3d8" : cl(y.h.t);
+      if(on) g += `<circle cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="14" fill="${c}" opacity=".18"/>`;
+      g += `<circle cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="${on?7:4}" fill="${on?c:"none"}" stroke="${c}" stroke-width="${on?2:1.5}" opacity="${(y.m.payload||y.m[yId])?1:.4}"><title>${esc(y.h.n)} — ${y.h.t} · payload ${fmtNum(y.m.payload)} · ${AX[yId].toLowerCase()} ${fmtAx(yId,y.m[yId])}</title></circle>`;
+      if(on){
+        const left = ax > (x0+x1)/2;
+        g += `<text x="${(ax + (left?-13:13)).toFixed(1)}" y="${(ay-12).toFixed(1)}" text-anchor="${left?"end":"start"}" fill="${c}" font-family="ui-monospace,monospace" font-size="12.5" font-weight="700">${esc(y.h.n)}</text>`;
+      }
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto" role="img"
+      aria-label="${esc(x.h.n)}: payload against ${AX[yId].toLowerCase()}, all ${HEROES.length} heroes plotted.">${g}</svg>`;
+  }
+  function spotLine(sel){
+    const {x, yId, pr, yr} = sel;
+    const h = x.h, kinds = kindsOf(x);
+    const leadY = x.m[yId] === MAXM[yId];
+    const leadX = x.m.payload && x.m.payload === MAXM.payload;
+    /* The verdict has to weigh BOTH axes. A first cut read only the vertical
+       and told Oda Nobunaga his case was thin - the man with the biggest
+       payload on the board. Whichever axis they place best on gets the line. */
+    let verdict;
+    if(leadY)              verdict = `Nobody on the board does more ${AX[yId].toLowerCase()}.`;
+    else if(leadX)         verdict = `Nobody on the board hits harder &mdash; and that is the whole case.`;
+    else if(pr && pr.at <= 3 && (!yr || pr.at <= yr.at))
+                           verdict = `${ordN(pr.at)}-biggest payload on the board.`;
+    else if(yr && yr.at <= 3)
+                           verdict = `${ordN(yr.at)} of ${yr.of} for it.`;
+    else if(kinds >= 6)    verdict = `Their case is breadth &mdash; ${kinds} kinds of effect, more than anyone.`;
+    else if(yr && yr.at <= Math.ceil(yr.of/3))
+                           verdict = `Top third for it, without leading anything.`;
+    else                   verdict = `Nothing in the top third of either &mdash; the score cannot explain this one.`;
+    return `<b>${esc(h.n)}</b> &mdash; ${h.t}, kit ${kitOf(h)||"?"}.
+      Payload <span class="au">${fmtNum(x.m.payload)}</span>${pr?` (${ordN(pr.at)} of ${pr.of})`:""},
+      ${AX[yId].toLowerCase()} <span class="au">${fmtAx(yId, x.m[yId])}</span>. ${verdict}`;
+  }
+  function paintSpot(i){
+    ovSpot = ((i % cast.length) + cast.length) % cast.length;
+    const sel = spotFor(cast[ovSpot]);
+    const c = document.getElementById("ovSpotBox"); if(!c) return;
+    c.innerHTML = `<p class="ovspotline">${spotLine(sel)}</p>
+      <div class="oveq ovbrk" style="padding:16px 14px 8px">${spotChart(sel)}</div>`;
+    document.querySelectorAll("#viewOverview .ovchip").forEach((b,n)=>
+      b.setAttribute("aria-pressed", String(n === ovSpot)));
+  }
+  const chipsHTML = cast.map((x,i)=>`<button class="ovchip" data-ovspot="${i}" aria-pressed="${i===0}">
+      ${portraitOf(x.h)?`<img src="${portraitOf(x.h)}" alt="">`:""}${esc(x.h.n)}</button>`).join("");
 
   const VIEWS = [
     ["Tier board","Where everyone sits. Drag to move; a hero nobody has placed follows their own score."],
@@ -6771,14 +6878,14 @@ function drawOverview(){
     </div></div>
 
     <div class="ovsec"><div class="ovwrap">
-      <div class="ovkick">A finding</div>
-      <h3 class="ovh2">Hit hard, or strip armour</h3>
-      <p class="ovlede">Payload against defence ignored, all ${F.heroes} plotted. The two multiply, so
-        the top-right is where any hero would want to be. <b>${esc(best.n)} is alone up there.</b></p>
-      <div class="oveq ovbrk" style="padding:16px 14px 8px">
-        <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto" role="img"
-          aria-label="Payload against percentage of enemy defence ignored, ${F.heroes} heroes.">${g}</svg>
-      </div>
+      <div class="ovkick">In the spotlight</div>
+      <h3 class="ovh2">One hero at a time</h3>
+      <p class="ovlede">Payload runs along the bottom every time, because 31 of the ${F.heroes} have one
+        and it is the axis anybody can be read against. <b>The vertical changes with the hero</b> &mdash;
+        it is whichever measure they place highest on, so the chart is always aimed at the thing they
+        are actually good at.</p>
+      <div class="ovpick">${chipsHTML}<span class="ovrot" id="ovRot">auto &middot; click to hold</span></div>
+      <div class="ovspot" id="ovSpotBox"></div>
     </div></div>
 
     <div class="ovsec alt"><div class="ovwrap">
@@ -6824,6 +6931,31 @@ function drawOverview(){
       <span>${F.heroes} heroes &middot; ${F.skills} skills &middot; one file</span>
       <span>Built for one player's board, and it argues back</span>
     </div></div></div>`;
+
+  /* ---- the rotation ----
+     It advances on its own, because "a different hero each time" was the
+     ask. But content that moves while you are reading it is a nuisance, so
+     the FIRST interaction stops it for good: click a chip, or just put the
+     pointer on the panel, and it holds. Anyone who has asked the OS not to
+     animate never gets a moving one at all. */
+  clearInterval(ovTimer); ovTimer = null;
+  const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const rotLabel = document.getElementById("ovRot");
+  const holdRotation = why => {
+    if(!ovTimer) return;
+    clearInterval(ovTimer); ovTimer = null;
+    if(rotLabel) rotLabel.textContent = why;
+  };
+  paintSpot(ovSpot);
+  if(!still && cast.length > 1){
+    ovTimer = setInterval(()=>paintSpot(ovSpot + 1), 7000);
+  }else if(rotLabel){
+    rotLabel.textContent = cast.length > 1 ? "pick a hero" : "";
+  }
+  body.querySelectorAll("[data-ovspot]").forEach(b=>
+    b.addEventListener("click", ()=>{ holdRotation("holding \u2014 pick another"); paintSpot(+b.dataset.ovspot); }));
+  const spotBox = document.getElementById("ovSpotBox");
+  if(spotBox) spotBox.addEventListener("pointerenter", ()=> holdRotation("holding \u2014 pick another"));
 
   body.querySelectorAll("[data-ovback]").forEach(b=>
     b.addEventListener("click", ()=>{ switchView("board"); window.scrollTo({top:0, behavior:"smooth"}); }));
@@ -7380,6 +7512,11 @@ function helpDraw(spec){
 }
 
 function switchView(v){
+  /* the Overview rotates on a timer; it has no business running while you
+     are on another tab */
+  if(view === "overview" && v !== "overview" && typeof ovTimer !== "undefined" && ovTimer){
+    clearInterval(ovTimer); ovTimer = null;
+  }
   view = v;
   document.getElementById("viewBoard").classList.toggle("hidden", v!=="board");
   document.getElementById("viewRadar").classList.toggle("hidden", v!=="radar");
