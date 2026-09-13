@@ -1,5 +1,30 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-13 — "THEN IT'S NOT LIVE." Sid, and he was right.
+     The admits wall computed its NUMBERS and then wrote the
+     SITUATION around them in fixed prose: "every one has a single
+     member", "none of that is on file", "all fifteen rate the same".
+     Enter one real warband and the card would have gone on saying
+     something false with a correct figure sitting inside it. That is
+     the same lie-with-a-delay this app keeps catching elsewhere —
+     the 89% on the WORTH card, the 16 warbands on the front page —
+     only one level up, in the sentence rather than the number. A
+     computed figure inside a hard-coded claim is still hard-coded.
+     Both cards now choose their wording from what is there.
+     WARBANDS has three states, verified by driving the data:
+       nothing entered  -> "No warband is a warband yet. 16 strings
+                           ... every one has a single member."
+       two entered      -> "2 warbands, 5 heroes in them. 2 of them
+                           can be collected cheaply or free ... 13
+                           names are still on a single hero ... 19
+                           heroes have no warband recorded at all."
+       all 37 in bands  -> "9 warbands, 36 heroes in them ... 1 name
+                           is still on a single hero."
+     The one line that never moves is the honest one: what a
+     warband's four buffs GIVE is not on file, so none of it scores.
+     TREES flips the same way — the heading stops saying "all worth
+     the same" the moment they are not.
+
      2026-09-13 — A WARBAND COLUMN ON THE ROSTER, AND A STRAIGHT
      ANSWER ABOUT WHAT IT MOVES. Sid asked whether going through the
      warbands updates the live board. Tested it rather than guessed:
@@ -7284,6 +7309,11 @@ function ovFigures(){
   const mem = {};
   HEROES.forEach(h=>{ const w = warbandOf(h.key); if(w) (mem[w] = mem[w] || []).push(h); });
   const groups = Object.entries(mem).filter(([,m])=>m.length > 1);
+  const solo   = Object.entries(mem).filter(([,m])=>m.length === 1);
+  const inBands = groups.reduce((n,[,m])=>n + m.length, 0);
+  const noWb   = HEROES.filter(h=>!warbandOf(h.key)).length;
+  const eases  = groups.map(([n])=>warbandInfo(n)).filter(Boolean);
+  const freeSets = eases.filter(w=>w.ease === "free set" || w.ease === "cheap").length;
   const withPower = HEROES.filter(h=>powerOf(h)).length;
   /* the talent trees: 30 distinct orderings across the roster, and every one of
      them currently worth exactly the same. Counted so the page can say so. */
@@ -7292,6 +7322,7 @@ function ovFigures(){
     return v.length ? [Math.min(...v), Math.max(...v)] : [0,0]; })();
   return { heroes:HEROES.length, skills, unread,
            warbands:groups.length, titles:Object.keys(mem).length,
+           solo:solo.length, inBands, noWb, freeSets,
            treeCombos:combos.size, treeFlat: trRange[0] === trRange[1] ? trRange[0] : null,
            tri:tri.length, tri4:tri.filter(t=>t.n>=4).length, withPower };
 }
@@ -7708,18 +7739,39 @@ function drawOverview(){
         <div class="ovcard warn"><h4>Not everything is read</h4>
           <p>Rage, movement, proc chances and troop buffs fall to 3 by design. The model reads a short
             list of things that decide fights, and treats the rest as small.</p></div>
-        <div class="ovcard warn"><h4>${F.treeCombos} tree sets, all worth the same</h4>
+        <div class="ovcard ${F.treeFlat !== null ? "warn" : ""}"><h4>${F.treeCombos} tree sets${F.treeFlat !== null ? ", all worth the same" : ", now rated"}</h4>
           <p>Every hero's three talent trees are on file, and they make
             <b>${F.treeCombos}</b> different combinations &mdash; more than twice the ${(()=>{const A=scoreAudit();return A?A.values:"?";})()}
-            distinct scores the whole formula produces. What each tree actually GIVES has never been
-            recorded, so all fifteen rate the same${F.treeFlat !== null ? ` and every hero's trees total exactly ${F.treeFlat}` : ""}.
-            The highest-resolution thing on file is the one term doing no work.</p></div>
+            distinct scores the whole formula produces. ${F.treeFlat !== null
+              ? `What each tree actually GIVES has never been recorded, so all fifteen rate the same and
+                 every hero's trees total exactly ${F.treeFlat}. The highest-resolution thing on file is
+                 the one term doing no work.`
+              : `They now carry different values, so the combination a hero holds finally tells.`}</p></div>
+        ${(()=>{
+          /* THIS CARD HAS TO MOVE WITH THE DATA, not just its numbers. The first
+             cut computed the figures and then wrote the situation around them in
+             fixed prose — "every one has a single member", "none of that is on
+             file" — so the moment Sid entered a real warband the card would have
+             gone on saying something false with a correct number inside it. That
+             is the same lie-with-a-delay this app keeps catching itself in, one
+             level up. Three states, and the wording is chosen by what is there. */
+          const buffs = `What a warband's four buffs GIVE is still not on file anywhere, so none of
+            this scores &mdash; it reads how cheaply a set ranks up, never how strong it is.`;
+          if(!F.warbands) return `
         <div class="ovcard warn"><h4>No warband is a warband yet</h4>
           <p>${F.titles} strings sit in the warband field and every one has a single member &mdash;
             one of them is the name of that hero's own ultimate. They are TITLES, the line above the
             name in the game, not membership. A real warband would say who else is in it, how cheaply
             that set ranks up, and what its buffs give. None of that is on file, so the count reads
-            <b>0</b> rather than flattering itself.</p></div>
+            <b>0</b> rather than flattering itself.</p></div>`;
+          return `
+        <div class="ovcard ${F.solo || F.noWb ? "warn" : ""}"><h4>${F.warbands} warband${F.warbands===1?"":"s"}, ${F.inBands} hero${F.inBands===1?"":"es"} in ${F.warbands===1?"it":"them"}</h4>
+          <p>${F.freeSets ? `<b>${F.freeSets}</b> of them can be collected cheaply or free, worked out
+              from the obtain column without anybody typing a number. ` : ""}${
+            F.solo ? `<b>${F.solo}</b> name${F.solo===1?" is":"s are"} still on a single hero &mdash;
+              those are titles, not membership, until somebody else joins ${F.solo===1?"it":"them"}. ` : ""}${
+            F.noWb ? `<b>${F.noWb}</b> hero${F.noWb===1?" has":"es have"} no warband recorded at all. ` : ""}${buffs}</p></div>`;
+        })()}
       </div>
     </div></div>
 
