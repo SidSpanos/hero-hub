@@ -1,5 +1,32 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-13 — THE FLAT CARD STOPS SHRUGGING. It used to end
+     "the score cannot explain this one", which was true of the six
+     bars and false of the hero. FARHAD is the case Sid raised: two
+     kinds of effect, nothing in the top third, and still S+ —
+     because he comes off the ROULETTE WHEEL while most of that tier
+     is chief-gated or paid, and because he carries talent trees the
+     bars never look at. A tier list has always priced the route as
+     well as the payload; access became a scoring term this morning,
+     so the card can finally say so out loud.
+     It reads "Earns it elsewhere — the case is the route: off the
+     roulette wheel, a cheaper route than 4 of the other 8 in S+,
+     plus the Versatile tree. A tier list has always priced that;
+     the measures here do not."
+     Both halves are computed, not written for Farhad: the route is
+     compared against the rest of that hero's OWN tier, and the trees
+     are whatever their sheet row lists. The rotating finding on the
+     Overview uses the same line for the same reason.
+     ONE CAREFUL WORD. Two trees are in play and they are not the
+     same thing. BALANCED is the one that frees a hero from their
+     troop — that is what h.versatile means and what "any troop" on
+     a hero card means. VERSATILE is an ordinary general-purpose
+     tree. Farhad carries Versatile and NOT Balanced, so the line
+     names the tree it means rather than letting one word cover
+     both. Sid: if you meant he runs under any commander, that is
+     Balanced and his row does not have it — say the word and it
+     goes in the sheet.
+
      2026-09-13 — A HERO NEVER FALLS SO THAT ANOTHER CAN RISE.
      Sid's rule, and the grader was breaking it structurally, not by
      accident. suggestTier handed out SEATS: it sorted the whole
@@ -120,11 +147,13 @@
      explained him. FREYJA is third for counterattack and summons.
      ERIN is third for defence-down on a payload that ranks 23rd of
      31. JOAN and YI SUN-SIN are solid and nowhere first.
-     And FARHAD is the honest anomaly, called out in amber: two kinds
-     of effect, nothing in the top third of anything, and the score
-     cannot explain why the board has him S+. That card is the most
-     useful one on the page. A model that never disagrees with the
-     board is not telling you anything.
+     And FARHAD is the flat card, called out in amber: two kinds of
+     effect and nothing in the top third of anything. That card is
+     the most useful one on the page. A model that never disagrees
+     with the board is not telling you anything.
+     (2026-09-13: it no longer shrugs at him. See the entry at the
+     top of this file — the flat card now reads the ROUTE and the
+     TALENTS, which is where Farhad's case actually lives.)
      Read whatever tier sits at the top and whoever is in it — move a
      hero into S+ and their profile appears beside the others.
      The verdict line names the measure a hero actually places on,
@@ -7008,6 +7037,46 @@ function drawOverview(){
   const topList = topTier ? allM.filter(x=>x.h.t === topTier.k) : [];
   /* how many of the eight a hero registers at all - the breadth number */
   const kindsOf = x => BARS.filter(([id])=>x.m[id]).length + FLAGS.filter(([id])=>x.m[id]).length;
+
+  /* ------------------------------------------------------------------
+     WHEN THE NUMBERS DON'T EXPLAIN A HERO, SAY WHAT DOES
+     ------------------------------------------------------------------
+     The flat card used to end "the score cannot explain this one",
+     which was true of the six bars and false of the hero. FARHAD is
+     the case: two kinds of effect, nothing in the top third, and
+     still S+ - because he comes off the WHEEL while most of that
+     tier is chief-gated or paid, and because he carries talent trees
+     the bars never look at. A tier list has always priced the ROUTE
+     as well as the payload; access is a scoring term now, so the
+     card can finally say so out loud instead of shrugging.
+     Both halves are read from the hero, not written for one of them:
+     the route is compared against the rest of their own tier, and
+     the trees are whatever their sheet row lists.
+     A NOTE ON THE WORD. Two different trees are in play and they are
+     not the same thing. BALANCED is the one that frees a hero from
+     their troop, which is what h.versatile means, and VERSATILE is
+     an ordinary general-purpose tree. Farhad carries Versatile and
+     not Balanced, so the line names the tree it means rather than
+     letting one word cover both. ------------------------------- */
+  function offBoardCase(h, tier, tierKey){
+    let route = "", tree = "";
+    const acc = accessOf(h), ob = obtainById(h.obtain || "");
+    if(acc.known && ob){
+      const rest = (tier || []).filter(y=>y.key !== h.key).map(y=>accessOf(y)).filter(a=>a.known);
+      const dearer = rest.filter(a=>a.v < acc.v).length;
+      route = `off the <b>${ob.name.toLowerCase()}</b>` + (dearer && dearer >= rest.length / 3
+        ? `, a cheaper route than ${dearer} of the other ${rest.length} in ${tierKey}`
+        : `, ${acc.v} of 5 on access`);
+    }
+    if(h.versatile)
+      tree = `<b>${treeById(VERSATILE_TREE).name}</b>, so they fit under any commander`;
+    else if((h.treeSet || []).includes("vers"))
+      tree = `the <b>Versatile</b> tree`;
+    if(!route && !tree) return "";
+    const lead = route ? `the case is the route: ${route}` : `the case is in the talents`;
+    const also = tree ? `${route ? " — plus " : ": "}${tree}` : "";
+    return `${lead}${also}. A tier list has always priced that; the measures here do not.`;
+  }
   const profHTML = topList.map(x=>{
     const h = x.h, kinds = kindsOf(x);
     const leads = BARS.filter(([id])=> x.m[id] && x.m[id] === MAXM[id]).map(([,l])=>l);
@@ -7031,9 +7100,12 @@ function drawOverview(){
     const ord = n => n + (["th","st","nd","rd"][(n%100>=11&&n%100<=13) ? 0 : (n%10)] || "th");
     const flagsOn = FLAGS.filter(([id])=>x.m[id]).map(([,l])=>l.toLowerCase());
     const best = placed[0];
+    const off = offBoardCase(h, topList.map(y=>y.h), topTier.k);
     let verd;
     if(flat)
-      verd = `<b>Nothing stands out.</b> ${kinds} kinds of effect and nothing in the top third — the score cannot explain this one.`;
+      verd = off
+        ? `<b>Earns it elsewhere.</b> ${kinds} kinds of effect and nothing in the top third — ${off}`
+        : `<b>Nothing stands out.</b> ${kinds} kinds of effect and nothing in the top third — the score cannot explain this one.`;
     else if(leads.length)
       verd = `<b>Best on the board</b> for ${leads.join(" and ").toLowerCase()}${
         flagsOn.length ? `, and ${flagsOn.join(" + ")}` : ""}.`;
@@ -7145,7 +7217,11 @@ function drawOverview(){
     else if(kinds >= 6)    verdict = `Their case is breadth &mdash; ${kinds} kinds of effect, more than anyone.`;
     else if(yr && yr.at <= Math.ceil(yr.of/3))
                            verdict = `Top third for it, without leading anything.`;
-    else                   verdict = `Nothing in the top third of either &mdash; the score cannot explain this one.`;
+    else {
+      const off = offBoardCase(h, HEROES.filter(y=>y.t === h.t), h.t);
+      verdict = off ? `Nothing in the top third of either &mdash; ${off}`
+                    : `Nothing in the top third of either &mdash; the score cannot explain this one.`;
+    }
     return `<b>${esc(h.n)}</b> &mdash; ${h.t}, kit ${kitOf(h)||"?"}.
       Payload <span class="au">${fmtNum(x.m.payload)}</span>${pr?` (${ordN(pr.at)} of ${pr.of})`:""},
       ${AX[yId].toLowerCase()} <span class="au">${fmtAx(yId, x.m[yId])}</span>. ${verdict}`;
