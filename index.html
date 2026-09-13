@@ -1,5 +1,33 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-13 — A WARBAND COLUMN ON THE ROSTER, AND A STRAIGHT
+     ANSWER ABOUT WHAT IT MOVES. Sid asked whether going through the
+     warbands updates the live board. Tested it rather than guessed:
+     the counters move, THE TIER BOARD DOES NOT. Warband reaches
+     nothing in worthOf, so scores and placements are untouched.
+     What was actually stopping him was the way in. The only place a
+     warband could be typed was one field buried in each hero's Hero
+     Score card — 37 giant cards to scroll. The ROSTER TABLE now has
+     a Warband column with a datalist of the names already in use, so
+     the first hero is typed and the rest are picked from a menu.
+     (Roster opens in CARDS view; the column is on the TABLE toggle.)
+     AND IT PAYS OFF THE MOMENT TWO HEROES SHARE A NAME. Every hero
+     already carries an obtain, so the app can price the whole set
+     with no extra input: the cell shows "3 in · free set", and the
+     tooltip names the members, their routes, how many are free and
+     the average access. That is Sid's own point — a warband whose
+     heroes are mostly free ranks up far faster — answered from data
+     already on file. Ironshield with Baldur, Sylvan and Voll reads
+     3 in · free set, all three f2p, access 5.0 of 5.
+     IT STILL DOES NOT SCORE, and the label is careful about why: the
+     four buffs a warband gives are not captured anywhere, so this
+     reads how REACHABLE a set is, never how strong. It says "ranks
+     up", not "is better".
+     One bug found on the way: the handler called touch(), which is
+     local to the Hero Score wiring, so every warband edit threw and
+     nothing persisted. markDirty() + clearFocus() now, and the layer
+     survives a reload — verified.
+
      2026-09-13 — A THRESHOLD, NOT A VERDICT. The accuracy panel now
      carries Sid's own rule instead of leaving it in a conversation:
      no meta-driven review of the board until 100 LINEUP SIGHTINGS
@@ -1649,6 +1677,10 @@
   #viewOverview .ovaccn{grid-column:2 / -1;font-size:12.5px;line-height:1.5;color:var(--ov-tx2);margin-top:-4px}
   #viewOverview .ovacc:last-child .ovaccb span{background:var(--ov-amber)}
   #viewOverview .ovacc:last-child .ovaccv{color:var(--ov-amber)}
+  .rwb{display:flex;flex-direction:column;gap:3px;min-width:132px}
+  .rwbi{width:100%;font:inherit;font-size:12px;padding:3px 5px;border:1px solid var(--border);
+    border-radius:4px;background:var(--surface);color:inherit}
+  .rwbn{font-size:10px;font-weight:700;letter-spacing:.03em;color:var(--series-3);cursor:help}
   #viewOverview .ovhold{margin-top:26px;padding:16px 18px;border:1px solid var(--ov-edge);
     border-left:3px solid var(--ov-amber);background:var(--ov-deep);border-radius:3px}
   #viewOverview .ovholdb{height:6px;background:var(--ov-void);border:1px solid var(--ov-edge);
@@ -4482,7 +4514,31 @@ function fxVocab(){
     (sk.fx||[]).forEach(f=>{ const k=(f.what||"").trim(); if(k) n[k]=(n[k]||0)+1; })));
   return Object.entries(n).sort((a,b)=>b[1]-a[1]);
 }
-const warbandVocab = () => [...new Set(Object.values(WARBANDS).filter(Boolean))].sort();
+const warbandVocab = () => [...new Set(HEROES.map(h=>warbandOf(h.key)).filter(Boolean))].sort();
+/* ------------------------------------------------------------------
+   A WARBAND IS ITS MEMBERS, AND ITS MEMBERS HAVE ROUTES
+   ------------------------------------------------------------------
+   Sid's point, and it costs no new input beyond membership: a warband
+   whose heroes are mostly free ranks up far faster than one gated
+   behind four paywalls, because you can actually collect the set.
+   Every hero already carries an obtain, so the moment two heroes
+   share a warband name the app can price the whole set — without
+   anybody typing a single extra number.
+   What it does NOT know is the four buffs a warband gives. Those are
+   a separate capture, and until they exist this stays a reading of
+   how reachable a set is, not of how strong it is. The label says
+   "ranks up", never "is better". ------------------------------- */
+function warbandInfo(name){
+  if(!name) return null;
+  const mem = HEROES.filter(h=>warbandOf(h.key) === name);
+  if(!mem.length) return null;
+  const acc = mem.map(h=>accessOf(h)).filter(a=>a.known);
+  const free = mem.filter(h=>["f2p","any"].includes(h.obtain)).length;
+  const mean = acc.length ? acc.reduce((n,a)=>n + a.v, 0) / acc.length : null;
+  return {name, n:mem.length, members:mem, free, known:acc.length, mean,
+          ease: mean === null ? "" : mean >= 4.5 ? "free set" : mean >= 3.5 ? "cheap"
+                                  : mean >= 2.5 ? "mixed"    : mean >= 1.5 ? "gated" : "paywalled"};
+}
 /* how much of a skill actually reaches the fight */
 const WHO_MULT  = {"self":0.6, "one ally":0.8, "one enemy":1, "whole team":1.4,
                    "all enemies":1.5, "front row":1.2, "back row":1.2};
@@ -10100,6 +10156,15 @@ function drawRoster(){
           <option value="yes" ${h.skin==="yes"?"selected":""}>skin</option>
           <option value="no"  ${h.skin==="no"?"selected":""}>none</option>
         </select></td>
+        <td><div class="rwb">
+          <input class="rwbi" list="wbNamesR" data-rwb="${h.key}" placeholder="—"
+                 value="${warbandOf(h.key).replace(/"/g,"&quot;")}"
+                 title="Which warband ${h.n} belongs to. Type the same name on two heroes and they become a set — the app then prices how cheaply that set ranks up from the obtain you have already recorded. It does NOT score: the four buffs a warband gives are not on file.">
+          ${(()=>{ const W = warbandInfo(warbandOf(h.key));
+            return W && W.n > 1
+              ? `<span class="rwbn" title="${W.n} heroes in ${esc(W.name)}: ${W.members.map(x=>`${x.n} (${x.obtain||"route unset"})`).join(", ")}. ${W.free} of ${W.n} are free to get, average access ${W.mean.toFixed(1)} of 5.">${W.n} in &middot; ${W.ease}</span>`
+              : ``; })()}
+        </div></td>
         <td><select class="rtier" data-robtain="${h.key}">
           <option value="" ${h.obtain===""?"selected":""}>—</option>
           ${OBTAIN.map(o=>`<option value="${o.id}" ${h.obtain===o.id?"selected":""}>${o.name}</option>`).join("")}
@@ -10145,7 +10210,7 @@ total ${f.score}">focus #${f.rank}</span>`; })()}
     return;
   }
   document.getElementById("rosterWrap").innerHTML = `<table>
-    <thead><tr><th></th><th>Hero</th><th>Alias</th><th title="Tick the heroes you own">Own</th><th title="The fist on their card in the game, at level 60 and 6 stars. Blank means not there yet. It does not score.">Power</th><th title="Where your levels, stars, skills and gear pay back most — hover a row for the reasons">Focus</th><th>Tier</th><th>Modes</th><th>Troops</th><th>Skin</th><th>Obtain</th><th title="Levels for skills 1-4 — the order you train them in">Skills</th><th>Talents</th><th></th></tr></thead>
+    <thead><tr><th></th><th>Hero</th><th>Alias</th><th title="Tick the heroes you own">Own</th><th title="The fist on their card in the game, at level 60 and 6 stars. Blank means not there yet. It does not score.">Power</th><th title="Where your levels, stars, skills and gear pay back most — hover a row for the reasons">Focus</th><th>Tier</th><th>Modes</th><th>Troops</th><th>Skin</th><th title="Which warband each hero belongs to. Type the same name on two heroes and they become a set, and the app prices how cheaply that set ranks up from the obtain column. It does not score.">Warband</th><th>Obtain</th><th title="Levels for skills 1-4 — the order you train them in">Skills</th><th>Talents</th><th></th></tr></thead>
     <tbody>${rows}</tbody></table>`;
   wireRosterBits();
   drawMergeSelects();
@@ -10191,6 +10256,28 @@ function wireRosterBits(){
       losers.forEach(k=> mergeHeroes(k, keeper.key));
       renderAll();
       document.getElementById("mergeMsg").textContent = `Merged into ${keeper.n}. Tidy up hero-names.js when convenient.`;
+    }));
+  /* the vocabulary of warband names already in use, so going down the list is
+     picking from a menu after the first hero rather than retyping a long name */
+  (()=>{
+    let dl = document.getElementById("wbNamesR");
+    if(!dl){ dl = document.createElement("datalist"); dl.id = "wbNamesR";
+             document.getElementById("rosterWrap").appendChild(dl); }
+    dl.innerHTML = warbandVocab().map(v=>`<option value="${v.replace(/"/g,"&quot;")}">`).join("");
+  })();
+  document.querySelectorAll("#rosterWrap [data-rwb]").forEach(inp=>
+    inp.addEventListener("change", ()=>{
+      const key = inp.dataset.rwb, v = inp.value.trim();
+      const core = ((coreOf(key) || {}).warband) || "";
+      if(v && v !== core) WARBANDS[key] = v; else delete WARBANDS[key];
+      markDirty(); clearFocus();          // `touch` is local to the Hero Score wiring
+      /* the Overview counter and the admits wall both read warbands, so every
+         other tab owes a redraw — but not this one, which is redrawn below so
+         the member chip updates under the cursor */
+      Object.keys(VIEW_DRAW).forEach(v=>{ if(v !== "roster") viewStale[v] = true; });
+      drawRoster();
+      const again = document.querySelector(`#rosterWrap [data-rwb="${CSS.escape(key)}"]`);
+      if(again){ again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
     }));
   wireBuilds("#rosterWrap");
   wireScoreJump("#rosterWrap");
