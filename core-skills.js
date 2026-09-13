@@ -82,6 +82,12 @@
    SEATS column: C, L or CL. Farhad is CL, and he is the only row set so far.
    The Versatile and Balanced trees are a separate matter and keep their own
    meaning; nothing about them changed.
+
+   2026-09-13 16:40 - ASKA IS F2P, NOT BOXES. Sid's word; backup taken.
+   Note what this does rather than what it fixes: access goes 4 -> 5 and his
+   score goes 36 -> 37, so the model now rates him even further ABOVE the S he
+   is sitting in. Both things Sid said about Aska push the same way. Nothing
+   else in his row moved.
 */
 
 /* ---- HALF ONE: the sheet -------------------------------------------------
@@ -121,7 +127,7 @@ Shisunin     | bers  | bal garr def      | yes  | wheel   # Yi Sun-sin
 # hero         | troop | trees             | skin | obtain | seats | tier | modes
 # ---- S ----
 Amaterasu    | axe   | siege skill bal   | yes  | wheel
-Asuka        | cav   | cav vers field    | yes  | boxes   # Aska
+Asuka        | cav   | cav vers field    | yes  | f2p     # Aska
 Rot          | beast | axe vers field    | yes  | wheel   # Roro
 Wukong       | bers  | cav skill vers    | yes  | p2p   # Wukon
 # hero         | troop | trees             | skin | obtain | seats | tier | modes
