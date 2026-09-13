@@ -1,5 +1,49 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-13 — EDITS CAN COME HOME. A "Send to project" button
+     and panel, because the browser layer was a one-way street and
+     that is worse than it sounds: a layer entry SHADOWS THE FILE
+     FOREVER. Once Sid's browser says a hero is Axe, a later
+     correction in core-skills.js can never reach him. Everything
+     this session put right about Farhad would have been invisible
+     to a browser that already held an opinion about Farhad.
+
+     THREE DESTINATIONS, because there are three kinds of fact.
+     FACTS ABOUT THE GAME — troop, trees, skin, obtain, seats —
+     come out as sheet rows in core-skills.js's own column format,
+     aligned, ready to replace the existing line.
+     WARBANDS get their own block and deliberately NOT a sheet
+     column: core-skills.js already carries a warband on each hero
+     in the skills half, and this file's own hard lesson is that two
+     homes for one fact become two opinions — the talent trees lived
+     in two places and disagreed on 31 of 35 rows before anybody
+     noticed. So the block names the exact `warband:` line to set.
+     FACTS ABOUT THE ACCOUNT — owned, skin owned, skill levels,
+     power at 60/6* — go to hero-mine.js, which is already loaded as
+     its own sidecar and is nobody else's business. POWER is now a
+     readable sheet column so it has somewhere to land.
+     And what has no column anywhere — ratings, meta lineups,
+     pairings, arena layouts, adjustments — is NAMED and counted
+     rather than quietly dropped. Those stay in the JSON that "Save
+     my changes" already writes.
+
+     THEN RECONCILE, which is the half that makes it sustainable.
+     After the rows are pasted in and the page reloaded, the layer
+     still holds the same values — now agreeing with the file and
+     pinning them. The panel counts those and offers to drop them,
+     so the layer shrinks back to what is genuinely only Sid's.
+     Without this step every sync ratchets the layer wider and the
+     file matters less each time.
+
+     PROVED END TO END rather than asserted. Made browser-only edits
+     of every kind, took the emitted row, pasted it into a copy of
+     core-skills.js, loaded that copy: Helda came back beast / axe
+     siege skill / yes / f2p / CL, no skipped rows, and the panel
+     then had NOTHING LEFT TO SEND. The loop closes. Reconcile was
+     tested the same way — two settled entries found, dropped, and
+     Aska still reads f2p, skin yes, worth 37, because the file now
+     supplies what the layer used to.
+
      2026-09-13 — THE WORKLIST: WHAT IS MISSING, HERO BY HERO.
      A new Overview section, one row per hero and one column per
      recordable fact, read off the live data every time the page
@@ -1727,6 +1771,11 @@
   #viewOverview .ovaccn{grid-column:2 / -1;font-size:12.5px;line-height:1.5;color:var(--ov-tx2);margin-top:-4px}
   #viewOverview .ovacc:last-child .ovaccb span{background:var(--ov-amber)}
   #viewOverview .ovacc:last-child .ovaccv{color:var(--ov-amber)}
+  .synch{font-size:14px;margin:18px 0 6px}
+  .synch:first-child{margin-top:4px}
+  .synch i{font-style:normal;font-weight:400;font-size:11px;opacity:.7;margin-left:8px}
+  .syncta{width:100%;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+    white-space:pre;overflow-x:auto;margin-top:6px}
   .rwb{display:flex;flex-direction:column;gap:3px;min-width:132px}
   .rwbi{width:100%;font:inherit;font-size:12px;padding:3px 5px;border:1px solid var(--border);
     border-radius:4px;background:var(--surface);color:inherit}
@@ -2771,6 +2820,7 @@
     <button class="btn" id="resetBtn">Reset</button>
     <button class="btn" id="connectBtn" title="Opens a file picker — choose the hero-data.js already sitting next to this page. You are picking an existing file, not naming a new one. After that every change is written straight to it.">Auto-save…</button>
     <button class="btn" id="mineBtn" aria-pressed="false" title="Everything you have changed on top of the published data — save it, move it to another browser, or drop it">My changes</button>
+    <button class="btn" id="syncBtn" aria-pressed="false" title="Turn the edits in this browser into rows you can paste into core-skills.js and hero-mine.js, so they stop being yours alone and become part of the project">Send to project…</button>
     <span class="savestate" id="saveState"></span>
     <span class="custom-flag" id="customFlag">your arrangement</span>
     <div class="grow"></div>
@@ -2951,6 +3001,16 @@
     </div>
     <p class="note" style="margin-top:10px">Saving gives you a small <code>my-hero-hub.json</code>. Load it in another
       browser or on another machine and your setup comes across — it carries only your edits, not the whole roster.</p>
+  </section>
+
+  <section class="panel hidden" id="syncPanel">
+    <button class="panelx" data-closes="syncBtn" title="Close">&times;</button>
+    <h2>Send my edits back to the project</h2>
+    <p class="note">Everything you change lives in this browser as a layer over the published files.
+      That is right while you are working and wrong once a fact is settled &mdash; a layer entry
+      <b>shadows the file forever</b>, so once your browser says a hero is Axe, a later correction in
+      <code>core-skills.js</code> can never reach you. This is how an edit comes home.</p>
+    <div id="syncBody"></div>
   </section>
 
   <section class="panel hidden" id="exportPanel">
@@ -5775,7 +5835,7 @@ let SHEET_DATA = null;
   const NO  = new Set(["no","n","false","0","none"]);
 
   /* What the files contribute, in the same shape the app writes itself. */
-  const SD = {TROOPS:{}, TREE_SET:{}, SKINS:{}, OBTAIN:{}, SEATS:{}, SKILLS:{}, OWNED:{}, SKIN_OWNED:{}, SKILLSEQ:{}, NEW:[]};
+  const SD = {TROOPS:{}, TREE_SET:{}, SKINS:{}, OBTAIN:{}, SEATS:{}, POWER:{}, SKILLS:{}, OWNED:{}, SKIN_OWNED:{}, SKILLSEQ:{}, NEW:[]};
   const bad = [];
 
   /* Columns are named by the header row, so a file only carries the columns it
@@ -5788,7 +5848,7 @@ let SHEET_DATA = null;
   /* tier and modes are optional and only ever used to INTRODUCE a hero the
      built-in roster has never heard of. On a hero who already exists they are
      ignored, because where a hero sits is yours to drag, not the file's. */
-  const COL_NAMES = ["hero","troop","trees","skin","obtain","seats","skills","own","hasskin","tier","modes"];
+  const COL_NAMES = ["hero","troop","trees","skin","obtain","seats","power","skills","own","hasskin","tier","modes"];
   const DEFAULT_MAP = {hero:0, troop:1, trees:2, skin:3, obtain:4, skills:5, own:6};
   function headerMap(line){
     const parts = line.replace(/^#\s*/, "").split("|").map(x=>flat(x));
@@ -5898,6 +5958,14 @@ let SHEET_DATA = null;
         const norm = v.includes("c") && v.includes("l") ? "CL" : v === "c" ? "C" : v === "l" ? "L" : "";
         if(norm) SD.SEATS[key] = norm;
         else note(`"${col.seats}" isn't a seat. Use: C (commander), L (lieutenant) or CL (either)`);
+      }
+      /* power at level 60 and 6 stars — a per-ACCOUNT fact, so it belongs in
+         hero-mine.js rather than in the shared sheet. Commas and spaces are
+         forgiving because that is how the game prints it. */
+      if(!blank(col.power)){
+        const n = Number(String(col.power).replace(/[\s,]/g, ""));
+        if(Number.isFinite(n) && n > 0) SD.POWER[key] = n;
+        else note(`power wants a number, got "${col.power}"`);
       }
       if(!blank(col.skills)){
         const n = col.skills.split(/[\s,]+/).filter(Boolean).map(Number);
@@ -12911,6 +12979,130 @@ function wireNameEditing(){
 /* ============================================================
    EXPORT
    ============================================================ */
+/* ============================================================
+   SYNCING YOUR BROWSER BACK INTO THE PROJECT
+   ============================================================
+   Everything you change lives in one browser as a layer over the
+   published files. That is right while you are working and wrong
+   the moment the fact is settled, because a layer entry SHADOWS
+   the file forever: once your browser says Farhad is axe, a later
+   correction in core-skills.js can never reach you. Edits have to
+   be able to come home.
+
+   THE TWO KINDS, because they do not go to the same place.
+     SHARED — troop, trees, skin, obtain, seats, warband. Facts
+       about the GAME. They belong in core-skills.js, the authority,
+       and once there everybody who opens the page gets them.
+     YOURS — owned, skin owned, skill levels, power at 60/6*. Facts
+       about your ACCOUNT. They belong in hero-mine.js, which is
+       already loaded as its own sidecar and is nobody else's
+       business.
+   What is left over — ratings, meta lineups, pairings, arena
+   layouts, your adjustments — has no column anywhere, and the
+   panel says so rather than pretending. Those stay in the JSON
+   that "Save my changes" already gives you.
+
+   AND THEN RECONCILE. After the rows are pasted in and the page
+   reloaded, the layer still holds the same values, now agreeing
+   with the file and pinning them. The panel counts those and
+   offers to drop them, so the layer shrinks back to the things
+   that are genuinely only yours. That is the step that keeps this
+   sustainable instead of a one-way ratchet.
+   ============================================================ */
+const SHEET_W = {key:12, troop:5, trees:17, skin:4, obtain:7, seats:4};
+const pad = (v, n) => String(v === undefined || v === null ? "" : v).padEnd(n);
+/* what the FILES say, before your layer — the thing to compare against */
+function fileSaysFor(key){
+  const B = window.__BASE || {};
+  const g = (sec, k) => (B[sec] || {})[k];
+  const tr = g("TROOPS", key) || {};
+  return {
+    troop: tr.primary || "",
+    trees: (g("TREE_SET", key) || []).filter(Boolean).join(" "),
+    skin:  g("SKINS", key) || "",
+    obtain:g("OBTAIN", key) || "",
+    seats: ((B.SEATS || {})[key]) || ((coreOf(key) || {}).seats) || "",
+    warband: ((B.WARBANDS || {})[key]) || ((coreOf(key) || {}).warband) || "",
+    own:   (B.OWNED || {})[key] === false ? "no" : "yes",
+    mySkin:(B.SKIN_OWNED || {})[key] === true ? "yes" : "no",
+    skills:(g("SKILLS", key) || []).join(" "),
+    power: (B.POWER || {})[key] || ""
+  };
+}
+function liveSaysFor(h){
+  return {
+    troop: h.troop || "",
+    trees: (h.treeSet || []).filter(Boolean).join(" "),
+    skin:  h.skin || "",
+    obtain:h.obtain || "",
+    seats: h.seats || "",
+    warband: warbandOf(h.key) || "",
+    own:   h.own ? "yes" : "no",
+    mySkin:h.mySkin ? "yes" : "no",
+    skills:(h.skills || []).some(Boolean) ? (h.skills || []).join(" ") : "",
+    power: POWER[h.key] || ""
+  };
+}
+/* WARBAND IS DELIBERATELY NOT A SHEET COLUMN. core-skills.js already carries a
+   warband on each hero in the SKILLS half, and this file's own hard lesson is
+   that two homes for one fact become two opinions — the trees lived in two
+   places and disagreed on 31 of 35 rows before anybody noticed. So warband
+   keeps its single home and gets its own block below, naming the exact line to
+   change, rather than a second column that would quietly outrank it. */
+const SHARED_KEYS = ["troop","trees","skin","obtain","seats"];
+const MINE_KEYS   = ["own","mySkin","skills","power"];
+function syncPlan(){
+  const shared = [], mine = [], settled = [];
+  HEROES.forEach(h=>{
+    const f = fileSaysFor(h.key), l = liveSaysFor(h);
+    const dS = SHARED_KEYS.filter(k=>String(f[k]) !== String(l[k]));
+    const dM = MINE_KEYS.filter(k=>String(f[k]) !== String(l[k]));
+    if(dS.length) shared.push({h, f, l, fields:dS});
+    if(dM.length) mine.push({h, f, l, fields:dM});
+  });
+  /* layer entries that now say exactly what the file says — they change
+     nothing and quietly stop the file from ever correcting them */
+  const ov = readOverlay();
+  if(ov && ov.set){
+    const secOf = {TROOPS:"troop", TREE_SET:"trees", SKINS:"skin", OBTAIN:"obtain"};
+    Object.entries(ov.set).forEach(([sec, rows])=>{
+      if(!(sec in secOf)) return;
+      Object.keys(rows).forEach(key=>{
+        const h = byKey(key); if(!h) return;
+        const k = secOf[sec];
+        if(String(fileSaysFor(key)[k]) === String(liveSaysFor(h)[k])) settled.push(`${h.n} · ${k}`);
+      });
+    });
+  }
+  const bandRows = HEROES.filter(h=>{
+    const core = ((coreOf(h.key) || {}).warband) || "";
+    return warbandOf(h.key) !== core;
+  }).map(h=>`  "${h.key}": warband: ${JSON.stringify(warbandOf(h.key) || "")},`
+      + (h.n !== h.key ? `   // ${h.n}` : ""));
+  const sheetRows = shared.map(({h, l})=>
+    pad(h.key, SHEET_W.key) + " | " + pad(l.troop || "-", SHEET_W.troop)
+    + " | " + pad(l.trees || "-", SHEET_W.trees) + " | " + pad(l.skin || "-", SHEET_W.skin)
+    + " | " + pad(l.obtain || "-", SHEET_W.obtain) + " | " + pad(l.seats || "", SHEET_W.seats)
+    + (h.n !== h.key ? `  # ${h.n}` : ""));
+  const mineRows = mine.map(({h, l})=>
+    pad(h.key, SHEET_W.key) + " | " + pad(l.own, 4) + " | " + pad(l.mySkin === "yes" ? "skin" : "-", 5)
+    + " | " + pad(l.power || "-", 8) + " | " + (l.skills || "-")
+    + (h.n !== h.key ? `  # ${h.n}` : ""));
+  /* the parts of your layer with no column anywhere */
+  const homeless = [];
+  if(ov && ov.whole){
+    const NAMED = {META:"meta lineups", SK_RATE:"your skill ratings", TR_RATE:"your talent ratings",
+      TREE_RATE:"tree values", WORTH_ADJ:"your score adjustments", PAIRINGS:"pairings",
+      FORMATIONS:"arena layouts", PHASES:"the plan", SKILL_FX:"skill effects you typed",
+      META_SCORE:"meta scores", VERS_SCORE:"any-troop scores", COPIES:"copies", SHIFTS:"shifts"};
+    Object.keys(ov.whole).forEach(k=>{
+      const v = ov.whole[k];
+      const n = Array.isArray(v) ? v.length : (v && typeof v === "object" ? Object.keys(v).length : (v ? 1 : 0));
+      if(n && NAMED[k]) homeless.push(`${NAMED[k]} (${n})`);
+    });
+  }
+  return {shared, mine, settled, sheetRows, mineRows, bandRows, homeless};
+}
 function updateExport(){
   const lines = TIERS.map(t=>{
     const names = HEROES.filter(h=>h.t===t.k).map(h=>h.n);
@@ -13434,6 +13626,88 @@ document.getElementById("downloadNamesBtn").addEventListener("click", ()=>{
 document.getElementById("resetNamesBtn").addEventListener("click", ()=>{
   HEROES.forEach(h=>{ h.n = h.key; h.a = h.srcA; if(RENAMES[h.key]) applyRename(h, RENAMES[h.key]); });
   renderAll(); namesMsg("Names reverted.");
+});
+function drawSync(){
+  const el = document.getElementById("syncBody"); if(!el) return;
+  const P = syncPlan();
+  const hdrSheet = "# hero         | troop | trees             | skin | obtain | seats";
+  const hdrMine  = "# hero         | own  | hasskin | power    | skills";
+  const block = (id, title, note, head, rows, where) => rows.length ? `
+    <h3 class="synch">${title} <i>${rows.length} hero${rows.length===1?"":"es"}</i></h3>
+    <p class="note">${note}</p>
+    <textarea class="syncta" id="${id}" readonly rows="${Math.min(14, rows.length + 2)}">${
+      esc(head + "\n" + rows.join("\n"))}</textarea>
+    <div class="erow"><button class="btn" data-synccopy="${id}">Copy</button>
+      <span class="msg">paste into <code>${where}</code></span></div>` : `
+    <h3 class="synch">${title} <i>nothing</i></h3>
+    <p class="note">${note} Nothing in this browser differs from <code>${where}</code>.</p>`;
+  el.innerHTML =
+    block("syncSheet", "Facts about the game", 
+      `These belong in the authority, so everyone who opens the page gets them. Replace each hero's
+       existing row, or add it under the right header line &mdash; the column order is read off that
+       header, so a row must match it.`,
+      hdrSheet, P.sheetRows, "core-skills.js")
+  + (P.bandRows.length ? `
+    <h3 class="synch">Warbands <i>${P.bandRows.length} hero${P.bandRows.length===1?"":"es"}</i></h3>
+    <p class="note">A warband has ONE home and it is not the sheet: core-skills.js already carries it on
+      each hero in the skills half, and two homes for one fact become two opinions &mdash; the talent
+      trees lived in two places and disagreed on 31 of 35 rows before anybody noticed. So these are the
+      <code>warband:</code> lines to set, by hero id.</p>
+    <textarea class="syncta" id="syncBand" readonly rows="${Math.min(12, P.bandRows.length + 1)}">${
+      esc(P.bandRows.join("\n"))}</textarea>
+    <div class="erow"><button class="btn" data-synccopy="syncBand">Copy</button>
+      <span class="msg">the skills half of <code>core-skills.js</code></span></div>` : "")
+  + block("syncMine", "Facts about your account",
+      `Yours, not the game's, and nobody else's business. hero-mine.js is loaded as its own sidecar and
+       sits on top of the shared sheet.`,
+      hdrMine, P.mineRows, "hero-mine.js")
+  + `<h3 class="synch">No column anywhere <i>${P.homeless.length}</i></h3>
+     <p class="note">${P.homeless.length
+        ? `${P.homeless.join(", ")} &mdash; none of these has a place in either file yet, so they stay
+           in this browser. <b>My changes → Save my changes</b> writes them to a JSON you can keep or
+           hand over. Said plainly rather than quietly dropped.`
+        : `Nothing. Every edit in this browser has a file it can go home to.`}</p>`
+  + `<h3 class="synch">Then reconcile <i>${P.settled.length} settled</i></h3>
+     <p class="note">${P.settled.length
+        ? `After the rows are pasted in and this page reloaded, your layer still holds the same values
+           &mdash; now agreeing with the file and <b>pinning them</b>, so a later correction could never
+           reach you. ${P.settled.length} entr${P.settled.length===1?"y":"ies"} already match the file:
+           ${esc(P.settled.slice(0,8).join(", "))}${P.settled.length>8?` and ${P.settled.length-8} more`:""}.
+           Dropping them changes nothing you can see and hands those facts back to the file.`
+        : `Nothing in your layer merely repeats the file. There is nothing to drop.`}</p>
+     ${P.settled.length ? `<div class="erow"><button class="btn" id="syncReconcile">Drop the ${P.settled.length} settled</button>
+       <span class="msg" id="syncMsg"></span></div>` : ""}`;
+  el.querySelectorAll("[data-synccopy]").forEach(b=>
+    b.addEventListener("click", ()=>{
+      const ta = document.getElementById(b.dataset.synccopy); if(!ta) return;
+      ta.select();
+      try{ navigator.clipboard.writeText(ta.value); b.textContent = "Copied"; setTimeout(()=>b.textContent="Copy", 1200); }
+      catch(_){ b.textContent = "Press Ctrl/Cmd+C"; }
+    }));
+  const rec = document.getElementById("syncReconcile");
+  if(rec) rec.addEventListener("click", ()=>{
+    const ov = readOverlay(); if(!ov || !ov.set) return;
+    const secOf = {TROOPS:"troop", TREE_SET:"trees", SKINS:"skin", OBTAIN:"obtain"};
+    let n = 0;
+    Object.entries(secOf).forEach(([sec, k])=>{
+      const rows = ov.set[sec]; if(!rows) return;
+      Object.keys(rows).forEach(key=>{
+        const h = byKey(key); if(!h) return;
+        if(String(fileSaysFor(key)[k]) === String(liveSaysFor(h)[k])){ delete rows[key]; n++; }
+      });
+      if(!Object.keys(rows).length) delete ov.set[sec];
+    });
+    try{ localStorage.setItem(OVERLAY_KEY, JSON.stringify({...ov, savedAt:Date.now()})); }catch(_){}
+    const m = document.getElementById("syncMsg");
+    if(m) m.textContent = `${n} handed back to the file. Reload to see the layer shrink.`;
+    drawSync();
+  });
+}
+document.getElementById("syncBtn").addEventListener("click", e=>{
+  const on = e.target.getAttribute("aria-pressed")==="true";
+  e.target.setAttribute("aria-pressed", String(!on));
+  document.getElementById("syncPanel").classList.toggle("hidden", on);
+  if(!on) drawSync();
 });
 document.getElementById("exportBtn").addEventListener("click", e=>{
   const on = e.target.getAttribute("aria-pressed")==="true";
