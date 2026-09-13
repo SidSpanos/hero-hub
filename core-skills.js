@@ -97,8 +97,8 @@ Wukong       | bers  | cav skill vers    | yes  | p2p   # Wukon
 #   the last two columns are only read for a hero the app has never seen -
 #   they introduce them. On an existing hero they are ignored, because where
 #   a hero sits is yours to drag.
-Ganglot      | bers  | bers vers skill   | -    | any    | -    | PvP Arena PvE Rally   # trees are PANEL order not wheel order - check on the wheel. Skin, obtain, tier and modes not yet known.
-Odysseus     | axe   | axe hunt skill    | -    | any    | -    | PvP Arena Rally   # trees are PANEL order not wheel order. Troop from Armor Piercer ("consists entirely of Axethrowers"). All five slots read. Skin, obtain, warband and tier not yet known.
+Ganglot      | bers  | bers vers skill   | yes  | any    | -    | PvP Arena PvE Rally   # trees are PANEL order not wheel order - check on the wheel. Skin, obtain, tier and modes not yet known.
+Odysseus     | axe   | axe hunt skill    | yes  | any    | -    | PvP Arena Rally   # trees are PANEL order not wheel order. Troop from Armor Piercer ("consists entirely of Axethrowers"). All five slots read. Skin, obtain, warband and tier not yet known.
 
 # troop   axe   bers   cav   beast
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
