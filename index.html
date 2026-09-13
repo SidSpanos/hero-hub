@@ -1,5 +1,32 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-13 — TWO THINGS THE APP WAS QUIETLY WRONG ABOUT, both
+     raised by Sid, both measured before saying anything.
+
+     THE WARBAND COUNT WAS FALSE. The showcase printed "16 Warbands"
+     as a computed fact. All sixteen have exactly ONE member, and one
+     of them — Aska's "Blade of Judgment" — is the name of his own
+     ultimate. They are TITLES, the line above the hero's name in the
+     game, picked up into the wrong field. Exactly the trap that was
+     spotted on Odysseus ("The Voyager") and left unset for; it had
+     already happened sixteen times behind us. The counter now shows
+     warbands with MORE THAN ONE member, which is what the word
+     means, and today that is 0. Sid's point stands and cannot be
+     answered from what is on file: a warband whose heroes are mostly
+     f2p ranks up far faster, and its buffs land on everyone in it.
+     That needs MEMBERSHIP captured, which nothing here has.
+
+     THE TALENT TREES ARE THE BIGGEST IDLE ASSET IN THE FILE. All 37
+     heroes have their three trees recorded, and they make 30
+     DISTINCT COMBINATIONS — more than twice the 14 distinct scores
+     the entire formula produces. What each tree GIVES has never been
+     recorded, so all fifteen rate a flat 3 and every hero's trees
+     total exactly 9. Measured: min 9, max 9, across the roster. The
+     highest-resolution thing on file is the one term doing no work,
+     and it does not touch WORTH at all — only the tally.
+     Both are now on the "what it admits" wall rather than in a
+     comment, which is where this app puts its own holes.
+
      2026-09-13 — HOW WRONG IS IT. Sid asked the only question that
      matters about a model, so the Overview now marks it against his
      board in public, live, every time the page draws.
@@ -7154,9 +7181,25 @@ function ovFigures(){
     if(k && k.name) skills++; else unread++;
   }));
   const tri = HEROES.map(h=>trifectasOf(h.key)[0]).filter(Boolean);
-  const wb  = new Set(HEROES.map(h=>warbandOf(h.key)).filter(Boolean));
+  /* A WARBAND IS A GROUP OR IT IS NOTHING. This counted distinct strings and
+     printed 16 on the front page, which was false: all sixteen had exactly one
+     member, and one of them (Aska's "Blade of Judgment") is the name of his own
+     ultimate. They are TITLES — the line above the hero's name in the game —
+     picked up into the wrong field, the same trap that was spotted on Odysseus
+     ("The Voyager") and left unset for. So the counter now shows warbands with
+     MORE THAN ONE member, which is what the word means, and today that is 0. */
+  const mem = {};
+  HEROES.forEach(h=>{ const w = warbandOf(h.key); if(w) (mem[w] = mem[w] || []).push(h); });
+  const groups = Object.entries(mem).filter(([,m])=>m.length > 1);
   const withPower = HEROES.filter(h=>powerOf(h)).length;
-  return { heroes:HEROES.length, skills, unread, warbands:wb.size,
+  /* the talent trees: 30 distinct orderings across the roster, and every one of
+     them currently worth exactly the same. Counted so the page can say so. */
+  const combos = new Set(HEROES.map(h=>(h.treeSet||[]).filter(Boolean).join(">")).filter(Boolean));
+  const trRange = (()=>{ const v = HEROES.map(h=>heroRating(h).trTotal);
+    return v.length ? [Math.min(...v), Math.max(...v)] : [0,0]; })();
+  return { heroes:HEROES.length, skills, unread,
+           warbands:groups.length, titles:Object.keys(mem).length,
+           treeCombos:combos.size, treeFlat: trRange[0] === trRange[1] ? trRange[0] : null,
            tri:tri.length, tri4:tri.filter(t=>t.n>=4).length, withPower };
 }
 function drawOverview(){
@@ -7443,7 +7486,7 @@ function drawOverview(){
     <div class="ovcounts">
       <div class="ovct"><div class="n">${F.heroes}</div><div class="l">Heroes</div></div>
       <div class="ovct"><div class="n">${F.skills}</div><div class="l">Skills read</div></div>
-      <div class="ovct"><div class="n">${F.warbands}</div><div class="l">Warbands</div></div>
+      <div class="ovct" title="A warband is a GROUP. The ${F.titles} strings on file all have exactly one member — they are titles picked up into the warband field, not warband membership, so the honest count is ${F.warbands}."><div class="n">${F.warbands}</div><div class="l">Warbands</div></div>
       <div class="ovct"><div class="n">${F.tri}</div><div class="l">Trifectas</div></div>
       <div class="ovct"><div class="n">${F.tri4}</div><div class="l">Quadfectas</div></div>
       <div class="ovct"><div class="n">9</div><div class="l">Views</div></div>
@@ -7563,6 +7606,18 @@ function drawOverview(){
         <div class="ovcard warn"><h4>Not everything is read</h4>
           <p>Rage, movement, proc chances and troop buffs fall to 3 by design. The model reads a short
             list of things that decide fights, and treats the rest as small.</p></div>
+        <div class="ovcard warn"><h4>${F.treeCombos} tree sets, all worth the same</h4>
+          <p>Every hero's three talent trees are on file, and they make
+            <b>${F.treeCombos}</b> different combinations &mdash; more than twice the ${(()=>{const A=scoreAudit();return A?A.values:"?";})()}
+            distinct scores the whole formula produces. What each tree actually GIVES has never been
+            recorded, so all fifteen rate the same${F.treeFlat !== null ? ` and every hero's trees total exactly ${F.treeFlat}` : ""}.
+            The highest-resolution thing on file is the one term doing no work.</p></div>
+        <div class="ovcard warn"><h4>No warband is a warband yet</h4>
+          <p>${F.titles} strings sit in the warband field and every one has a single member &mdash;
+            one of them is the name of that hero's own ultimate. They are TITLES, the line above the
+            name in the game, not membership. A real warband would say who else is in it, how cheaply
+            that set ranks up, and what its buffs give. None of that is on file, so the count reads
+            <b>0</b> rather than flattering itself.</p></div>
       </div>
     </div></div>
 
