@@ -1,5 +1,41 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-13 — ACCESS IS ABOUT SPEED, NOT ABOUT WHETHER.
+     I had written "a hero you cannot get is worth less than one you
+     can" and scored P2P at 1 of 5, the floor, next to a hard wall.
+     Sid corrected it: P2P DOES NOT MEAN LOCKED. You can get a p2p
+     hero without spending — it just takes longer. Paying is how you
+     field them competitively FAST, not how you field them at all.
+     Nobody on this board is unobtainable, and the term was quietly
+     saying otherwise about three heroes.
+     P2P MOVES 1 -> 2: a slow road, not a closed one, level with the
+     Chieftain track. Every tooltip and comment that said "cannot
+     get" now says how fast.
+     MEASURED BEFORE MOVING, not after, and the two authorities
+     agree — which is the part worth having. At 1: three p2p heroes
+     read S+/S/A, pair agreement 85%. At 2: Freyja, Wukon and Morgan
+     all still read exactly where Sid has them, and agreement rises
+     to 86%. At 3 Wukon breaks out of S; at 4 Morgan breaks out of A
+     as well. So 2 is both what his correction says and what his own
+     tier list says, which is the strongest kind of answer.
+     Not lost on me that MORGAN LE FAY is one of the three. The
+     "she should not fall for others to earn a place" argument this
+     morning was partly my own term holding her down on a premise
+     that was factually wrong.
+     VIP STAYS AT 1 AND IS FLAGGED A GUESS. Sid's correction was
+     about p2p. Whether a VIP level has a free road too, and how
+     long it is, is his to say — Kiana is the only hero on it.
+     AND A BUG THE CORRECTION FLUSHED OUT. Rewording p2p's
+     description in index.html changed nothing on screen: hero-data.js
+     ships its own copy of OBTAIN_TYPES, and addObtainType let that
+     copy overwrite the wording here at load. A stale sentence in a
+     generated file was quietly winning over the source. Two homes
+     for one fact, for the third time in this project — the talent
+     trees, the warband field, and now this. A built-in route's
+     DESCRIPTION is now owned by index.html and a data file cannot
+     overwrite it; renaming a type still works, and a type you added
+     yourself still owns its own words.
+
      2026-09-13 — IS THE FOCUS FORMULA STILL TRUE? Sid asked, and
      the honest answer was no, it had not kept up. Audited it rather
      than reassured him.
@@ -336,10 +372,14 @@
      more than it may lose to one. Imputed at the roster average it
      costs nothing and gains nothing: 33, mid S+.
      ACCESS, on Sid's call, is now a term out of 5 — f2p and general
-     5, boxes 4, wheel and shift 3, chief 2, p2p and VIP 1. It is
+     5, boxes 4, wheel and shift 3, chief 2, p2p 2, VIP 1. It is
      what a tier list has always quietly encoded and never admitted:
-     a hero you cannot get is worth less to this board than one you
-     can. It is why FARHAD and BALDUR were unexplainable — both
+     a hero who takes months to become useful is worth less to this
+     board than one you can run tomorrow. (This first read "a hero
+     you cannot get", with p2p on the floor at 1. Sid corrected it
+     the same day — see the top entry. Nobody here is unobtainable;
+     access is about SPEED.) It is why FARHAD and BALDUR were
+     unexplainable — both
      score on a route, not on a number, and the model was only ever
      reading the number.
      WORTH is now out of 40 rather than 35, and the card says how
@@ -3689,7 +3729,7 @@ const SKIN_DATA = {};
 const OBTAIN = [
   {id:"chief", short:"CHIEF", name:"Top Chieftain",  desc:"earned from the Top Chieftain track"},
   {id:"wheel", short:"WHEEL", name:"Roulette Wheel", desc:"pulled from the roulette wheel"},
-  {id:"p2p",   short:"P2P",   name:"P2P",            desc:"pay to play — bundles, packs or direct purchase"},
+  {id:"p2p",   short:"P2P",   name:"P2P",            desc:"reachable without spending, just slowly — paying is how you field them fast"},
   {id:"f2p",   short:"F2P",   name:"F2P",            desc:"free to play — reachable without spending"},
   {id:"boxes", short:"BOXES", name:"Selection Boxes", desc:"upgraded through selection boxes — usually cheap"},
   {id:"shift", short:"SHIFT", name:"Top Shift Time",  desc:"needs resources hoarded for the shift"},
@@ -4228,10 +4268,29 @@ const KIT_MAX = 25, SKIN_MAX = 5, META_MAX = 5, ACCESS_MAX = 5;
 const MERIT_MAX = KIT_MAX + SKIN_MAX + META_MAX;                // 35 — what a hero IS
 const WORTH_MAX = MERIT_MAX + ACCESS_MAX;                       // 40 — and what they cost
 
-/* how much it costs YOU to field them — free at the top, money-gated at the
-   bottom. A hero you cannot get is worth less to this board than one you can,
-   which is the thing a tier list has always quietly encoded. */
-const ACCESS = {f2p:5, any:5, boxes:4, wheel:3, shift:3, chief:2, p2p:1, vip:1};
+/* ------------------------------------------------------------------
+   ACCESS IS ABOUT SPEED, NOT ABOUT WHETHER
+   ------------------------------------------------------------------
+   The first cut of this read "a hero you cannot get is worth less
+   than one you can", and scored p2p at 1 of 5 — the floor, next to
+   a hard wall. Sid corrected it: P2P DOES NOT MEAN LOCKED. You can
+   get a p2p hero without spending; it just takes longer. Paying is
+   how you field them COMPETITIVELY FAST, not how you field them at
+   all. Nobody on this board is unobtainable.
+   So the term measures HOW QUICKLY you can put a hero on the field
+   ready to fight, and p2p moves 1 -> 2: a slow road, not a closed
+   one, level with the Chieftain track.
+   The correction and Sid's own board agree, which is the useful
+   part. At 1 the three p2p heroes read S+/S/A and pair agreement
+   was 85%. At 2 they still read S+/S/A — Freyja, Wukon and Morgan
+   all stay exactly where he has them — and agreement rises to 86%.
+   At 3 Wukon breaks out of S, at 4 Morgan breaks out of A. Measured
+   before moving, not after.
+   VIP IS LEFT AT 1 AND IS AN OPEN QUESTION. Sid's correction was
+   about p2p; whether a VIP level has a free road too, and how long
+   it is, is his to say. Kiana is the only hero on it, so nothing
+   much hangs on it — but it is a guess, and it is labelled one. */
+const ACCESS = {f2p:5, any:5, boxes:4, wheel:3, shift:3, chief:2, p2p:2, vip:1};
 function accessOf(h){
   const id = h && h.obtain;
   if(!id || !(id in ACCESS)) return {v:null, known:false};
@@ -5085,7 +5144,17 @@ function addObtainType(o){
   const found = OBTAIN.find(x=>x.id===id);
   const short = String(o.short || (name.length<=6 ? name : name.split(/\s+/).map(w=>w[0]).join("")))
                   .toUpperCase().slice(0,6);
-  if(found){ found.name = name; found.short = short; if(o.desc) found.desc = o.desc; return found; }
+  /* A BUILT-IN'S DESCRIPTION IS OWNED BY THIS FILE. hero-data.js ships a copy
+     of OBTAIN_TYPES, and this line used to let that copy overwrite the wording
+     here — so correcting p2p's description in index.html changed nothing,
+     because a stale sentence in a generated file quietly won at load. Two homes
+     for one fact, again. Your own relabelling of a type still applies; the
+     explanation of what a built-in route MEANS does not come from a data file. */
+  if(found){
+    found.name = name; found.short = short;
+    if(o.desc && found.custom) found.desc = o.desc;
+    return found;
+  }
   const made = {id, short, name, desc:o.desc || name, custom:true};
   OBTAIN.push(made);
   return made;
@@ -9852,7 +9921,7 @@ percentage of what this hero could carry in ${skMode} (skills + talents
           ${tri.map(t=>`<tr class="mtri" title="${t.tip}"><td colspan="2">${t.id} ${t.name} &nbsp;<span style="opacity:.65;font-weight:400">— ${t.n} skills</span></td><td class="tnote">+1 each</td></tr>`).join("")}
           <tr class="${P.skin.known?(skin?"":""):"z"} mbonus" title="${P.skin.known ? "What the game charges, not what the hero does." : "NOT RECORDED — this leaves the sum rather than scoring zero. Blank is not the same as no skin."}"><td>+ skin</td><td class="tv">${P.skin.known?(skin||"0"):"·"}</td><td class="tnote">${P.skin.known?"of 5":"roster avg"}</td></tr>
           <tr class="${P.access.known?"":"z"} mbonus" title="${P.access.known
-            ? `How much it costs you to field them: ${obtainById(P.access.id) ? obtainById(P.access.id).name : P.access.id}. Free at the top, money-gated at the bottom — f2p and general 5, boxes 4, wheel and shift 3, chief 2, p2p and VIP 1. A hero you cannot get is worth less to this board than one you can, which is the thing a tier list has always quietly encoded.`
+            ? `HOW FAST you can field them, not whether you can have them: ${obtainById(P.access.id) ? obtainById(P.access.id).name : P.access.id}. f2p and general 5, boxes 4, wheel and shift 3, chief and p2p 2, VIP 1. P2P does not mean locked — you can get those heroes without spending, it just takes longer; paying is how you field them competitively fast. A hero who takes months to become useful is worth less to this board than one you can run tomorrow, which is the thing a tier list has always quietly encoded.`
             : "NOT RECORDED — this leaves the sum rather than scoring zero. Set how the hero is obtained on their card."}">
             <td>+ access</td><td class="tv">${P.access.known?acc:accB}</td><td class="tnote">${P.access.known?(obtainById(P.access.id)||{short:""}).short.toLowerCase():"roster avg"}</td></tr>
           <tr class="${P.meta.known?"":"z"} mbonus" title="${P.meta.known ? "How often they turn up in the lineups you have logged." : "NOT SET — this leaves the sum rather than scoring zero."}">

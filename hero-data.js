@@ -71,7 +71,7 @@ window.HERO_DATA = {
    "id": "p2p",
    "short": "P2P",
    "name": "P2P",
-   "desc": "pay to play — bundles, packs or direct purchase"
+   "desc": "reachable without spending, just slowly — paying is how you field them fast"
   },
   {
    "id": "f2p",
