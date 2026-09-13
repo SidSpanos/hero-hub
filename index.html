@@ -1,5 +1,30 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-13 — THE WORKLIST: WHAT IS MISSING, HERO BY HERO.
+     A new Overview section, one row per hero and one column per
+     recordable fact, read off the live data every time the page
+     draws. Fill a field anywhere in the app and that row loses its
+     gap — verified by filling Aska's power and seat and watching
+     him drop from four gaps to two and fall down the order.
+     Eleven columns: skills, skin, obtain, meta, power, seat,
+     warband, talents, modes, troop, portrait. Today: 148 gaps
+     across 37 heroes.
+     IT MARKS WHICH GAPS ACTUALLY COUNT, because a worklist that
+     treats all eleven as equally urgent is a worse worklist. Four
+     reach the score and carry a dot on the column head and an amber
+     cell — skills, skin, obtain, meta. The other seven are recorded
+     and shown and deliberately do not score: power and seat by
+     Sid's own ruling, warband because the four buffs it gives are
+     not captured, talents because what a tree gives has never been
+     written down. 39 of the 148 gaps are the ones that pay, and the
+     rows sort by those first.
+     The footer row totals each column, which is where the shape of
+     the job shows: meta 37 of 37, warband 37, power 36, seat 35 —
+     and skin, obtain, talents, troop and portraits all at zero. The
+     skills column is down to 2 (Baldur and Elia).
+     A hero's name is a way in, not a label: clicking it opens them
+     on the Hero Score tab with the card flashed.
+
      2026-09-13 — "THEN IT'S NOT LIVE." Sid, and he was right.
      The admits wall computed its NUMBERS and then wrote the
      SITUATION around them in fixed prose: "every one has a single
@@ -1706,6 +1731,27 @@
   .rwbi{width:100%;font:inherit;font-size:12px;padding:3px 5px;border:1px solid var(--border);
     border-radius:4px;background:var(--surface);color:inherit}
   .rwbn{font-size:10px;font-weight:700;letter-spacing:.03em;color:var(--series-3);cursor:help}
+  #viewOverview .ovmisswrap{margin-top:26px;overflow-x:auto;border:1px solid var(--ov-edge);
+    border-radius:3px;background:var(--ov-deep)}
+  #viewOverview .ovmiss{border-collapse:collapse;width:100%;font-size:12px}
+  #viewOverview .ovmiss th,#viewOverview .ovmiss td{padding:5px 8px;text-align:center;
+    border-bottom:1px solid var(--ov-edge);white-space:nowrap}
+  #viewOverview .ovmiss thead th{font-family:var(--ov-mono);font-size:10px;font-weight:700;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--ov-tx2);position:sticky;top:0;
+    background:var(--ov-panel);cursor:help}
+  #viewOverview .ovmiss thead th.sc{color:var(--ov-cy)}
+  #viewOverview .ovmiss thead th i{font-style:normal;font-size:7px;vertical-align:super;margin-left:2px}
+  #viewOverview .ovmiss .hnm{text-align:left;font-family:var(--ov-mono);color:var(--ov-tx)}
+  #viewOverview .ovmh{cursor:pointer;border-bottom:1px dotted var(--ov-edge2)}
+  #viewOverview .ovmh:hover{color:var(--ov-cy)}
+  #viewOverview .ovmt{font-style:normal;font-size:9px;opacity:.7;margin-left:5px}
+  #viewOverview .ovmiss td.ok{color:var(--ov-edge2)}
+  #viewOverview .ovmiss td.gap{color:var(--ov-dim);font-weight:700;cursor:help}
+  #viewOverview .ovmiss td.gapsc{color:var(--ov-amber);font-weight:700;cursor:help;
+    background:color-mix(in srgb,var(--ov-amber) 9%,transparent)}
+  #viewOverview .ovmiss tfoot td{font-family:var(--ov-mono);font-weight:700;
+    border-top:1px solid var(--ov-edge2);border-bottom:none;background:var(--ov-panel)}
+  #viewOverview .ovdot{font-style:normal;font-size:8px;vertical-align:super;color:var(--ov-cy)}
   #viewOverview .ovhold{margin-top:26px;padding:16px 18px;border:1px solid var(--ov-edge);
     border-left:3px solid var(--ov-amber);background:var(--ov-deep);border-radius:3px}
   #viewOverview .ovholdb{height:6px;background:var(--ov-void);border:1px solid var(--ov-edge);
@@ -4227,6 +4273,75 @@ function pairAgreement(){
   }
   return (AGREE_CACHE = tot ? Math.round(ag / tot * 100) : 0);
 }
+/* ============================================================
+   WHAT IS MISSING, HERO BY HERO
+   ============================================================
+   The accuracy panel says how wrong the model is. This says what
+   would have to be typed to make it less wrong, and on whom.
+   One row per hero, one column per recordable fact, and it is
+   read off the live data every time the page draws — fill a
+   field anywhere in the app and the row loses a gap.
+
+   IT MARKS WHICH GAPS ACTUALLY COUNT. Four of these reach the
+   score (the five skill slots, skin, obtain, meta); the rest are
+   recorded and shown and deliberately do not score — power and
+   seat by Sid's own ruling, warband because the four buffs it
+   gives are not captured, talents because what a tree gives has
+   never been written down. A worklist that treats all eleven as
+   equally urgent is a worse worklist, so the ones that move the
+   number say so.
+   ============================================================ */
+const MISSING_FIELDS = [
+  {id:"slots",  label:"skills",   scores:true,
+   has:h=>{ const k = kitRead(h); return !!(k && k.read === 5); },
+   miss:h=>{ const k = kitRead(h); return `${k ? k.read : 0} of 5 tooltips read`; },
+   why:"an unread slot is a guess, however good"},
+  {id:"skin",   label:"skin",     scores:true,
+   has:h=>h.skin === "yes" || h.skin === "no",
+   why:"blank is not the same as no skin"},
+  {id:"obtain", label:"obtain",   scores:true,
+   has:h=>!!h.obtain,
+   why:"the route is worth up to 5 on its own"},
+  {id:"meta",   label:"meta",     scores:true,
+   has:h=>metaScoreOf(h.key).v > 0,
+   why:"how often you field them — the only empty term in the formula"},
+  {id:"power",  label:"power",    scores:false,
+   has:h=>powerOf(h) !== null,
+   why:"at level 60 and 6 stars only, or the numbers do not compare"},
+  {id:"seats",  label:"seat",     scores:false,
+   has:h=>!!h.seats,
+   why:"commander, lieutenant or either"},
+  {id:"band",   label:"warband",  scores:false,
+   has:h=>{ const W = warbandInfo(warbandOf(h.key)); return !!(W && W.n > 1); },
+   miss:h=>warbandOf(h.key) ? `"${warbandOf(h.key)}" has no other member` : "no warband recorded",
+   why:"a name on one hero is a title, not a warband"},
+  {id:"trees",  label:"talents",  scores:false,
+   has:h=>(h.treeSet||[]).filter(Boolean).length === 3,
+   why:"three trees, left to right off the wheel"},
+  {id:"modes",  label:"modes",    scores:false,
+   has:h=>(h.tags||[]).length > 0,
+   why:"what they are actually for"},
+  {id:"troop",  label:"troop",    scores:false,
+   has:h=>!!h.troop,
+   why:"who they march"},
+  {id:"face",   label:"portrait", scores:false,
+   has:h=>!!portraitOf(h),
+   why:"cosmetic, but the board reads better with it"}
+];
+function missingAudit(){
+  const rows = HEROES.map(h=>{
+    const gaps = MISSING_FIELDS.filter(f=>!f.has(h));
+    return {h, gaps, n:gaps.length,
+            scoring: gaps.filter(f=>f.scores).length};
+  });
+  const perField = MISSING_FIELDS.map(f=>({f, n:rows.filter(r=>r.gaps.includes(f)).length}));
+  return {rows: rows.filter(r=>r.n).sort((a,b)=>
+            b.scoring - a.scoring || b.n - a.n || a.h.n.localeCompare(b.h.n)),
+          done: rows.filter(r=>!r.n).length,
+          total: HEROES.length, perField,
+          fields: MISSING_FIELDS};
+}
+
 /* ============================================================
    HOW CLOSE IS IT, AND WHAT IS STOPPING IT
    ============================================================
@@ -7721,7 +7836,48 @@ function drawOverview(){
           ${esc(x.h.n)} <i>${x.t}&#8594;${x.g}</i> <b>${x.gap > 0 ? "+" + x.gap : x.gap}</b></span>`).join("")}</div>` : ""}
     </div></div>`; })()}
 
+    ${(()=>{ const M = missingAudit(); if(!M.rows.length) return `
     <div class="ovsec alt"><div class="ovwrap">
+      <div class="ovkick">The worklist</div>
+      <h3 class="ovh2">Nothing is missing</h3>
+      <p class="ovlede">All ${M.total} heroes carry every field the app knows how to hold. This section
+        fills itself back in the moment that stops being true.</p>
+    </div></div>`;
+      const scoringGaps = M.rows.reduce((n,r)=>n + r.scoring, 0);
+      const allGaps = M.rows.reduce((n,r)=>n + r.n, 0);
+      return `
+    <div class="ovsec alt"><div class="ovwrap">
+      <div class="ovkick">The worklist</div>
+      <h3 class="ovh2">${M.rows.length} heroes are missing something</h3>
+      <p class="ovlede"><b>${allGaps}</b> gaps across ${M.rows.length} heroes, and
+        <b>${scoringGaps}</b> of them reach the score &mdash; the rest are recorded and shown but
+        deliberately do not count. Filled anywhere in the app, a row loses its gap here the next time
+        this page draws. Heroes with the most SCORING gaps come first, because that is the order that
+        pays. ${M.done ? `${M.done} of ${M.total} are complete.` : ""}</p>
+      <div class="ovmisswrap"><table class="ovmiss">
+        <thead><tr><th class="hnm">Hero</th>${M.fields.map(f=>`
+          <th class="${f.scores?"sc":""}" title="${f.why}${f.scores?" — THIS ONE SCORES." : " — recorded and shown, does not score."} Missing on ${
+            (M.perField.find(x=>x.f===f)||{}).n} of ${M.total}.">${f.label}${f.scores?`<i>&#9679;</i>`:""}</th>`).join("")}</tr></thead>
+        <tbody>${M.rows.map(r=>`
+          <tr><td class="hnm"><span class="ovmh" data-ovjump="${r.h.key}" title="Find ${esc(r.h.n)} on the tier board">${
+            esc(r.h.n)}</span> <i class="ovmt t-${r.h.t.replace("+","p")}">${r.h.t}</i></td>${
+            M.fields.map(f=>{
+              const gap = !f.has(r.h);
+              return `<td class="${gap ? (f.scores ? "gapsc" : "gap") : "ok"}" title="${
+                gap ? `${esc(r.h.n)}: ${f.miss ? f.miss(r.h) : "no " + f.label + " recorded"}${
+                  f.scores ? " — this one scores" : ""}` : `${esc(r.h.n)}: ${f.label} recorded`}">${
+                gap ? "&middot;" : "&#10003;"}</td>`;
+            }).join("")}</tr>`).join("")}</tbody>
+        <tfoot><tr><td class="hnm">missing on</td>${M.perField.map(x=>`
+          <td class="${x.n ? (x.f.scores?"gapsc":"gap") : "ok"}">${x.n}</td>`).join("")}</tr></tfoot>
+      </table></div>
+      <p class="ovlede" style="margin-top:18px;font-size:13px">A <i class="ovdot">&#9679;</i> on a
+        column means that field reaches the score. Power and seat do not, by your own ruling; warband
+        does not because the four buffs it gives are not captured; talents do not because what a tree
+        gives has never been written down.</p>
+    </div></div>`; })()}
+
+    <div class="ovsec"><div class="ovwrap">
       <div class="ovkick">Kept honest</div>
       <h3 class="ovh2">What it admits</h3>
       <p class="ovlede">A card that pretends is worse than a card that owns up. All of these are on
@@ -7810,6 +7966,9 @@ function drawOverview(){
     b.addEventListener("click", ()=>{ switchView("board"); window.scrollTo({top:0, behavior:"smooth"}); }));
   body.querySelectorAll("[data-ovhero]").forEach(b=>
     b.addEventListener("click", ()=> revealOnBoard(b.dataset.ovhero)));
+  /* the worklist: a name is a way in, not a label — go and fill the gap */
+  body.querySelectorAll("[data-ovjump]").forEach(b=>
+    b.addEventListener("click", ()=> editOnScore(b.dataset.ovjump)));
 }
 
 /* ============================================================
