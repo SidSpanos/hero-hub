@@ -1,5 +1,19 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-13 — A THRESHOLD, NOT A VERDICT. The accuracy panel now
+     carries Sid's own rule instead of leaving it in a conversation:
+     no meta-driven review of the board until 100 LINEUP SIGHTINGS
+     are logged, with a live count against it. 0 of 100 today.
+     Why it matters more than it looks. A meta score read off a
+     handful of lineups is noise wearing a number, and he would
+     rather the board be wrong for a known reason than right for an
+     accidental one. So while the count is short, a hero reading one
+     band off where he has them is EXPECTED, not a fault — the term
+     that would explain it has nothing in it yet. ASKA is the live
+     case: the score says S+, the board says S, and S is where he
+     stays. The panel says so on its face so nobody reads 57% as a
+     failing grade on a model that is missing an input by design.
+
      2026-09-13 — TWO THINGS THE APP WAS QUIETLY WRONG ABOUT, both
      raised by Sid, both measured before saying anything.
 
@@ -1635,6 +1649,13 @@
   #viewOverview .ovaccn{grid-column:2 / -1;font-size:12.5px;line-height:1.5;color:var(--ov-tx2);margin-top:-4px}
   #viewOverview .ovacc:last-child .ovaccb span{background:var(--ov-amber)}
   #viewOverview .ovacc:last-child .ovaccv{color:var(--ov-amber)}
+  #viewOverview .ovhold{margin-top:26px;padding:16px 18px;border:1px solid var(--ov-edge);
+    border-left:3px solid var(--ov-amber);background:var(--ov-deep);border-radius:3px}
+  #viewOverview .ovholdb{height:6px;background:var(--ov-void);border:1px solid var(--ov-edge);
+    border-radius:2px;overflow:hidden;margin-bottom:10px}
+  #viewOverview .ovholdb span{display:block;height:100%;background:var(--ov-amber)}
+  #viewOverview .ovholdt{font-size:13px;line-height:1.55;color:var(--ov-tx2)}
+  #viewOverview .ovholdt b{color:var(--ov-amber)}
   #viewOverview .ovoff{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
   #viewOverview .ovoffc{font-family:var(--ov-mono);font-size:11.5px;padding:5px 9px;cursor:help;
     border:1px solid var(--ov-edge);border-radius:3px;background:var(--ov-deep);color:var(--ov-tx2)}
@@ -4176,7 +4197,20 @@ function pairAgreement(){
    It is that 1-5 across five skills only produces a handful of
    distinct totals, and a coarse ruler cannot cut fine.
    ============================================================ */
+/* SID'S THRESHOLD. A meta score read off a handful of lineups is noise wearing
+   a number, and he would rather the board be wrong for a known reason than
+   right for an accidental one. So: no meta-driven review until 100 sightings
+   are logged. Until then a hero reading one band off their placement is
+   EXPECTED, not a fault — Aska is the live case, and where he sits is S. */
+const META_REVIEW_AT = 100;
+function metaProgress(){
+  const F = (typeof metaHeroFreq === "function") ? metaHeroFreq() : {total:0};
+  return {total:F.total || 0, at:META_REVIEW_AT,
+          pct: Math.min(100, Math.round((F.total||0) / META_REVIEW_AT * 100)),
+          ready: (F.total||0) >= META_REVIEW_AT};
+}
 function scoreAudit(){
+  const METPROG = metaProgress();
   const order = TIERS.map(t=>t.k), idx = k=>order.indexOf(k);
   const C = tierCuts();
   const pool = HEROES.filter(h=>!h.unplaced && idx(h.t) >= 0)
@@ -4205,10 +4239,13 @@ function scoreAudit(){
     near:  pool.filter(x=>Math.abs(x.gi - x.ti) <= 1).length,
     pairs: pairAgreement(),
     ceil, split, values: Object.keys(byS).length,
+    meta: METPROG,
     off: pool.filter(x=>x.g !== x.t).sort((a,b)=>Math.abs(b.gap) - Math.abs(a.gap) || a.h.n.localeCompare(b.h.n)),
     fields: [
       {id:"meta",  label:"meta score",   have: has(x=>metaScoreOf(x.h.key).v > 0),
-       what:"how often you actually field them — the one term in the formula with nobody in it"},
+       what:`how often you actually field them &mdash; the one term in the formula with nobody in it.
+         ${METPROG.total} of the ${META_REVIEW_AT} lineup sightings you want logged before this is
+         worth reading${METPROG.ready ? " &mdash; so it is time to review" : ""}`},
       {id:"power", label:"power at 60/6&#9733;", have: has(x=>powerOf(x.h) !== null),
        what:"a real number, so it breaks the ties a 1-5 scale cannot"},
       {id:"seats", label:"seat",          have: has(x=>x.h.seats),
@@ -7578,6 +7615,15 @@ function drawOverview(){
         <div class="ovcard ${f.have ? "" : "warn"}">
           <h4>${f.have} of ${A.n} &middot; ${f.label}</h4>
           <p>${f.what}</p></div>`).join("")}</div>
+      <div class="ovhold">
+        <div class="ovholdb"><span style="width:${A.meta.pct}%"></span></div>
+        <div class="ovholdt"><b>${A.meta.total} of ${A.meta.at}</b> lineup sightings logged.
+          ${A.meta.ready
+            ? `Enough to read the meta term properly &mdash; time to review the board against it.`
+            : `Until that is met, a hero reading one band off where you have them is EXPECTED rather
+               than a fault: the term that would explain it has nothing in it yet. A meta score taken
+               off a handful of lineups is noise wearing a number.`}</div>
+      </div>
       ${A.off.length ? `<p class="ovlede" style="margin-top:26px">And these
         <b>${A.off.length}</b> carry the whole disagreement. Everyone else already reads where you
         have them, so nothing you record about them can improve the number:</p>
