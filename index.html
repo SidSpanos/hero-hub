@@ -1,5 +1,36 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-13 — IS THE FOCUS FORMULA STILL TRUE? Sid asked, and
+     the honest answer was no, it had not kept up. Audited it rather
+     than reassured him.
+     WHAT IT READS: h.t, and nothing else new. Not worthOf, not
+     obtain, not seats, not warband, not power. Measured its order
+     against plain tier order — 97% of 549 cross-tier pairs. So the
+     recommendation was very nearly "your own tier list, re-sorted".
+     WHY: the two meta terms are 135 of the 256 points on offer,
+     more than half the formula, and both read 0 because no lineups
+     are logged. It was running on a third of its intended signal
+     and looking confident about it. The panel now says so on its
+     own face, with the real ceiling arithmetic.
+     ONE NUMBER FOR ONE JUDGMENT. metaTrust said 6 — full weight
+     after six lineups — while the accuracy panel added this morning
+     said 100. Sixteen times apart, same question, and I wrote the
+     second one. metaTrust now follows META_REVIEW_AT, so raising
+     Sid's threshold raises both.
+     A LABEL ON THE WRONG FACT. The +8 term read h.versatile, the
+     BALANCED tree — not stuck with one troop — and captioned itself
+     "versatile — fits any commander", which is the SEAT question
+     and the exact confusion Sid corrected two hours earlier. Now
+     two terms that say what they read: anyTroop (Balanced) and
+     eitherSeat (CL). Farhad moves 6th to 3rd on it, which is the
+     first time his either-seat fact has paid for anything.
+     STILL NOT READ, and deliberately left for Sid: ACCESS. Focus
+     asks where levels, stars and gear pay back — and an f2p hero's
+     shards keep arriving while a p2p hero stalls, which is his own
+     Baldur-and-Farhad insight pointed at investment rather than
+     ranking. That changes recommendations, so it is his call, not
+     a change to slip in.
+
      2026-09-13 — EDITS CAN COME HOME. A "Send to project" button
      and panel, because the browser layer was a one-way street and
      that is worse than it sounds: a layer entry SHADOWS THE FILE
@@ -2755,6 +2786,7 @@
   .mkwarn{ font-size:10px; letter-spacing:.05em; color:#b4553c; border:1px solid #e2b6a8;
            border-radius:999px; padding:2px 7px; margin-right:6px; }
   .mkwarnnote{ color:#b4553c !important; }
+  .warnnote{border-left:3px solid var(--series-2);padding-left:10px}
   .skcard.markers tr.mtri td{ color:#2f6f4f; }
   .wsug{ margin-top:9px; padding:7px 9px; border-radius:7px; font-size:11px; line-height:1.5; }
   .wsug.ok{  background:rgba(47,111,79,.07);  color:#2f6f4f; }
@@ -2833,6 +2865,7 @@
     <p class="note">Where your levels, stars, skills and gear pay back most, worked out for every hero you
       own. Change a weight and the table re-sorts immediately — the point is that you can disagree with it.
       Terms that score nothing for anyone are usually waiting on data, not broken.</p>
+    <p class="note" id="focusSleep"></p>
     <div class="fwgrid" id="fwGrid"></div>
     <div class="erow" style="margin-top:10px">
       <button class="btn" id="fwReset">Back to the standard weights</button>
@@ -9188,9 +9221,20 @@ const FOCUS_W = {
   teamCap: 15,     // three teams' worth is as much as team count can ever say
   metaMax: 90,     // answering everything the meta fields earns this
   metaSelf: 45,    // and being in the meta yourself is proof you're worth having
-  metaTrust: 6,    // lineups tracked before the meta terms count at full weight
+  /* ONE NUMBER FOR "WHEN IS META WORTH READING". This said 6 while the
+     accuracy panel said 100, sixteen times apart, for the same judgment —
+     exactly the drift this project keeps catching. It now follows Sid's own
+     threshold, so raising META_REVIEW_AT raises both. */
+  metaTrust: META_REVIEW_AT,
   mode: 2,
-  versatile: 8,
+  /* TWO DIFFERENT THINGS, AND THIS TERM HAD THE WRONG LABEL ON THE RIGHT
+     CODE. anyTroop reads h.versatile, which is the BALANCED tree: the hero is
+     not stuck with their own troop. It used to be captioned "fits any
+     commander", which is the SEAT question and a different fact entirely —
+     the one Sid means by versatile. Both are worth investment and they are
+     now two terms saying what they actually read. */
+  anyTroop: 8,     // carries Balanced — can march whatever you are geared for
+  eitherSeat: 8,   // works as commander AND lieutenant — twice the places to put them
   scarce: 6,
   /* How much a hero is worth once you already own better ones of the same
      troop. You field five teams — ten seats — and the triangle wants a spread,
@@ -9263,7 +9307,10 @@ function focusScore(h, forMode){
     const v = h.tags.length * FOCUS_W.mode;
     if(v){ score += v; why.push({t:"modes", k:`${h.tags.length} modes`, v}); }
   }
-  if(h.versatile){ score += FOCUS_W.versatile; why.push({t:"vers", k:"versatile — fits any commander", v:FOCUS_W.versatile}); }
+  if(h.versatile){ score += FOCUS_W.anyTroop;
+    why.push({t:"vers", k:`carries ${treeById(VERSATILE_TREE).name} — not stuck with one troop`, v:FOCUS_W.anyTroop}); }
+  if(h.seats === "CL"){ score += FOCUS_W.eitherSeat;
+    why.push({t:"seat", k:"works in either seat — commander or lieutenant", v:FOCUS_W.eitherSeat}); }
   const sameTroop = HEROES.filter(x=>x.own && x.troop && x.troop===h.troop).length;
   if(h.troop && sameTroop <= 3){
     score += FOCUS_W.scarce; why.push({t:"scarce", k:`only ${sameTroop} ${troopName(h.troop)} you own`, v:FOCUS_W.scarce});
@@ -13566,11 +13613,36 @@ document.addEventListener("keydown", e=>{
   // close the last one that's open
   Object.keys(PANEL_OF).reverse().some(closePanel);
 });
+/* The two meta terms are 135 of the points on offer and they are worth nothing
+   at all until lineups are logged. A formula running on a third of its intended
+   signal should say so on its own face rather than looking confident. */
+function drawFocusSleep(){
+  const el = document.getElementById("focusSleep"); if(!el) return;
+  const F = (typeof metaHeroFreq === "function") ? metaHeroFreq() : {total:0};
+  /* the most any hero could score from each half — the top tier is 6 points of
+     tier, and a hero can hold every mode, so this is a real ceiling not a guess */
+  const asleep = FOCUS_W.metaMax + FOCUS_W.metaSelf;
+  const awake  = FOCUS_W.tier * Math.max(...Object.values(TIER_WORTH))
+               + FOCUS_W.teamCap + FOCUS_W.mode * MODES.length
+               + FOCUS_W.anyTroop + FOCUS_W.eitherSeat + FOCUS_W.scarce;
+  if(F.total >= FOCUS_W.metaTrust){
+    el.innerHTML = `<b>${F.total} lineups tracked</b> — the two meta terms are at full weight.`;
+    el.className = "note"; return;
+  }
+  el.innerHTML = `<b>The two biggest terms are asleep.</b> Answering the meta is worth
+    ${FOCUS_W.metaMax} and being in it yourself ${FOCUS_W.metaSelf} &mdash; <b>${asleep} of the
+    ${asleep + awake}</b> points on offer, more than half the formula &mdash; and both read <b>0</b>
+    until lineups are logged
+    (${F.total} of ${FOCUS_W.metaTrust}). Until then this ranking is mostly your own tier order,
+    adjusted for teams, modes and how many of that troop you already own. It is a real answer, but it
+    is not yet the answer this formula was built to give.`;
+  el.className = "note warnnote";
+}
 document.getElementById("focusBtn").addEventListener("click", e=>{
   const on = e.currentTarget.getAttribute("aria-pressed")==="true";
   e.currentTarget.setAttribute("aria-pressed", String(!on));
   document.getElementById("focusPanel").classList.toggle("hidden", on);
-  if(!on){ clearFocus(); drawFocusPanel(); wireFocusPanel(); }
+  if(!on){ clearFocus(); drawFocusPanel(); wireFocusPanel(); drawFocusSleep(); }
 });
 document.getElementById("startBtn").addEventListener("click", e=>{
   const on = e.currentTarget.getAttribute("aria-pressed")==="true";
