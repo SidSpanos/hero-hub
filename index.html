@@ -1,5 +1,42 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-13 — A HERO NEVER FALLS SO THAT ANOTHER CAN RISE.
+     Sid's rule, and the grader was breaking it structurally, not by
+     accident. suggestTier handed out SEATS: it sorted the whole
+     roster by score and gave each tier exactly as many places as it
+     already held — nine S+ chairs, four S, seven A. On a fixed
+     number of chairs every gain is somebody's loss. So recording
+     GANGLOT's skin, which is a fact about Ganglot, evicted a hero
+     who had not changed at all, and MORGAN LE FAY read A->B holding
+     the joint-best kit on the board (23) because two heroes BELOW
+     her collected an access bonus and took the last A chair. Neither
+     of them had got worse. The ladder had run out of chairs.
+     GRADING IS NOW ABSOLUTE. There are six score lines — S+ 33+,
+     S 31-32, A 28-30, B 26-27, C 25, D 23-24 — and the band a hero
+     reads into is a function of their own number and nothing else.
+     Morgan holds A. Helda and Reid hold A. Nobody is standing in
+     anybody's way any more.
+     THE LINES ARE FITTED TO SID'S OWN BOARD, not invented. Of every
+     possible set of monotone cuts these are the ones that disagree
+     with where he has actually put people the fewest times: 15 of
+     35 placed heroes. A tie in score is never split across a cut —
+     two heroes on the same number have to read the same, which is
+     what a score means. fitTierCuts() is in the file so the numbers
+     are reproducible rather than magic.
+     AND THE LINES ARE PINNED. The first cut of this re-fitted them
+     on every render, which put the coupling straight back in a
+     quieter place: move one hero and the lines move under everyone.
+     Measured it — a +3 on each hero in turn, and 10 of the 37
+     dragged somebody else across a band with them. Written down as
+     constants the same test moves nobody: 0 of 37. Re-fitting is
+     now a deliberate act, for after a deliberate re-tiering.
+     WITH THE IMPUTATION RULE BELOW, the promise is closed at both
+     ends: a hole in your data does not push a hero down, and
+     neither does somebody else's hole being filled in.
+     Band changes fall from 18 to 15, and the 15 left are the model
+     honestly disagreeing with the board rather than the board
+     fighting over chairs.
+
      2026-09-13 — NOTHING MISSING IS SCORED AS ZERO, AND ACCESS IS A
      TERM. Two changes, but they are the same change.
      A blank was being read as a fact in three places at once: an
@@ -32,13 +69,18 @@
      WORTH is now out of 40 rather than 35, and the card says how
      much of a hero's number is measured: "6 of 8 known", with the
      unknowns named.
-     18 of 37 heroes change band. The big ones are worth seeing
-     rather than discovering: KARL A->C and KIANA B->D fall on a wheel
-     and a VIP gate with no skin behind them, and MORGAN LE FAY A->B
-     falls with the joint-best kit on the board (23) because she is
-     p2p. That last one is the trade in one hero: this board now
-     answers WHAT SHOULD I BUILD, not WHO IS STRONGEST. Both are real
-     questions. Only one of them is now on the board.
+     ACCESS IS ADDED ON TOP, out of the merit ratio entirely, so the
+     worst it can ever do is add nothing: a hero is not dragged down
+     for being expensive, they simply do not collect a bonus that a
+     free hero does. MERIT (kit + skin + meta) is what a hero IS, out
+     of 35; access is what they cost, up to 5 more.
+     KARL A->D and KIANA B->D fall on a wheel and a VIP gate with no
+     skin behind them. This board now answers WHAT SHOULD I BUILD,
+     not WHO IS STRONGEST. Both are real questions. Only one of them
+     is now on the board.
+     (MORGAN LE FAY fell A->B in the first cut of this, which broke
+     Sid's rule about nobody falling for somebody else. Fixed in the
+     entry above; she holds A.)
 
      2026-09-12 — THE FINDING NOW ROTATES. One hero at a time, the
      chart re-aimed at what THEY do. Payload stays on the horizontal
@@ -447,7 +489,10 @@
      The card on each hero is WORTH, and it is your design, not
      mine. Every skill scores at least 3, the good ones 4, the ones
      that decide a fight 5 - then skin and meta on top. That is all
-     it is. It agrees with the tier board on 89% of hero pairs. The
+     it is. It agreed with the tier board on 89% of hero pairs when
+     this was written; the card now COMPUTES that figure every time
+     it draws (pairAgreement), because it was 85% by the next change
+     and a hard-coded honesty number is a lie with a delay. The
      seven correlation-fitted markers it replaced managed 90%, so a
      lot of fitting bought one point over a rule stated in one
      sentence - and the fitted version had the worse flaw: it used
@@ -3738,19 +3783,47 @@ function termMeans(){
   });
   return TERM_MEAN_CACHE;
 }
-function clearTermMeans(){ TERM_MEAN_CACHE = null; }
-function worthOf(h){
+function clearTermMeans(){ TERM_MEAN_CACHE = null; CUTS_CACHE = null; AGREE_CACHE = null; }
+/* ------------------------------------------------------------------
+   ACCESS ADDS. IT NEVER SUBTRACTS.
+
+   The first cut marked access inside the same ratio as everything
+   else, and that quietly made it a penalty: Morgan le Fay holds the
+   joint-best kit on the board at 23 and fell A -> B, because being
+   p2p scored 1 of 5 and dragged her whole ratio down. A hero must
+   not fall for something that is not about them. Others earn their
+   place by being good, not by someone else being taxed.
+
+   So the card is in two halves. MERIT — kit, skin, meta — is what a
+   hero IS, normalised out of 35 with a missing term borrowing the
+   roster average, exactly as before. ACCESS is added on top, out of
+   5, and the worst it can ever do is add nothing. Morgan keeps her
+   merit in full and simply does not collect a bonus that free heroes
+   do; she stays in A, and Sylvan still passes her on a tie, which is
+   the right way round.
+   ------------------------------------------------------------------ */
+function meritOf(h){
   const P = worthParts(h); if(!P) return null;
   const M = termMeans();
   let got = P.kit.v, outOf = P.kit.max;
-  ["skin","meta","access"].forEach(k=>{
+  ["skin","meta"].forEach(k=>{
     const t = P[k];
     if(t.known){ got += t.v; outOf += t.max; }
     else if(M[k] !== null){ got += M[k]; outOf += t.max; }   // borrow the ordinary
-    /* nobody has it: the term leaves the card for everyone */
+    /* nobody has it: the term leaves the card for everyone alike */
   });
-  if(!outOf) return null;
-  return Math.round(got / outOf * WORTH_MAX) + P.adj;
+  return outOf ? got / outOf * MERIT_MAX : null;
+}
+function accessBonusOf(h){
+  const P = worthParts(h); if(!P) return 0;
+  if(P.access.known) return P.access.v;
+  const M = termMeans();
+  return M.access === null ? 0 : M.access;      // ordinary, so a blank cannot move them
+}
+function worthOf(h){
+  const P = worthParts(h); if(!P) return null;
+  const m = meritOf(h); if(m === null) return null;
+  return Math.round(m + accessBonusOf(h)) + P.adj;
 }
 /* how much of a hero's number is measured rather than inferred */
 function worthConfidence(h){
@@ -3797,7 +3870,8 @@ function worthConfidence(h){
    ============================================================ */
 const KIT_FLOOR = 2;          // fewest slots read before a kit may be projected
 const KIT_MAX = 25, SKIN_MAX = 5, META_MAX = 5, ACCESS_MAX = 5;
-const WORTH_MAX = KIT_MAX + SKIN_MAX + META_MAX + ACCESS_MAX;   // 40
+const MERIT_MAX = KIT_MAX + SKIN_MAX + META_MAX;                // 35 — what a hero IS
+const WORTH_MAX = MERIT_MAX + ACCESS_MAX;                       // 40 — and what they cost
 
 /* how much it costs YOU to field them — free at the top, money-gated at the
    bottom. A hero you cannot get is worth less to this board than one you can,
@@ -3820,28 +3894,144 @@ function kitRead(h){
            v: projected ? Math.round(raw / read.length * 5 * 10) / 10 : raw };
 }
 function kitOf(h){ const k = kitRead(h); return k ? k.v : null; }
+/* ============================================================
+   A HERO NEVER FALLS SO THAT ANOTHER CAN RISE
+   ============================================================
+   suggestTier used to hand out SEATS. It sorted the whole roster
+   by score and then gave each tier exactly as many places as it
+   already held: nine S+ chairs, four S, seven A. That is
+   zero-sum by construction, and it produced a result nobody
+   asked for — recording Ganglot's skin evicted somebody who had
+   not changed at all, and Morgan le Fay read A→B on a joint-best
+   kit of 23 because two heroes BELOW her collected an access
+   bonus and took the last A chair. Neither of them had got
+   worse. The ladder had simply run out of chairs.
+
+   Grading is now ABSOLUTE. A score maps to a band, and the band
+   a hero reads into is a function of their own number and
+   nothing else. No other hero's data arriving can move them.
+   Together with the imputation rule above — nothing missing is
+   ever scored as zero — that closes both halves of the promise:
+   a hole in the data does not push a hero down, and neither
+   does somebody else's hole being filled in.
+
+   THE CUTS ARE NOT INVENTED. They are fitted to Sid's own list.
+   For every set of monotone thresholds we count how many heroes
+   would read into a band other than the one he put them in, and
+   we keep the cuts that disagree with him least. Ties in score
+   are never split across a cut — two heroes on the same number
+   always read the same, which is what a score means. His board
+   is the calibration; the formula only has to reproduce it.
+
+   THE LINES ARE PINNED, NOT RE-DERIVED
+   ------------------------------------
+   The first cut of this re-fitted the thresholds on every render,
+   and that quietly put the coupling straight back: shift one
+   hero and the lines shift under everybody. Measured — give each
+   hero in turn a +3 adjustment and 10 of the 37 dragged somebody
+   else across a band with them. So the lines are WRITTEN DOWN
+   here, fitted once, with the misfit they cost recorded beside
+   them. fitTierCuts() below is the derivation, kept in the file
+   so the numbers are reproducible rather than magic; it is not
+   called during rendering. Grading is now a pure function of one
+   hero's own score, and re-running the fit is a deliberate act.
+   ============================================================ */
+const TIER_CUTS = {"S+":33, "S":31, "A":28, "B":26, "C":25, "D":23};
+const TIER_CUTS_FIT = {on:"2026-09-13", miss:15, of:35};   // what the pinned lines cost
+let CUTS_CACHE = null;
+function tierCuts(){
+  if(CUTS_CACHE) return CUTS_CACHE;
+  const order = TIERS.map(t=>t.k);
+  const th = {};
+  order.forEach(k=>{ if(k in TIER_CUTS) th[k] = TIER_CUTS[k]; });
+  return (CUTS_CACHE = {order, th, ...TIER_CUTS_FIT});
+}
+/* THE DERIVATION, for the record. Every band must stay reachable — leaving one
+   empty fits one hero better and makes a whole tier unreachable, which is a
+   worse trade — and a tie in score is never split across a cut, because two
+   heroes on the same number have to read the same. Call it from the console
+   after a deliberate re-tiering, then paste the result into TIER_CUTS above. */
+function fitTierCuts(){
+  const order = TIERS.map(t=>t.k);
+  /* an unplaced hero follows their score, so they do not vote on where the
+     lines fall — that would be the score calibrating itself */
+  const pool = HEROES.filter(h=>!h.unplaced && order.indexOf(h.t) >= 0)
+                     .map(h=>({t:h.t, s:worthOf(h)})).filter(x=>x.s !== null);
+  if(!pool.length) return null;
+  const vals = [...new Set(pool.map(x=>x.s))].sort((a,b)=>b-a);   // score groups, best first
+  const pTot = [0], pHit = order.map(()=>[0]);
+  vals.forEach((v,i)=>{
+    pTot.push(pTot[i] + pool.filter(x=>x.s === v).length);
+    order.forEach((k,b)=>pHit[b].push(pHit[b][i] + pool.filter(x=>x.s === v && x.t === k).length));
+  });
+  /* reading groups j..k as band b contradicts Sid this many times */
+  const cost = (j,k,b)=> (pTot[k+1] - pTot[j]) - (pHit[b][k+1] - pHit[b][j]);
+  const memo = new Map();
+  function best(j, b){
+    const left = order.length - b;
+    if(j >= vals.length) return {c:Infinity, cut:new Array(left).fill(-1)};
+    if(left === 1) return {c:cost(j, vals.length - 1, b), cut:[j]};   // the floor takes the rest
+    const mk = j + ":" + b;
+    if(memo.has(mk)) return memo.get(mk);
+    let out = {c:Infinity, cut:[]};
+    for(let k = j; k < vals.length; k++){
+      const rest = best(k + 1, b + 1);
+      const c = cost(j, k, b) + rest.c;
+      if(c < out.c) out = {c, cut:[j, ...rest.cut]};
+    }
+    memo.set(mk, out);
+    return out;
+  }
+  const fit = best(0, 0), th = {};
+  fit.cut.forEach((g, i)=>{
+    if(g === -1) return;
+    const nx = fit.cut.slice(i + 1).find(x=>x !== -1);
+    th[order[i]] = vals[(nx === undefined ? vals.length : nx) - 1];
+  });
+  return {cuts:th, miss:fit.c, of:pool.length,
+          off: pool.filter(x=>gradeWith(th, x.s) !== x.t).length};
+}
+/* How often the score puts two heroes in the order Sid's board puts them in.
+   Pairs inside the same tier are skipped — he has not said which of those two
+   is better, so there is nothing there to agree or disagree with. Computed,
+   because it was written into the card as 89% and was 85% by the next change. */
+let AGREE_CACHE = null;
+function pairAgreement(){
+  if(AGREE_CACHE !== null) return AGREE_CACHE;
+  const order = TIERS.map(t=>t.k);
+  const pool = HEROES.filter(h=>!h.unplaced)
+                     .map(h=>({t:order.indexOf(h.t), s:worthOf(h)}))
+                     .filter(x=>x.t >= 0 && x.s !== null);
+  let ag = 0, tot = 0;
+  for(let i = 0; i < pool.length; i++) for(let j = i + 1; j < pool.length; j++){
+    const a = pool[i], b = pool[j];
+    if(a.t === b.t) continue;
+    tot++;
+    if((a.t < b.t) === (a.s > b.s)) ag++;      // lower index = higher tier
+  }
+  return (AGREE_CACHE = tot ? Math.round(ag / tot * 100) : 0);
+}
+/* a score, and the band it reads into — no reference to anybody else */
+function gradeWith(th, s){
+  const order = TIERS.map(t=>t.k);
+  for(const k of order) if(k in th && s >= th[k]) return k;
+  return order[order.length - 1];                      // the floor is the catch-all
+}
+function gradeFor(s){
+  if(s === null || s === undefined) return null;
+  return gradeWith(tierCuts().th, s);
+}
 function suggestTier(h){
   const mine = worthOf(h); if(mine === null) return null;
-  /* TIES USED TO BE BROKEN BY NOTHING — whoever sat earlier in the roster
-     array took the higher tier. That is not a rule, it is an accident, and
-     with a 36-hero board on a 1-5 scale ties are constant: five heroes share
-     26, three share 27. It cost Ganglot an S: her meta score took her to 25,
-     level with Amaterasu, and she lost the last S place on array order.
-     A tie now goes to the better KIT, then to the name so the order is at
-     least stable and reproducible. Skin, meta and your adjustment are all
-     things about a hero; the five skills are the hero. */
-  const pool = HEROES.map(x=>({key:x.key, t:x.t, n:x.n, s:worthOf(x), k:kitOf(x) || 0}))
-                     .filter(x=>x.s !== null)
-                     .sort((a,b)=> b.s - a.s || b.k - a.k || a.n.localeCompare(b.n));
-  const sizes = TIERS.map(t=>({k:t.k, n:HEROES.filter(x=>x.t === t.k).length}));
-  let i = 0; const placed = {};
-  sizes.forEach(({k,n})=>{ for(let j=0;j<n && i<pool.length;j++,i++) placed[pool[i].key] = k; });
-  while(i < pool.length) placed[pool[i++].key] = sizes[sizes.length-1].k;
-  const tier = placed[h.key];
-  const bands = {};
-  sizes.forEach(({k})=>{ const v = pool.filter(x=>placed[x.key] === k).map(x=>x.s);
-    if(v.length) bands[k] = Math.min(...v) + "-" + Math.max(...v); });
-  return {tier, score:mine, bands, same: tier === h.t};
+  const C = tierCuts(), bands = {};
+  C.order.forEach((k, i)=>{
+    if(!(k in C.th)) return;
+    const above = C.order.slice(0, i).filter(x=>x in C.th).map(x=>C.th[x]);
+    bands[k] = above.length ? C.th[k] + "-" + (Math.min(...above) - 1)
+             : C.th[k] + "+";
+  });
+  const tier = gradeFor(mine);
+  return {tier, score:mine, bands, cuts:C.th, miss:C.miss, of:C.of, same: tier === h.t};
 }
 function heroMarkers(h){
   const core = coreOf(h.key);
@@ -8851,7 +9041,9 @@ percentage of what this hero could carry in ${skMode} (skills + talents
     const adj    = P.adj;
     const total  = worthOf(h);
     const gaps   = 5 - K.read;
-    const known  = [P.kit, P.skin, P.meta, P.access].filter(t=>t.known);
+    const merit  = Math.round(meritOf(h));
+    const accB   = Math.round(accessBonusOf(h));
+    const known  = [P.kit, P.skin, P.meta].filter(t=>t.known);
     const outOf  = known.reduce((a,t)=>a + t.max, 0);
     const gotSum = known.reduce((a,t)=>a + t.v, 0);
     const missing= conf.missing;
@@ -8886,7 +9078,7 @@ percentage of what this hero could carry in ${skMode} (skills + talents
           <tr class="${P.access.known?"":"z"} mbonus" title="${P.access.known
             ? `How much it costs you to field them: ${obtainById(P.access.id) ? obtainById(P.access.id).name : P.access.id}. Free at the top, money-gated at the bottom — f2p and general 5, boxes 4, wheel and shift 3, chief 2, p2p and VIP 1. A hero you cannot get is worth less to this board than one you can, which is the thing a tier list has always quietly encoded.`
             : "NOT RECORDED — this leaves the sum rather than scoring zero. Set how the hero is obtained on their card."}">
-            <td>+ access</td><td class="tv">${P.access.known?acc:"·"}</td><td class="tnote">${P.access.known?(obtainById(P.access.id)||{short:""}).short.toLowerCase():"roster avg"}</td></tr>
+            <td>+ access</td><td class="tv">${P.access.known?acc:accB}</td><td class="tnote">${P.access.known?(obtainById(P.access.id)||{short:""}).short.toLowerCase():"roster avg"}</td></tr>
           <tr class="${P.meta.known?"":"z"} mbonus" title="${P.meta.known ? "How often they turn up in the lineups you have logged." : "NOT SET — this leaves the sum rather than scoring zero."}">
             <td>+ meta</td><td class="tv">${P.meta.known?meta:"·"}</td><td class="tnote">${P.meta.known?"of 5":"not set"}</td></tr>
           <tr class="${adj?"madj":"z"} mbonus" title="Your own adjustment, in whole points. The score reads the skills and knows nothing about how a hero actually plays — this is where you say so. It counts toward the total and toward where an unplaced hero lands, and it saves with your other edits.">
@@ -8894,12 +9086,14 @@ percentage of what this hero could carry in ${skMode} (skills + talents
             <td class="tv">${adj ? (adj>0?"+"+adj:adj) : "·"}</td>
             <td class="tnote"><button class="wadj" data-wadj="${h.key}:-1" title="A point down">−</button><button class="wadj" data-wadj="${h.key}:1" title="A point up">+</button>${
               adj ? `<button class="wadj" data-wadj="${h.key}:0" title="Back to what the skills say">×</button>` : ""}</td></tr>
-          <tr class="tsum" title="${gotSum} scored across the ${known.length} term${known.length===1?"":"s"} we know, out of ${outOf} — scaled to a full card of ${WORTH_MAX}${adj?`, then your call ${adj>0?"+"+adj:adj}`:""}.">
+          <tr class="tsum" title="MERIT — kit, skin and meta — is what the hero IS: ${gotSum} across the ${known.length} term${known.length===1?"":"s"} we know, out of ${outOf}, scaled to ${MERIT_MAX}.">
+            <td>merit</td><td class="tv">${merit}</td><td class="tnote">of ${MERIT_MAX}</td></tr>
+          <tr class="tsum" title="Access is added ON TOP and the worst it can do is add nothing. It is not part of the merit ratio, so a hero is never dragged down for being expensive — they simply do not collect a bonus that a free hero does.${adj?` Then your call ${adj>0?"+"+adj:adj}.`:""}">
             <td>total</td><td class="tv">${total}</td><td class="tnote">of ${WORTH_MAX}</td></tr>
         </table>
         ${(()=>{ const sg = suggestTier(h); if(!sg) return "";
           const med = TIERS.map(t=>t.k + " " + (sg.bands[t.k] ?? "–")).join(" · ");
-          return `<div class="wsug ${sg.same?"ok":"off"}" title="Each tier's median score, worked out from the heroes already in it, with this hero left out so they cannot vote for themselves: ${med}. Nothing moves on its own — where a hero sits is yours.">
+          return `<div class="wsug ${sg.same?"ok":"off"}" title="The bands are fixed score lines — ${med} — not a queue for a fixed number of seats, so a hero is never pushed down a tier because somebody else's data arrived. The lines are fitted to YOUR board: out of every possible set of cuts these are the ones that disagree with where you have actually put people the fewest times, ${sg.miss} of ${sg.of}. They stay put once fitted. Nothing moves on its own — where a hero sits is yours.">
             <b>${total}</b> reads as <b>${sg.tier}</b>${
               h.unplaced ? ` — and that is where they are sitting. Nobody has placed them, so they follow their score and will keep moving as their data fills in. Drag them once and they stay put.`
               : sg.same ? ` — where you have them.`
@@ -8909,8 +9103,8 @@ percentage of what this hero could carry in ${skMode} (skills + talents
         <p class="tallynote">Every skill scores at least <b>3</b>, the good ones <b>4</b>, the ones
           that decide a fight <b>5</b> — then skin and meta on top. Nothing here is fitted to your
           tier board; it reads <b>core-skills.js</b> and scores what each skill does. It agrees with
-          your tier list on <b>89%</b> of hero pairs, and where it does not, that is the interesting
-          part rather than an error. It never touches the tally on the left.</p>
+          your tier list on <b>${pairAgreement()}%</b> of hero pairs, and where it does not, that is
+          the interesting part rather than an error. It never touches the tally on the left.</p>
       </div>
     </div>`;
   };
