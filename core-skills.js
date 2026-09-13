@@ -19,6 +19,12 @@
              trees and a hero can have both.
      skin    yes / no
      obtain  how you get them
+     seats   which seat the hero actually works in — C commander, L
+             lieutenant, CL either. THIS IS NOT A TALENT TREE. A hero who
+             holds up in both seats is worth more to a roster than one who
+             only commands, and none of the six effect measures can see it.
+             Blank means not recorded, which is not the same as "commander
+             only". It RECORDS, it does not score — same rule as power.
 
    Spelling is forgiving: Cavalry, BZ, seige, cheif and p2w all land correctly.
    Lines starting with # are ignored, a # anywhere starts a comment, and a
@@ -51,6 +57,31 @@
    first and then replaced by these. It can be deleted.
 
    Your own edits in the browser still sit on top of all of it and still win.
+
+   ---------------------------------------------------------------------------
+   CHANGES TO THIS FILE
+
+   2026-09-13 15:52 — FARHAD IS AXE, NOT CAVALRY. His troop column read
+   "cav", which Sid says was an old wrong listing we picked up somewhere and
+   carried. His own skills agree with him and always did: Warrior's Will
+   (slot 3) reads "requires Troop of Axethrowers only" and increases the ATK
+   of Axethrower-type soldiers, and his talent trees are "axe skill vers".
+   Every piece of evidence in this file pointed at axe and only the troop
+   column disagreed. Changed on Sid's word, backup taken first.
+
+   2026-09-13 16:05 - FARHAD'S TREES, AND A SEATS COLUMN.
+   His trees read "axe skill vers" and Sid says two of those three are wrong:
+   he does NOT have a Versatile tree. They are HUNTER (for PvE), AXE (his
+   troop) and ATTACK (attack-type damage), in that order as he said them -
+   worth a glance at the wheel, since the order here is 10 / 12 / 2 o'clock
+   and only the wheel shows it.
+   The word "versatile" was doing two jobs and I had it on the wrong one.
+   When Sid calls Farhad versatile he means HE WORKS IN EITHER SEAT -
+   commander or lieutenant - which is a fact about the hero, not a talent
+   tree. Nothing in this file could record that, so the sheet now carries a
+   SEATS column: C, L or CL. Farhad is CL, and he is the only row set so far.
+   The Versatile and Balanced trees are a separate matter and keep their own
+   meaning; nothing about them changed.
 */
 
 /* ---- HALF ONE: the sheet -------------------------------------------------
@@ -73,10 +104,10 @@ window.HERO_SHEET = `
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
 #         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
-# hero         | troop | trees             | skin | obtain | tier | modes
+# hero         | troop | trees             | skin | obtain | seats | tier | modes
 # ---- S+ ----
 Arthur       | bers  | siege bal def     | yes  | chief
-Farad        | cav   | axe skill vers    | yes  | wheel   # Farhad
+Farad        | axe   | hunt axe atk      | yes  | wheel   | CL   # Farhad
 Freya        | axe   | beast siege def   | yes  | p2p   # Freyja
 Irin         | beast | cav skill hunt    | yes  | wheel   # Erin
 Odaunaga     | axe   | cav vers atk      | yes  | chief   # Oda Nobunaga
@@ -87,24 +118,24 @@ Shisunin     | bers  | bal garr def      | yes  | wheel   # Yi Sun-sin
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
 #         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
-# hero         | troop | trees             | skin | obtain | tier | modes
+# hero         | troop | trees             | skin | obtain | seats | tier | modes
 # ---- S ----
 Amaterasu    | axe   | siege skill bal   | yes  | wheel
 Asuka        | cav   | cav vers field    | yes  | boxes   # Aska
 Rot          | beast | axe vers field    | yes  | wheel   # Roro
 Wukong       | bers  | cav skill vers    | yes  | p2p   # Wukon
-# hero         | troop | trees             | skin | obtain | tier | modes
+# hero         | troop | trees             | skin | obtain | seats | tier | modes
 #   the last two columns are only read for a hero the app has never seen -
 #   they introduce them. On an existing hero they are ignored, because where
 #   a hero sits is yours to drag.
-Ganglot      | bers  | bers vers skill   | yes  | any    | -    | PvP Arena PvE Rally   # trees are PANEL order not wheel order - check on the wheel. Skin, obtain, tier and modes not yet known.
-Odysseus     | axe   | axe hunt skill    | yes  | any    | -    | PvP Arena Rally   # trees are PANEL order not wheel order. Troop from Armor Piercer ("consists entirely of Axethrowers"). All five slots read. Skin, obtain, warband and tier not yet known.
+Ganglot      | bers  | bers vers skill   | yes  | any    |      | -    | PvP Arena PvE Rally   # trees are PANEL order not wheel order - check on the wheel. Skin, obtain, tier and modes not yet known.
+Odysseus     | axe   | axe hunt skill    | yes  | any    |      | -    | PvP Arena Rally   # trees are PANEL order not wheel order. Troop from Armor Piercer ("consists entirely of Axethrowers"). All five slots read. Skin, obtain, warband and tier not yet known.
 
 # troop   axe   bers   cav   beast
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
 #         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
-# hero         | troop | trees             | skin | obtain | tier | modes
+# hero         | troop | trees             | skin | obtain | seats | tier | modes
 # ---- A ----
 Carl         | cav   | bers vers def     | no   | wheel   # Karl
 Held         | beast | axe siege skill   | no   | shift   # Helda
@@ -118,7 +149,7 @@ Silvin       | beast | vers skill bal    | no   | f2p   # Sylvan
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
 #         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
-# hero         | troop | trees             | skin | obtain | tier | modes
+# hero         | troop | trees             | skin | obtain | seats | tier | modes
 # ---- B ----
 Balder       | bers  | bers hunt def     | no   | f2p   # Baldur
 Elfwine      | cav   | hunt supp bal     | no   | f2p   # Aelfwine
@@ -135,7 +166,7 @@ Voll         | bers  | hunt bers skill   | no   | f2p
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
 #         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
-# hero         | troop | trees             | skin | obtain | tier | modes
+# hero         | troop | trees             | skin | obtain | seats | tier | modes
 # ---- C ----
 Linda        | axe   | cav vers skill    | no   | f2p
 Rex          | cav   | bers garr def     | no   | f2p
@@ -145,7 +176,7 @@ Vista        | beast | vers bal supp     | no   | f2p
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill
 #         trees read LEFT TO RIGHT: 10 o'clock, 12 o'clock, 2 o'clock
 # obtain  chief  wheel  p2p  f2p  boxes  shift  vip  any
-# hero         | troop | trees             | skin | obtain | tier | modes
+# hero         | troop | trees             | skin | obtain | seats | tier | modes
 # ---- D ----
 Elina        | axe   | gath bal supp     | no   | any   # Elena
 Ilia         | cav   | axe hunt supp     | no   | any   # Elia

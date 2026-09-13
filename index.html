@@ -1,5 +1,31 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-13 — "VERSATILE" WAS DOING TWO JOBS AND I HAD IT ON
+     THE WRONG ONE. There is a VERSATILE talent tree, and there is
+     BALANCED, the tree that frees a hero from their troop. Neither
+     is what Sid means. When he says Farhad is versatile he means
+     the hero WORKS IN EITHER SEAT — commander or lieutenant — which
+     is a fact about the hero and not a talent at all. Nothing in
+     the app could record it, so core-skills.js now carries a SEATS
+     column: C, L or CL, read off the header line like every other
+     column. Farhad is CL and is the only row set so far.
+     It RECORDS, IT DOES NOT SCORE — the same rule as power, and for
+     the same reason: it is a real thing about a hero that the 1-5
+     scale has no honest way to price yet. It shows as its own chip
+     on the Hero Score header, beside the troop chip and never
+     merged with it, and the flat card reads it.
+     The troop chip's tooltip no longer says "Not versatile" either.
+     That chip is about TROOPS; it had no business borrowing the
+     word.
+     ALSO ON SID'S WORD, two corrections to his sheet, backup taken
+     first: FARHAD IS AXE, NOT CAVALRY (an old wrong listing we
+     picked up — and his own Warrior's Will reads "requires Troop of
+     Axethrowers only", so every other piece of evidence in the file
+     already agreed with him), and his trees are HUNTER, AXE, ATTACK
+     — not "axe skill vers". He does not have a Versatile tree.
+     The tree ORDER is as he said them; the wheel is the only place
+     that settles 10 / 12 / 2 o'clock, so it is worth one look.
+
      2026-09-13 — THE FLAT CARD STOPS SHRUGGING. It used to end
      "the score cannot explain this one", which was true of the six
      bars and false of the hero. FARHAD is the case Sid raised: two
@@ -11,21 +37,15 @@
      so the card can finally say so out loud.
      It reads "Earns it elsewhere — the case is the route: off the
      roulette wheel, a cheaper route than 4 of the other 8 in S+,
-     plus the Versatile tree. A tier list has always priced that;
-     the measures here do not."
+     and he runs in either seat, commander or lieutenant. A tier
+     list has always priced that; the measures here do not."
      Both halves are computed, not written for Farhad: the route is
      compared against the rest of that hero's OWN tier, and the trees
      are whatever their sheet row lists. The rotating finding on the
      Overview uses the same line for the same reason.
-     ONE CAREFUL WORD. Two trees are in play and they are not the
-     same thing. BALANCED is the one that frees a hero from their
-     troop — that is what h.versatile means and what "any troop" on
-     a hero card means. VERSATILE is an ordinary general-purpose
-     tree. Farhad carries Versatile and NOT Balanced, so the line
-     names the tree it means rather than letting one word cover
-     both. Sid: if you meant he runs under any commander, that is
-     Balanced and his row does not have it — say the word and it
-     goes in the sheet.
+     (The first cut of this line credited a talent tree. Wrong on
+     two counts, both corrected in the entry above: Farhad has no
+     Versatile tree, and what Sid meant by the word was the seat.)
 
      2026-09-13 — A HERO NEVER FALLS SO THAT ANOTHER CAN RISE.
      Sid's rule, and the grader was breaking it structurally, not by
@@ -3375,6 +3395,10 @@ const OBTAIN = [
   {id:"any",   short:"ANY",   name:"General",         desc:"mementos are everywhere"}
 ];
 const obtainById = id => OBTAIN.find(o=>o.id===id) || null;
+/* which seat a hero actually works in — from the sheet's seats column.
+   "C" commander, "L" lieutenant, "CL" either, absent = not recorded. */
+const SEATS_DATA = {};
+const SEAT_SAYS = {C:"commander only", L:"lieutenant only", CL:"either seat"};
 const OBTAIN_DATA = {
   /* from the corrected tier list — change any of these on the card */
   "Irin":"wheel", "Rot":"wheel", "Carl":"wheel",
@@ -5364,7 +5388,7 @@ let SHEET_DATA = null;
   const NO  = new Set(["no","n","false","0","none"]);
 
   /* What the files contribute, in the same shape the app writes itself. */
-  const SD = {TROOPS:{}, TREE_SET:{}, SKINS:{}, OBTAIN:{}, SKILLS:{}, OWNED:{}, SKIN_OWNED:{}, SKILLSEQ:{}, NEW:[]};
+  const SD = {TROOPS:{}, TREE_SET:{}, SKINS:{}, OBTAIN:{}, SEATS:{}, SKILLS:{}, OWNED:{}, SKIN_OWNED:{}, SKILLSEQ:{}, NEW:[]};
   const bad = [];
 
   /* Columns are named by the header row, so a file only carries the columns it
@@ -5377,7 +5401,7 @@ let SHEET_DATA = null;
   /* tier and modes are optional and only ever used to INTRODUCE a hero the
      built-in roster has never heard of. On a hero who already exists they are
      ignored, because where a hero sits is yours to drag, not the file's. */
-  const COL_NAMES = ["hero","troop","trees","skin","obtain","skills","own","hasskin","tier","modes"];
+  const COL_NAMES = ["hero","troop","trees","skin","obtain","seats","skills","own","hasskin","tier","modes"];
   const DEFAULT_MAP = {hero:0, troop:1, trees:2, skin:3, obtain:4, skills:5, own:6};
   function headerMap(line){
     const parts = line.replace(/^#\s*/, "").split("|").map(x=>flat(x));
@@ -5476,6 +5500,17 @@ let SHEET_DATA = null;
         const o = OBTAIN_OF[flat(col.obtain)];
         if(o) SD.OBTAIN[key] = o;
         else note(`"${col.obtain}" isn't an obtain method. Use: ${OBTAIN.map(x=>x.id).join(" ")}`);
+      }
+      /* WHICH SEAT THEY ACTUALLY WORK IN — C, L or CL. Not a talent tree,
+         and not derived from one: a hero who holds up as both commander and
+         lieutenant is worth more to a roster than one who only commands, and
+         none of the effect measures can see it. Blank is NOT RECORDED, which
+         is not the same as "commander only". */
+      if(!blank(col.seats)){
+        const v = flat(col.seats).replace(/[^cl]/g, "");
+        const norm = v.includes("c") && v.includes("l") ? "CL" : v === "c" ? "C" : v === "l" ? "L" : "";
+        if(norm) SD.SEATS[key] = norm;
+        else note(`"${col.seats}" isn't a seat. Use: C (commander), L (lieutenant) or CL (either)`);
       }
       if(!blank(col.skills)){
         const n = col.skills.split(/[\s,]+/).filter(Boolean).map(Number);
@@ -5594,6 +5629,7 @@ let SHEET_DATA = null;
   if(D.SKINS)      Object.assign(SKIN_DATA, D.SKINS);
   if(Array.isArray(D.OBTAIN_TYPES)) D.OBTAIN_TYPES.forEach(o=>addObtainType(o));
   if(D.OBTAIN)     Object.assign(OBTAIN_DATA, D.OBTAIN);
+  if(D.SEATS)      Object.assign(SEATS_DATA, D.SEATS);
   if(D.SKILLS)     Object.assign(SKILL_DATA, D.SKILLS);
   if(D.OWNED)      Object.assign(OWNED_DATA, D.OWNED);
   if(D.SKIN_OWNED) Object.assign(SKIN_OWNED_DATA, D.SKIN_OWNED);
@@ -5653,6 +5689,9 @@ HEROES.forEach(h=>{
   h.lt = h.lt.filter(x=>x !== "vers");
   h.skin = SKIN_DATA[h.key] || SKIN_DATA[h.n] || "";     // "" unknown · "yes" · "no"
   h.obtain = OBTAIN_DATA[h.key] || OBTAIN_DATA[h.n] || "";  // "" unknown, else an OBTAIN id
+  /* which seat they work in — "" not recorded, "C", "L" or "CL". A fact about
+     the hero, recorded and shown, deliberately NOT scored: same rule as power. */
+  h.seats = SEATS_DATA[h.key] || SEATS_DATA[h.n] || "";
   h.skills = normSkills(SKILL_DATA[h.key] || SKILL_DATA[h.n]);   // [s1,s2,s3,s4] levels 0-5
   /* the training order from skill-seq.js — null when that hero has no line */
   h.seq = (()=>{ const v = SEQ_DATA[h.key] || SEQ_DATA[h.n];
@@ -7052,14 +7091,16 @@ function drawOverview(){
      Both halves are read from the hero, not written for one of them:
      the route is compared against the rest of their own tier, and
      the trees are whatever their sheet row lists.
-     A NOTE ON THE WORD. Two different trees are in play and they are
-     not the same thing. BALANCED is the one that frees a hero from
-     their troop, which is what h.versatile means, and VERSATILE is
-     an ordinary general-purpose tree. Farhad carries Versatile and
-     not Balanced, so the line names the tree it means rather than
-     letting one word cover both. ------------------------------- */
+     A NOTE ON THE WORD. "Versatile" was doing two jobs and the first
+     cut of this line had it on the wrong one. There is a VERSATILE
+     talent tree, and there is BALANCED, the tree that frees a hero
+     from their troop — but when Sid calls Farhad versatile he means
+     neither. He means the hero WORKS IN EITHER SEAT, commander or
+     lieutenant, which is a fact about the hero and not a talent at
+     all. That is what the sheet's seats column records and what
+     this line reads. No tree is named here. ------------------- */
   function offBoardCase(h, tier, tierKey){
-    let route = "", tree = "";
+    let route = "", seat = "";
     const acc = accessOf(h), ob = obtainById(h.obtain || "");
     if(acc.known && ob){
       const rest = (tier || []).filter(y=>y.key !== h.key).map(y=>accessOf(y)).filter(a=>a.known);
@@ -7068,13 +7109,21 @@ function drawOverview(){
         ? `, a cheaper route than ${dearer} of the other ${rest.length} in ${tierKey}`
         : `, ${acc.v} of 5 on access`);
     }
-    if(h.versatile)
-      tree = `<b>${treeById(VERSATILE_TREE).name}</b>, so they fit under any commander`;
-    else if((h.treeSet || []).includes("vers"))
-      tree = `the <b>Versatile</b> tree`;
-    if(!route && !tree) return "";
-    const lead = route ? `the case is the route: ${route}` : `the case is in the talents`;
-    const also = tree ? `${route ? " — plus " : ": "}${tree}` : "";
+    if(h.seats === "CL"){
+      /* only make the comparison when enough of the tier is actually recorded —
+         "the only one marked that way" is a fact about the SHEET, not the hero,
+         while most rows are blank, and it reads like a dig at your own data */
+      const known = (tier || []).filter(y=>y.seats).length;
+      const both  = (tier || []).filter(y=>y.seats === "CL").length;
+      seat = `he runs in <b>either seat</b>` + (known >= (tier||[]).length / 2 && both < known
+        ? `, ${both} of the ${known} recorded in ${tierKey}`
+        : `, commander or lieutenant`);
+    } else if(h.seats === "L"){
+      seat = `he is a <b>lieutenant</b>, which is a different job from the one these bars measure`;
+    }
+    if(!route && !seat) return "";
+    const lead = route ? `the case is the route: ${route}` : `the case is the seat`;
+    const also = seat ? `${route ? " — and " : ": "}${seat}` : "";
     return `${lead}${also}. A tier list has always priced that; the measures here do not.`;
   }
   const profHTML = topList.map(x=>{
@@ -9343,9 +9392,14 @@ percentage of what this hero could carry in ${skMode} (skills + talents
         <span class="skvers ${h.versatile?"on":""}"
           title="${h.versatile
             ? `Runs any troop — the ${treeById(VERSATILE_TREE).name} tree isn't tied to one, so they aren't stuck with ${h.troop?troopName(h.troop):"their own"}.`
-            : `Not versatile — only their own troop${h.troop?`, ${troopName(h.troop)}`:""}.`}
+            : `Own troop only${h.troop?`, ${troopName(h.troop)}`:""} — no ${treeById(VERSATILE_TREE).name} tree. This is about TROOPS, not about which seat they play; the seat is the chip beside it.`}
 Trees: ${(h.treeSet||[]).filter(Boolean).map(t=>treeById(t)?.name||t).join(" · ") || "none recorded"}
 Both come from core-skills.js.">${h.versatile ? "ANY TROOP" : "own troop only"}</span>
+        <span class="skvers ${h.seats==="CL"?"on":""}"
+          title="${h.seats
+            ? `${SEAT_SAYS[h.seats]}. Which seat ${h.n} actually works in — a hero who holds up as BOTH commander and lieutenant is worth more to a roster than one who only commands, and none of the effect measures can see it. From the seats column in core-skills.js. It records; it does not score.`
+            : `Not recorded — which is not the same as commander only. Set it in the seats column of core-skills.js: C, L or CL.`}">${
+            h.seats === "CL" ? "EITHER SEAT" : h.seats === "L" ? "lieutenant" : h.seats === "C" ? "commander" : "seat —"}</span>
         ${powerBadge(h)}
         <label class="skwb" title="Which warband they belong to — type it and it's remembered">warband
           <input list="wbNames" data-wb="${h.key}" value="${warbandOf(h.key).replace(/"/g,"&quot;")}"
