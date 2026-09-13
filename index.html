@@ -1,5 +1,20 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-13 — THE WORKLIST HEADING, CHECKED RATHER THAN
+     CLAIMED. Sid asked whether "37 heroes are missing something"
+     actually moves. Fair question an hour after catching the admits
+     wall computing its numbers inside frozen prose, so it was
+     driven through every state instead of answered from memory:
+     37 -> 3 -> 1 -> none, and the heading flips to "Nothing is
+     missing" with its own paragraph when the last gap closes.
+     It moves. But the test found two things a claim would not have:
+     at one hero it read "1 HEROES ARE missing something", and the
+     lede said "1 of them reach the score". Both now agree with
+     their own number — hero/heroes, is/are, gap/gaps,
+     reaches/reach.
+     Everything in that section comes from missingAudit() at draw
+     time; nothing about the situation is written down.
+
      2026-09-13 — ACCESS IS ABOUT SPEED, NOT ABOUT WHETHER.
      I had written "a hero you cannot get is worth less than one you
      can" and scored P2P at 1 of 5, the floor, next to a hard wall.
@@ -8010,17 +8025,19 @@ function drawOverview(){
     <div class="ovsec alt"><div class="ovwrap">
       <div class="ovkick">The worklist</div>
       <h3 class="ovh2">Nothing is missing</h3>
-      <p class="ovlede">All ${M.total} heroes carry every field the app knows how to hold. This section
-        fills itself back in the moment that stops being true.</p>
+      <p class="ovlede">All ${M.total} heroes carry every field the app knows how to hold &mdash;
+        skills, skin, obtain, meta, power, seat, warband, talents, modes, troop and portrait. This
+        section fills itself back in the moment that stops being true.</p>
     </div></div>`;
       const scoringGaps = M.rows.reduce((n,r)=>n + r.scoring, 0);
       const allGaps = M.rows.reduce((n,r)=>n + r.n, 0);
       return `
     <div class="ovsec alt"><div class="ovwrap">
       <div class="ovkick">The worklist</div>
-      <h3 class="ovh2">${M.rows.length} heroes are missing something</h3>
-      <p class="ovlede"><b>${allGaps}</b> gaps across ${M.rows.length} heroes, and
-        <b>${scoringGaps}</b> of them reach the score &mdash; the rest are recorded and shown but
+      <h3 class="ovh2">${M.rows.length} hero${M.rows.length===1?" is":"es are"} missing something</h3>
+      <p class="ovlede"><b>${allGaps}</b> gap${allGaps===1?"":"s"} across ${M.rows.length}
+        hero${M.rows.length===1?"":"es"}, and <b>${scoringGaps}</b> of them
+        ${scoringGaps===1?"reaches":"reach"} the score &mdash; the rest are recorded and shown but
         deliberately do not count. Filled anywhere in the app, a row loses its gap here the next time
         this page draws. Heroes with the most SCORING gaps come first, because that is the order that
         pays. ${M.done ? `${M.done} of ${M.total} are complete.` : ""}</p>
