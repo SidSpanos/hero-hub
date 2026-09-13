@@ -1,5 +1,45 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-13 — NOTHING MISSING IS SCORED AS ZERO, AND ACCESS IS A
+     TERM. Two changes, but they are the same change.
+     A blank was being read as a fact in three places at once: an
+     unread slot scored 0, so Baldur read 8 on a kit where three of
+     five had simply never been photographed; an unrecorded SKIN
+     scored 0, identical to "he has no skin"; and access, dropped in
+     cold, would have made a blank the worst route on the board.
+     Now every term is KNOWN or ABSENT, and the two kinds of absent
+     get different answers, because they are different problems.
+     An unread SLOT sits inside a term whose other slots predict it —
+     four skills averaging 4.0 make a fifth near 4.0 the best guess —
+     so the kit is scaled from the hero's OWN average. Baldur goes
+     from 8 to 20 and the anomaly dissolves: his kit was never thin,
+     it was unphotographed. Below KIT_FLOOR (2) slots read there is
+     nothing to project from, so the raw figure stands.
+     A missing TERM has nothing about the hero to predict it, so it
+     borrows what the roster averages. The first cut scaled the
+     remaining terms up instead and put Ganglot and Odysseus TOP OF
+     THE BOARD on 36 — ahead of heroes whose skin was recorded as NO
+     and scored a real zero. Blank must not beat a known zero any
+     more than it may lose to one. Imputed at the roster average it
+     costs nothing and gains nothing: 33, mid S+.
+     ACCESS, on Sid's call, is now a term out of 5 — f2p and general
+     5, boxes 4, wheel and shift 3, chief 2, p2p and VIP 1. It is
+     what a tier list has always quietly encoded and never admitted:
+     a hero you cannot get is worth less to this board than one you
+     can. It is why FARHAD and BALDUR were unexplainable — both
+     score on a route, not on a number, and the model was only ever
+     reading the number.
+     WORTH is now out of 40 rather than 35, and the card says how
+     much of a hero's number is measured: "6 of 8 known", with the
+     unknowns named.
+     18 of 37 heroes change band. The big ones are worth seeing
+     rather than discovering: KARL A->C and KIANA B->D fall on a wheel
+     and a VIP gate with no skin behind them, and MORGAN LE FAY A->B
+     falls with the joint-best kit on the board (23) because she is
+     p2p. That last one is the trade in one hero: this board now
+     answers WHAT SHOULD I BUILD, not WHO IS STRONGEST. Both are real
+     questions. Only one of them is now on the board.
+
      2026-09-12 — THE FINDING NOW ROTATES. One hero at a time, the
      chart re-aimed at what THEY do. Payload stays on the horizontal
      every turn, because 31 of the 37 have one and it is the axis
@@ -3642,15 +3682,84 @@ function trifectaSides(key){
    so they cannot vote for their own tier.
 
    It is a SUGGESTION and nothing acts on it. Where a hero sits is yours. */
-function worthOf(h){
+/* every term a hero can be marked on, and whether we actually know it */
+function worthParts(h){
   if(!h) return null;
-  const per = ["1","2","3","4","U"].map(sl=>coreSkillValue(h.key, sl));
-  if(per.every(v=>v === null)) return null;
-  const skills = per.reduce((a,v)=>a + (v||0), 0);
-  const skin   = String(h.skin||"").toLowerCase() === "yes" ? 5 : 0;
-  const meta   = (metaScoreOf(h.key).v) || 0;
-  const adj    = WORTH_ADJ[h.key] || 0;
-  return skills + skin + meta + adj;
+  const k = kitRead(h); if(!k) return null;
+  const sk = String(h.skin||"").toLowerCase();
+  const acc = accessOf(h);
+  const mt = metaScoreOf(h.key);
+  return {
+    kit:    {v:k.v, max:KIT_MAX, known:true, read:k.read, projected:k.projected},
+    /* "yes" and "no" are both facts. Blank is not. */
+    skin:   {v: sk === "yes" ? SKIN_MAX : 0, max:SKIN_MAX, known: sk === "yes" || sk === "no"},
+    meta:   {v: mt.v || 0, max:META_MAX, known: typeof mt.v === "number" && mt.v > 0},
+    access: {v: acc.v || 0, max:ACCESS_MAX, known: acc.known, id: h.obtain || ""},
+    adj:    WORTH_ADJ[h.key] || 0
+  };
+}
+/* ------------------------------------------------------------------
+   TWO KINDS OF MISSING, AND THEY WANT DIFFERENT ANSWERS.
+
+   An unread SLOT sits inside a term whose other slots predict it: a
+   hero whose four read skills average 4.0 very probably has a fifth
+   somewhere near 4.0. So the kit is scaled from the hero's OWN
+   average. That is done in kitRead().
+
+   A missing TERM — skin, access, meta — has nothing about the hero
+   to predict it. Scaling the rest up to cover it says "assume they
+   are as good at skin as they are at everything else", and that is
+   not neutral, it is a reward: the first cut of this put Ganglot and
+   Odysseus top of the board on 36 because nobody had recorded their
+   skin, ahead of heroes whose skin was recorded as NO and scored a
+   real zero. Blank must not beat a known zero any more than it may
+   lose to one.
+
+   So a missing term is filled with what the roster actually averages
+   on it. A blank then costs nothing and gains nothing — it lands the
+   hero exactly where a typical hero sits, which is the only value
+   that cannot move them. When Sid's data arrives, a hero shifts only
+   by how far they differ from ordinary.
+   If NOBODY has a term recorded there is no average to borrow, so
+   the term drops out for everyone alike — which is what meta does
+   today, and it is fair because it is uniform.
+   ------------------------------------------------------------------ */
+let TERM_MEAN_CACHE = null;
+function termMeans(){
+  if(TERM_MEAN_CACHE) return TERM_MEAN_CACHE;
+  const acc = {skin:[], meta:[], access:[]};
+  HEROES.forEach(x=>{
+    const P = worthParts(x); if(!P) return;
+    ["skin","meta","access"].forEach(k=>{ if(P[k].known) acc[k].push(P[k].v); });
+  });
+  TERM_MEAN_CACHE = {};
+  ["skin","meta","access"].forEach(k=>{
+    TERM_MEAN_CACHE[k] = acc[k].length ? acc[k].reduce((a,v)=>a+v,0)/acc[k].length : null;
+  });
+  return TERM_MEAN_CACHE;
+}
+function clearTermMeans(){ TERM_MEAN_CACHE = null; }
+function worthOf(h){
+  const P = worthParts(h); if(!P) return null;
+  const M = termMeans();
+  let got = P.kit.v, outOf = P.kit.max;
+  ["skin","meta","access"].forEach(k=>{
+    const t = P[k];
+    if(t.known){ got += t.v; outOf += t.max; }
+    else if(M[k] !== null){ got += M[k]; outOf += t.max; }   // borrow the ordinary
+    /* nobody has it: the term leaves the card for everyone */
+  });
+  if(!outOf) return null;
+  return Math.round(got / outOf * WORTH_MAX) + P.adj;
+}
+/* how much of a hero's number is measured rather than inferred */
+function worthConfidence(h){
+  const P = worthParts(h); if(!P) return null;
+  const known = P.kit.read + (P.skin.known?1:0) + (P.meta.known?1:0) + (P.access.known?1:0);
+  return {known, of:8, projected:P.kit.projected,
+          missing:[ P.kit.read<5 ? `${5-P.kit.read} slot${P.kit.read===4?"":"s"}` : "",
+                    P.skin.known ? "" : "skin", P.meta.known ? "" : "meta",
+                    P.access.known ? "" : "access" ].filter(Boolean)};
 }
 /* By RANK, not by nearest median. Medians do not work here: S+ holds several
    heroes on 26 while S is tight at 25-27, so S ends up with the HIGHER median
@@ -3660,11 +3769,57 @@ function worthOf(h){
 /* the raw kit on its own — no skin, no meta, no adjustment. Used to break
    ties, because those three are all things ABOUT a hero and the five skills
    are the hero. */
-function kitOf(h){
-  const per = ["1","2","3","4","U"].map(sl=>coreSkillValue(h.key, sl));
-  if(per.every(v=>v === null)) return null;
-  return per.reduce((a,v)=>a + (v||0), 0);
+/* ============================================================
+   NOTHING MISSING IS EVER SCORED AS ZERO
+   ============================================================
+   A field nobody has filled in is not a fact about a hero. It was
+   being treated as one in three places at once, and all three were
+   the same bug wearing different hats:
+
+     · an unread skill slot scored 0, so Baldur read 8 on a kit where
+       three of five slots had simply never been photographed;
+     · an unrecorded SKIN scored 0 — identical to "he has no skin";
+     · access, had it gone in cold, would have made a blank the
+       worst possible route.
+
+   The rule now: every term is either KNOWN or ABSENT. Absent terms
+   leave the formula completely — out of the numerator AND out of
+   what the hero is marked out of — and the score is scaled back up
+   to a full card. It is marking a test on the questions that were
+   answered. A hole no longer pushes anybody down, and filling one in
+   only moves a hero if the real value differs from what they were
+   already averaging. Sid's data can arrive whenever it arrives.
+
+   THE FLOOR. One slot read scoring 5 would project to a perfect kit
+   off a single tooltip, so sparse data cannot be a way to the top:
+   below KIT_FLOOR slots read, the raw figure stands and the card
+   says provisional.
+   ============================================================ */
+const KIT_FLOOR = 2;          // fewest slots read before a kit may be projected
+const KIT_MAX = 25, SKIN_MAX = 5, META_MAX = 5, ACCESS_MAX = 5;
+const WORTH_MAX = KIT_MAX + SKIN_MAX + META_MAX + ACCESS_MAX;   // 40
+
+/* how much it costs YOU to field them — free at the top, money-gated at the
+   bottom. A hero you cannot get is worth less to this board than one you can,
+   which is the thing a tier list has always quietly encoded. */
+const ACCESS = {f2p:5, any:5, boxes:4, wheel:3, shift:3, chief:2, p2p:1, vip:1};
+function accessOf(h){
+  const id = h && h.obtain;
+  if(!id || !(id in ACCESS)) return {v:null, known:false};
+  return {v:ACCESS[id], known:true};
 }
+/* the kit, and how much of it we can actually see */
+function kitRead(h){
+  if(!h) return null;
+  const per = ["1","2","3","4","U"].map(sl=>coreSkillValue(h.key, sl));
+  const read = per.filter(v=>v !== null);
+  if(!read.length) return null;
+  const raw = read.reduce((a,v)=>a + v, 0);
+  const projected = read.length >= KIT_FLOOR && read.length < 5;
+  return { per, read:read.length, raw, projected,
+           v: projected ? Math.round(raw / read.length * 5 * 10) / 10 : raw };
+}
+function kitOf(h){ const k = kitRead(h); return k ? k.v : null; }
 function suggestTier(h){
   const mine = worthOf(h); if(mine === null) return null;
   /* TIES USED TO BE BROKEN BY NOTHING — whoever sat earlier in the roster
@@ -6294,6 +6449,7 @@ function drawView(v){
   f(); viewStale[v] = false;
 }
 function renderAll(){
+  clearTermMeans();                    // the roster's averages may have moved
   autoPlaceUnplaced();                 // data, not drawing — must always run
   resolveSlots();                      // ditto: resolves pairing slots to hero keys
   /* the chrome outside the tabs, all of it cheap */
@@ -6320,6 +6476,7 @@ function renderAllNow(){
    in or out of it — the "mine" filter is exactly that case, since
    unticking own has to make the hero leave the list. */
 function heroChanged(key){
+  clearTermMeans();
   autoPlaceUnplaced();
   resolveSlots();
   Object.keys(VIEW_DRAW).forEach(v=>{ viewStale[v] = true; });
@@ -8683,13 +8840,21 @@ percentage of what this hero could carry in ${skMode} (skills + talents
     const slots = ["1","2","3","4","U"];
     const per   = slots.map(sl=>({sl, v:coreSkillValue(h.key, sl)}));
     if(per.every(x=>x.v === null)) return "";
-    const skills = per.reduce((a,x)=>a + (x.v||0), 0);
-    const skin   = String(h.skin||"").toLowerCase() === "yes" ? 5 : 0;
-    const meta   = (metaScoreOf(h.key).v) || 0;
+    const P      = worthParts(h);
+    const conf   = worthConfidence(h);
+    const K      = kitRead(h);
+    const skills = K.raw;                       // what was actually read
+    const skin   = P.skin.v;
+    const meta   = P.meta.v;
+    const acc    = P.access.v;
     const tri    = trifectasOf(h.key);
-    const adj    = WORTH_ADJ[h.key] || 0;
-    const total  = skills + skin + meta + adj;
-    const gaps   = per.filter(x=>x.v === null).length;
+    const adj    = P.adj;
+    const total  = worthOf(h);
+    const gaps   = 5 - K.read;
+    const known  = [P.kit, P.skin, P.meta, P.access].filter(t=>t.known);
+    const outOf  = known.reduce((a,t)=>a + t.max, 0);
+    const gotSum = known.reduce((a,t)=>a + t.v, 0);
+    const missing= conf.missing;
     const why = {
       5:"how the hero kills — a payload of 8,000+, a summon, or defence-down",
       4:"a real multiplier or real sustain — damage up 15%+, counterattack 10%+, healing, mitigation 10%+",
@@ -8706,23 +8871,31 @@ percentage of what this hero could carry in ${skMode} (skills + talents
       <div class="skctop">
         <span class="skslot">WORTH</span>
         <span class="grow"></span>
-        ${gaps ? `<span class="mkwarn" title="${gaps} skill${gaps>1?"s":""} not captured yet — the total is a floor.">${gaps} unread</span>` : ""}
-        <span class="skpts" title="Skills alone, then the whole thing with trifectas, skin and meta on top.">${skills}<i>/</i>${total}</span>
+        ${missing.length ? `<span class="mkwarn" title="Not recorded: ${missing.join(", ")}. These do NOT count against ${h.n} — they leave the sum entirely and the rest is scaled up, so a blank never pushes a hero down. Fill them in and the number only moves if the truth differs from what they were already averaging.">${conf.known} of ${conf.of} known</span>` : ""}
+        <span class="skpts" title="The kit as read, then the whole thing out of ${WORTH_MAX}.">${K.v}<i>/</i>${total}</span>
       </div>
       <div class="tallybody">
         <table class="ttab">
           <tr class="thead"><td colspan="2">EACH SKILL</td><td class="tv">${skills}</td></tr>
           ${rows}
+          ${K.projected ? `<tr class="mtri" title="${K.read} slots of 5 were read. Rather than count the missing ones as nothing — which is what dropped Baldur to 8 on a kit nobody had photographed — the kit is scored on what IS read and scaled to five slots. Read the rest and this only moves if they differ from ${(K.raw/K.read).toFixed(1)}.">
+            <td colspan="2">SCALED FROM ${K.read} OF 5 &nbsp;<span style="opacity:.65;font-weight:400">— ${(K.raw/K.read).toFixed(1)} a slot</span></td>
+            <td class="tv">${K.v}</td></tr>` : ""}
           ${tri.map(t=>`<tr class="mtri" title="${t.tip}"><td colspan="2">${t.id} ${t.name} &nbsp;<span style="opacity:.65;font-weight:400">— ${t.n} skills</span></td><td class="tnote">+1 each</td></tr>`).join("")}
-          <tr class="${skin?"":"z"} mbonus" title="A bonus on top, not a decider — what the game charges, not what the hero does."><td>+ skin</td><td class="tv">${skin||"·"}</td><td class="tnote">of 5</td></tr>
-          <tr class="${meta?"":"z"} mbonus" title="How often they turn up in the lineups you have logged on the Meta tab. Set it there, or on the META card.">
-            <td>+ meta</td><td class="tv">${meta||"·"}</td><td class="tnote">${meta?"of 5":"not set"}</td></tr>
+          <tr class="${P.skin.known?(skin?"":""):"z"} mbonus" title="${P.skin.known ? "What the game charges, not what the hero does." : "NOT RECORDED — this leaves the sum rather than scoring zero. Blank is not the same as no skin."}"><td>+ skin</td><td class="tv">${P.skin.known?(skin||"0"):"·"}</td><td class="tnote">${P.skin.known?"of 5":"roster avg"}</td></tr>
+          <tr class="${P.access.known?"":"z"} mbonus" title="${P.access.known
+            ? `How much it costs you to field them: ${obtainById(P.access.id) ? obtainById(P.access.id).name : P.access.id}. Free at the top, money-gated at the bottom — f2p and general 5, boxes 4, wheel and shift 3, chief 2, p2p and VIP 1. A hero you cannot get is worth less to this board than one you can, which is the thing a tier list has always quietly encoded.`
+            : "NOT RECORDED — this leaves the sum rather than scoring zero. Set how the hero is obtained on their card."}">
+            <td>+ access</td><td class="tv">${P.access.known?acc:"·"}</td><td class="tnote">${P.access.known?(obtainById(P.access.id)||{short:""}).short.toLowerCase():"roster avg"}</td></tr>
+          <tr class="${P.meta.known?"":"z"} mbonus" title="${P.meta.known ? "How often they turn up in the lineups you have logged." : "NOT SET — this leaves the sum rather than scoring zero."}">
+            <td>+ meta</td><td class="tv">${P.meta.known?meta:"·"}</td><td class="tnote">${P.meta.known?"of 5":"not set"}</td></tr>
           <tr class="${adj?"madj":"z"} mbonus" title="Your own adjustment, in whole points. The score reads the skills and knows nothing about how a hero actually plays — this is where you say so. It counts toward the total and toward where an unplaced hero lands, and it saves with your other edits.">
             <td>${adj>0?"+ ":adj<0?"− ":"± "}your call</td>
             <td class="tv">${adj ? (adj>0?"+"+adj:adj) : "·"}</td>
             <td class="tnote"><button class="wadj" data-wadj="${h.key}:-1" title="A point down">−</button><button class="wadj" data-wadj="${h.key}:1" title="A point up">+</button>${
               adj ? `<button class="wadj" data-wadj="${h.key}:0" title="Back to what the skills say">×</button>` : ""}</td></tr>
-          <tr class="tsum"><td>total</td><td class="tv">${total}</td><td class="tnote">of 35</td></tr>
+          <tr class="tsum" title="${gotSum} scored across the ${known.length} term${known.length===1?"":"s"} we know, out of ${outOf} — scaled to a full card of ${WORTH_MAX}${adj?`, then your call ${adj>0?"+"+adj:adj}`:""}.">
+            <td>total</td><td class="tv">${total}</td><td class="tnote">of ${WORTH_MAX}</td></tr>
         </table>
         ${(()=>{ const sg = suggestTier(h); if(!sg) return "";
           const med = TIERS.map(t=>t.k + " " + (sg.bands[t.k] ?? "–")).join(" · ");
