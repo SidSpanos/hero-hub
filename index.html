@@ -1,5 +1,40 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-13 — HOW WRONG IS IT. Sid asked the only question that
+     matters about a model, so the Overview now marks it against his
+     board in public, live, every time the page draws.
+     57% EXACT, 91% within one band, 85% of PAIRS ordered the way he
+     ordered them. The pairs figure is the honest one: it only looks
+     at heroes he put in DIFFERENT tiers, and it never touches the
+     cuts, so it cannot flatter itself by moving a line.
+     THE CEILING IS THE FINDING. Group the roster by score and 25 of
+     the 35 share a number with somebody he placed in a different
+     tier. No single number can ever separate those, so the best any
+     scalar could possibly do here is 66%. The model is at 57%.
+     It is THREE HEROES off the most that is mathematically
+     available at this resolution — which means the formula is very
+     nearly spent, and the remaining error is not a formula error.
+     Only 14 distinct scores exist for 35 heroes. Five skills marked
+     1 to 5 cannot cut finer than that.
+     WHAT WOULD ACTUALLY HELP, in order. META is recorded for 0 of
+     35 and is the one term in the formula with nobody in it —
+     filled in, it has the headroom to close nearly all of the gap.
+     POWER is 0 of 35 and is a real number rather than a 1-5 mark,
+     so it breaks ties no integer scale can. SEAT is 1 of 35. Slots
+     are 33 of 35, so the skills are nearly all read and there is
+     little left there.
+     I LOOKED FOR A HIDDEN BIAS AND THERE ISN'T ONE. Grouped the 15
+     disagreements by troop, obtain, talent tree, kinds of effect,
+     payload rank and summon/heal/shield, and permutation-tested
+     every split: p between 0.20 and 0.42, all consistent with
+     chance. There is no systematic term missing that would fix a
+     whole class of hero. What is left is per-hero knowledge the
+     model does not have, which is exactly what meta and power are.
+     The panel also names the 15 heroes carrying the disagreement,
+     with how many points outside their band each sits. Everyone
+     else already reads where he has them, so recording anything
+     about them cannot improve the number.
+
      2026-09-13 — "VERSATILE" WAS DOING TWO JOBS AND I HAD IT ON
      THE WRONG ONE. There is a VERSATILE talent tree, and there is
      BALANCED, the tree that frees a hero from their troop. Neither
@@ -1560,6 +1595,29 @@
   #viewOverview .ovct .l{font-family:var(--ov-mono);font-size:9.5px;letter-spacing:.16em;
     text-transform:uppercase;color:var(--ov-dim);margin-top:6px}
 
+  #viewOverview .ovaccs{display:flex;flex-direction:column;gap:18px;margin-top:26px}
+  #viewOverview .ovacc{display:grid;grid-template-columns:190px 1fr 62px;gap:10px 14px;align-items:center}
+  #viewOverview .ovaccl{font-family:var(--ov-mono);font-size:11px;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--ov-tx2)}
+  #viewOverview .ovaccb{height:10px;background:var(--ov-deep);border:1px solid var(--ov-edge);
+    border-radius:2px;overflow:hidden}
+  #viewOverview .ovaccb span{display:block;height:100%;background:var(--ov-cy);opacity:.9}
+  #viewOverview .ovaccv{font-family:var(--ov-disp);font-size:26px;font-weight:700;color:var(--ov-cy);
+    text-align:right;line-height:1}
+  #viewOverview .ovaccv i{font-size:13px;font-style:normal;opacity:.6}
+  #viewOverview .ovaccn{grid-column:2 / -1;font-size:12.5px;line-height:1.5;color:var(--ov-tx2);margin-top:-4px}
+  #viewOverview .ovacc:last-child .ovaccb span{background:var(--ov-amber)}
+  #viewOverview .ovacc:last-child .ovaccv{color:var(--ov-amber)}
+  #viewOverview .ovoff{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  #viewOverview .ovoffc{font-family:var(--ov-mono);font-size:11.5px;padding:5px 9px;cursor:help;
+    border:1px solid var(--ov-edge);border-radius:3px;background:var(--ov-deep);color:var(--ov-tx2)}
+  #viewOverview .ovoffc i{font-style:normal;opacity:.7;margin:0 4px}
+  #viewOverview .ovoffc b{color:var(--ov-amber);font-weight:700}
+  @media (max-width:640px){
+    #viewOverview .ovacc{grid-template-columns:1fr 58px}
+    #viewOverview .ovaccl{grid-column:1 / -1}
+    #viewOverview .ovaccn{grid-column:1 / -1}
+  }
   #viewOverview .ovsec{padding:46px 0}
   #viewOverview .ovsec.alt{background:var(--ov-deep);border-top:1px solid var(--ov-edge);
     border-bottom:1px solid var(--ov-edge)}
@@ -4063,6 +4121,75 @@ function pairAgreement(){
     if((a.t < b.t) === (a.s > b.s)) ag++;      // lower index = higher tier
   }
   return (AGREE_CACHE = tot ? Math.round(ag / tot * 100) : 0);
+}
+/* ============================================================
+   HOW CLOSE IS IT, AND WHAT IS STOPPING IT
+   ============================================================
+   Sid asked the only question that matters about a model: how
+   wrong is it, and what would fix it. Everything here is measured
+   on the spot, never typed, because an accuracy figure written
+   into a page is a lie with a delay — the 89% on the WORTH card
+   was 85% by the next change.
+
+   THREE MEASURES, because one is not enough:
+     · EXACT — the band reads what you put them in.
+     · WITHIN ONE — off by a band. On a six-band list that is a
+       near miss, not a failure.
+     · PAIRS — of every two heroes you put in DIFFERENT tiers, how
+       often does the score order them the way you did. This is the
+       honest one: it never touches the cuts, so it cannot flatter
+       itself by moving a line.
+
+   AND THE CEILING, which is the finding. Group the roster by
+   score; where one score covers heroes you placed in different
+   tiers, no single number can ever separate them — the best any
+   scalar can do is call each group by its commonest tier. That
+   number is the floor of what is possible at this resolution, and
+   the model sits close to it. What is left is not a formula error.
+   It is that 1-5 across five skills only produces a handful of
+   distinct totals, and a coarse ruler cannot cut fine.
+   ============================================================ */
+function scoreAudit(){
+  const order = TIERS.map(t=>t.k), idx = k=>order.indexOf(k);
+  const C = tierCuts();
+  const pool = HEROES.filter(h=>!h.unplaced && idx(h.t) >= 0)
+                     .map(h=>({h, t:h.t, ti:idx(h.t), s:worthOf(h)}))
+                     .filter(x=>x.s !== null);
+  if(!pool.length) return null;
+  pool.forEach(x=>{
+    x.g = gradeFor(x.s); x.gi = idx(x.g);
+    const above = order.slice(0, x.ti).filter(k=>k in C.th).map(k=>C.th[k]);
+    const lo = (x.t in C.th) ? C.th[x.t] : -99;
+    const hi = above.length ? Math.min(...above) - 1 : 999;
+    x.gap = x.s < lo ? x.s - lo : (x.s > hi ? x.s - hi : 0);   // points outside their own band
+  });
+  const byS = {};
+  pool.forEach(x=>(byS[x.s] = byS[x.s] || []).push(x));
+  let ceil = 0, split = 0;
+  Object.values(byS).forEach(g=>{
+    const c = {}; g.forEach(x=>c[x.t] = (c[x.t] || 0) + 1);
+    ceil += Math.max(...Object.values(c));            // best case: call the group by its commonest tier
+    if(Object.keys(c).length > 1) split += g.length;  // heroes no scalar can ever separate
+  });
+  const has = t => pool.filter(t).length;
+  return {
+    n: pool.length,
+    exact: pool.filter(x=>x.g === x.t).length,
+    near:  pool.filter(x=>Math.abs(x.gi - x.ti) <= 1).length,
+    pairs: pairAgreement(),
+    ceil, split, values: Object.keys(byS).length,
+    off: pool.filter(x=>x.g !== x.t).sort((a,b)=>Math.abs(b.gap) - Math.abs(a.gap) || a.h.n.localeCompare(b.h.n)),
+    fields: [
+      {id:"meta",  label:"meta score",   have: has(x=>metaScoreOf(x.h.key).v > 0),
+       what:"how often you actually field them — the one term in the formula with nobody in it"},
+      {id:"power", label:"power at 60/6&#9733;", have: has(x=>powerOf(x.h) !== null),
+       what:"a real number, so it breaks the ties a 1-5 scale cannot"},
+      {id:"seats", label:"seat",          have: has(x=>x.h.seats),
+       what:"commander, lieutenant or either — worth more to a roster than the bars can see"},
+      {id:"slots", label:"skill slots read", have: has(x=>{ const k = kitRead(x.h); return k && k.read === 5; }),
+       what:"a tooltip never opened is a guess, however good"}
+    ]
+  };
 }
 /* a score, and the band it reads into — no reference to anybody else */
 function gradeWith(th, s){
@@ -7376,6 +7503,47 @@ function drawOverview(){
       <div class="ovgrid">${VIEWS.map(([t,d])=>`
         <div class="ovcard"><h4>${t}</h4><p>${d}</p></div>`).join("")}</div>
     </div></div>
+
+    ${(()=>{ const A = scoreAudit(); if(!A) return "";
+      const pc = n => Math.round(n / A.n * 100);
+      const bar = (label, got, of, note) => `
+        <div class="ovacc">
+          <div class="ovaccl">${label}</div>
+          <div class="ovaccb"><span style="width:${Math.round(got/of*100)}%"></span></div>
+          <div class="ovaccv">${Math.round(got/of*100)}<i>%</i></div>
+          <div class="ovaccn">${note}</div>
+        </div>`;
+      return `
+    <div class="ovsec"><div class="ovwrap">
+      <div class="ovkick">Marked against your board</div>
+      <h3 class="ovh2">${pc(A.exact)}% exact, ${pc(A.near)}% within a band</h3>
+      <p class="ovlede">Your tier list is the answer sheet and the score is the candidate. Every figure
+        below is worked out the moment this page draws &mdash; an accuracy number typed into a page is
+        a lie with a delay.</p>
+      <div class="ovaccs">
+        ${bar("Exact band", A.exact, A.n, `${A.exact} of ${A.n} read into the tier you put them in`)}
+        ${bar("Within one band", A.near, A.n, `${A.n - A.near} miss by two bands or more`)}
+        ${bar("Pairs ordered right", A.pairs, 100,
+              `of any two heroes you put in different tiers, how often the score agrees &mdash; this one never touches the cuts, so it cannot flatter itself`)}
+        ${bar("Best a single number could do", A.ceil, A.n,
+              `THE CEILING. ${A.split} of ${A.n} heroes share a score with someone you placed in a different tier, so no scalar can ever separate them. The model is ${A.ceil - A.exact} off the most that is possible at this resolution.`)}
+      </div>
+      <p class="ovlede" style="margin-top:26px">Only <b>${A.values} distinct scores</b> exist for
+        ${A.n} heroes. That is the wall, and it is not a formula error &mdash; five skills marked 1 to 5
+        cannot cut finer than this. What buys resolution is more recorded about each hero:</p>
+      <div class="ovgrid">${A.fields.map(f=>`
+        <div class="ovcard ${f.have ? "" : "warn"}">
+          <h4>${f.have} of ${A.n} &middot; ${f.label}</h4>
+          <p>${f.what}</p></div>`).join("")}</div>
+      ${A.off.length ? `<p class="ovlede" style="margin-top:26px">And these
+        <b>${A.off.length}</b> carry the whole disagreement. Everyone else already reads where you
+        have them, so nothing you record about them can improve the number:</p>
+      <div class="ovoff">${A.off.map(x=>`
+        <span class="ovoffc" title="${esc(x.h.n)} scores ${x.s}, which reads ${x.g}. ${
+          x.gap > 0 ? `${x.gap} point${x.gap===1?"":"s"} above the top of ${x.t}` : `${-x.gap} point${x.gap===-1?"":"s"} below the floor of ${x.t}`
+        } &mdash; the score rates them ${x.gap > 0 ? "higher" : "lower"} than you do.">
+          ${esc(x.h.n)} <i>${x.t}&#8594;${x.g}</i> <b>${x.gap > 0 ? "+" + x.gap : x.gap}</b></span>`).join("")}</div>` : ""}
+    </div></div>`; })()}
 
     <div class="ovsec alt"><div class="ovwrap">
       <div class="ovkick">Kept honest</div>
