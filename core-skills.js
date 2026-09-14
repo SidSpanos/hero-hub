@@ -83,6 +83,25 @@
    The Versatile and Balanced trees are a separate matter and keep their own
    meaning; nothing about them changed.
 
+   2026-09-14 07:15 - BALDUR'S SLOTS 2, 3 AND 4, off four screenshots.
+   GLADIATOR'S BLOODLINE (2) - below 50% Troop, attacks deal extra DMG worth
+   64% of what he took the previous round, shields included, once every 8s.
+   BATTLE FRENZY (3) - +18.5% DEF on his Troop and +18.5% ATK on up to four
+   nearby allies, but MODE-GATED: Arena of Legends, Ancestral Trial,
+   plundering Caravans and Ancient Wisdom only. Recorded in the notes because
+   the model has no concept of a mode-gated effect and would otherwise read it
+   as always-on.
+   CHASING THE THRILL (4) - on every enemy Troop defeated, +13% ATK and DEF for
+   10s, STACKING TO 3, so 39% at full, plus 5% to four nearby allies.
+   WARGOD SLASH re-confirmed unchanged: 10,500 before / 11,500 after, shield
+   2,250 either way. The per-allied-Troop cap is STILL cut off at "(Up to" -
+   third time that line has been lost to the tooltip edge.
+   SLOT 1, SEIZE THE INITIATIVE, IS STILL MISSING. It is the Burst, the first
+   icon, the one carrying the flame badge. The four shots were the awakened
+   skill plus slots 2, 3 and 4 - his one payload skill is the one that got
+   away. Said out loud rather than filed in a comment nobody reads, which is
+   how it stayed missing for three weeks the first time.
+
    2026-09-13 16:40 - ASKA IS F2P, NOT BOXES. Sid's word; backup taken.
    Note what this does rather than what it fixes: access goes 4 -> 5 and his
    score goes 36 -> 37, so the model now rates him even further ABOVE the S he
@@ -405,29 +424,44 @@ window.CORE_SKILLS = {
     stars: "4 of 6",
     myLevels: [5,5,5,5,5],
     note: "all five slots read 5 in the game, including the awakened slot",
-    incomplete: "only the base screen and the awakened tooltip were captured - slots 1-4 need re-shooting",
-    source: "game screenshots IMG_2057-2058",
+    incomplete: "slot 1 (Seize the Initiative) still has no tooltip - it is the Burst, the first icon, the one with the flame badge. Everything else is read.",
+    source: "game screenshots IMG_2057-2058 (base screen + awakened); slots 2, 3 and 4 supplied 2026-09-14",
     skills: {
       "1": {
         name: "Seize the Initiative",
         type: "Burst",
         myLevel: 5,
-        missing: "tooltip not captured; name read from the awakened skill's buff target"
+        missing: "tooltip STILL not captured. The name is read from what Wargod Slash says it buffs, nothing else. Four shots came in on 2026-09-14 and this was not among them - they were the awakened skill again plus slots 2, 3 and 4."
       },
       "2": {
-        name: null,
+        name: "Gladiator's Bloodline",
+        type: "Passive",
         myLevel: 5,
-        missing: "tooltip not captured"
+        notes: "fires only while this Hero's Troop is below 50%; the extra DMG is a share of what the Troop took the PREVIOUS round, shields included. Once every 8 seconds.",
+        effects: [
+          { what: "Additional DMG, as a share of DMG received last round", unit: "%",
+            values: [19.5, 26, 32, 45, 64] }
+        ]
       },
       "3": {
-        name: null,
+        name: "Battle Frenzy",
+        type: "Passive",
         myLevel: 5,
-        missing: "tooltip not captured"
+        notes: "MODE-GATED: only in Arena of Legends, Ancestral Trial, plundering Caravans and Ancient Wisdom. DEF on his own Troop, ATK on up to 4 nearby allied Troops.",
+        effects: [
+          { what: "Increase DEF of this Hero's Troop by", unit: "%", values: [6, 7.5, 9.5, 13, 18.5] },
+          { what: "Increase ATK of up to 4 nearby allied Troops by", unit: "%", values: [6, 7.5, 9.5, 13, 18.5] }
+        ]
       },
       "4": {
-        name: null,
+        name: "Chasing the Thrill",
+        type: "Passive",
         myLevel: 5,
-        missing: "tooltip not captured"
+        notes: "fires each time his Troop defeats an enemy Troop (Blackforged included), lasts 10 seconds and stacks up to 3 times — so at full stacks it is three times the listed figures. The ally share reaches up to 4 nearby Troops.",
+        effects: [
+          { what: "Increase ATK and DEF of this Hero's Troop by", unit: "%", values: [4, 6, 7, 10, 13] },
+          { what: "Increase ATK and DEF of up to 4 nearby allied Troops by", unit: "%", values: [1, 2, 3, 4, 5] }
+        ]
       },
       "U": {
         name: "Wargod Slash",

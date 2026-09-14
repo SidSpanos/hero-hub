@@ -1,5 +1,27 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-14 — BALDUR'S SLOTS 2, 3 AND 4 ARE IN, and the board
+     agreed with Sid rather than argued. He was one of the 15
+     misfits — B on the board, reading A on a kit projected from two
+     slots. With three real tooltips he reads B, exactly where Sid
+     has him. Exact placements 20 of 35 -> 21, misfits 15 -> 14.
+     Filling a hole RESOLVED a disagreement instead of creating one,
+     which is the outcome that says the projection rule was honest
+     rather than lucky.
+     A NAME IS NOT A READING, and the same shipment exposed it. Slot
+     1, "Seize the Initiative", has a name — inferred from what his
+     awakened skill says it buffs — and no tooltip behind it. It was
+     scoring the floor of 3, and because it SCORED, kitRead counted
+     it as one of five slots READ. The moment the other three landed
+     the app declared his kit complete and the worklist stopped
+     asking, while his one payload skill was still unknown. False
+     completeness is worse than a visible hole: nobody goes looking
+     for it. A slot carrying `missing` is now UNREAD — it leaves the
+     kit, the kit is projected from the tooltips that exist, and the
+     worklist still says 2 heroes short rather than 1.
+     Caught only because the numbers were checked after the edit
+     instead of before.
+
      2026-09-14 — "HOW CAN I TEST AS ANOTHER USER". Sid went and
      did it the right way — a private window — and confirmed Send
      to project is not there. The recipe worked; the tooling around
@@ -4167,6 +4189,16 @@ const MK_CAT = [
 function coreSkillValue(key, slot){
   const k = coreSlot(key, slot);
   if(!k || !k.name) return null;
+  /* A NAME IS NOT A READING. Baldur's slot 1 has a name — "Seize the
+     Initiative", inferred from what his awakened skill says it buffs — and no
+     tooltip behind it. It was scoring the floor of 3, and because it scored,
+     kitRead counted it as one of five slots READ: the moment his other three
+     came in the app declared his kit complete and the worklist stopped asking,
+     while his one payload skill was still unknown. False completeness is worse
+     than a visible hole, because nobody goes looking for it.
+     A slot carrying `missing` is now UNREAD, which is what it is. It leaves
+     the kit and the kit is projected from the slots that do have a tooltip. */
+  if(k.missing) return null;
   const blob = ((k.name||"") + " " + (k.notes||"")).toLowerCase();
   const awk  = (k.type||"") === "Awakened";
   const summon = /\b(summons?|summoning)\s+(a|an|\d+|the)\b|resurrects?/.test(blob);
