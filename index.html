@@ -1,5 +1,28 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-14 — "SEND TO PROJECT" IS MINE, NOT EVERYONE'S.
+     Sid is right: a visitor pressing it gets rows describing their
+     OWN browser edits, which they cannot commit anywhere. Not a
+     hole — a button that promises something it cannot deliver. It
+     is now hidden by default and the published page is clean.
+     ?me=1 once turns it on and the browser remembers, so he never
+     types it again and the URL he shares never carries it. ?me=0
+     turns it off, which is also how the published page is checked.
+     Verified both roles in separate browser profiles: a visitor
+     never sees it across repeat visits; Sid sees it after one flag
+     and on every plain visit afterwards; ?me=0 clears it for good.
+     SAID PLAINLY IN THE PANEL AND IN THE CODE: THIS IS NOT
+     SECURITY. One public HTML file — anyone who opens View Source
+     reads every line, this comment included, and can set the flag
+     in four seconds. What makes obscurity the right-sized tool here
+     is that the panel HAS NO POWER: it reads the viewer's own
+     localStorage and prints text, writes nothing, sends nothing,
+     and reaches nothing of Sid's. The thing being protected is the
+     tidiness of the published page. Anything that ever did need
+     real protection could not live in this file at all and would
+     need a server; nothing here does, and the panel says so on its
+     own face rather than letting anyone assume otherwise.
+
      2026-09-13 — THE WORKLIST HEADING, CHECKED RATHER THAN
      CLAIMED. Sid asked whether "37 heroes are missing something"
      actually moves. Fair question an hour after catching the admits
@@ -2907,7 +2930,7 @@
     <button class="btn" id="resetBtn">Reset</button>
     <button class="btn" id="connectBtn" title="Opens a file picker — choose the hero-data.js already sitting next to this page. You are picking an existing file, not naming a new one. After that every change is written straight to it.">Auto-save…</button>
     <button class="btn" id="mineBtn" aria-pressed="false" title="Everything you have changed on top of the published data — save it, move it to another browser, or drop it">My changes</button>
-    <button class="btn" id="syncBtn" aria-pressed="false" title="Turn the edits in this browser into rows you can paste into core-skills.js and hero-mine.js, so they stop being yours alone and become part of the project">Send to project…</button>
+    <button class="btn hidden" id="syncBtn" aria-pressed="false" title="Turn the edits in this browser into rows you can paste into core-skills.js and hero-mine.js, so they stop being yours alone and become part of the project">Send to project…</button>
     <span class="savestate" id="saveState"></span>
     <span class="custom-flag" id="customFlag">your arrangement</span>
     <div class="grow"></div>
@@ -3094,6 +3117,12 @@
   <section class="panel hidden" id="syncPanel">
     <button class="panelx" data-closes="syncBtn" title="Close">&times;</button>
     <h2>Send my edits back to the project</h2>
+    <p class="note" style="opacity:.8"><b>Maintainer view.</b> Hidden on the published page, because a
+      visitor pressing it would get rows describing their own browser edits and nowhere to put them.
+      It is off by default and remembered on this machine &mdash; <code>?me=1</code> turns it on,
+      <code>?me=0</code> off. That is tidiness, not security: this is one public HTML file and anyone
+      reading the source can find the switch. It is fine because this panel has <b>no power</b> &mdash;
+      it reads your own browser and prints text, writes nothing and sends nothing anywhere.</p>
     <p class="note">Everything you change lives in this browser as a layer over the published files.
       That is right while you are working and wrong once a fact is settled &mdash; a layer entry
       <b>shadows the file forever</b>, so once your browser says a hero is Axe, a later correction in
@@ -13861,6 +13890,57 @@ function drawSync(){
     drawSync();
   });
 }
+/* ============================================================
+   THE MAINTAINER SWITCH
+   ============================================================
+   "Send to project" is for the person who can actually change the
+   files, which is Sid. A visitor pressing it gets rows describing
+   their OWN browser edits, which they cannot commit anywhere — so
+   it is not a hole, it is a button that promises something it
+   cannot deliver. Off by default; the published page stays clean.
+
+   BE HONEST ABOUT WHAT THIS IS. It is not security and it must not
+   be described as security. This page is one public HTML file:
+   anyone who opens View Source sees every line of it, this comment
+   included, and can set the flag themselves in about four seconds.
+   What makes that FINE rather than sloppy is that the panel has no
+   power. It reads the viewer's own localStorage and prints text. It
+   writes nothing, sends nothing and reaches nothing of Sid's. The
+   thing being protected is the tidiness of the published page, and
+   obscurity is the right-sized tool for tidiness.
+   Anything that ever DID need real protection could not live in
+   this file at all, and would need a server. Nothing here does.
+
+   HOW IT TURNS ON: open the page with ?me=1 (or #me) once. It is
+   then remembered in this browser, so Sid never types it again and
+   the clean URL he shares never carries it. ?me=0 turns it back
+   off, which is also how the published page is checked.
+   ============================================================ */
+const MAINTAINER_KEY = "heroHub.maintainer";
+function maintainerOn(){
+  try{
+    const q = new URLSearchParams(location.search);
+    const flag = q.has("me") ? q.get("me") : (location.hash === "#me" ? "1" : null);
+    if(flag !== null){
+      const on = flag !== "0" && flag !== "false";
+      try{ on ? localStorage.setItem(MAINTAINER_KEY, "1") : localStorage.removeItem(MAINTAINER_KEY); }catch(_){}
+      return on;
+    }
+    return localStorage.getItem(MAINTAINER_KEY) === "1";
+  }catch(_){ return false; }
+}
+function applyMaintainer(){
+  const on = maintainerOn();
+  const btn = document.getElementById("syncBtn");
+  if(btn) btn.classList.toggle("hidden", !on);
+  if(!on){
+    const pan = document.getElementById("syncPanel");
+    if(pan) pan.classList.add("hidden");
+    if(btn) btn.setAttribute("aria-pressed", "false");
+  }
+  return on;
+}
+applyMaintainer();
 document.getElementById("syncBtn").addEventListener("click", e=>{
   const on = e.target.getAttribute("aria-pressed")==="true";
   e.target.setAttribute("aria-pressed", String(!on));
