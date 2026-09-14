@@ -971,8 +971,9 @@ window.CORE_SKILLS = {
     slotOrder: "game",
     power: 166900,
     soldierLimit: 181200,
+    slots: 4,
     rarityNote: "the card shows a blue B badge, not gold - like Baldur that is a per-account state, not a hero fact, so it is not asserted as her rarity",
-    note: "her card carries only FOUR skill icons - no awakened slot is drawn at all. Whether a fifth appears at a higher rarity is unknown, so slot U is left absent rather than invented. The kit is projected from four, which assumes a fifth exists; if it never does, that projection flatters her and should be revisited.",
+    note: "FOUR skills, not five - Sid: 'she's blue thus only 4 skills, she does not have 5'. Her card draws four icons and no awakened slot. `slots: 4` is what the app reads: she is marked against four, her kit is her real total rather than a projection of a fifth, and the Hero Score card stops drawing an empty ULT nobody can fill.",
     source: "game screenshots supplied 2026-09-14 (all four slots)",
     replaces: "a fatewarguide.com scrape that was WRONG for this account - see the file changelog",
     skills: {

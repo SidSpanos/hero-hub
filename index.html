@@ -1,5 +1,42 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-14 — NOT EVERY HERO HAS FIVE SKILLS. Sid: "she's blue
+     thus only 4 skills, she does not have 5." Elia's card draws
+     four icons and no awakened slot, and the app was doing two
+     wrong things with that.
+     It DREW HER AN EMPTY ULT — a card for a skill that does not
+     exist, sitting there inviting somebody to fill it in.
+     And it PROJECTED THE MISSING ONE. kitRead saw 4 of 5 read and
+     scaled her up, lifting her kit from a real 12 to an invented
+     15. That projection rule was written for a slot nobody had
+     photographed yet; a slot that is not there is a different thing
+     entirely, and treating them the same credits a hero for a skill
+     the game never gave her.
+     `slots: 4` on the core record is the fix, and it is NOT DERIVED
+     FROM RARITY on purpose. Baldur starts blue and progresses to
+     gold, so rarity is a per-account state and Sid ruled long ago
+     that it is not a hero fact. How many icons the card draws IS a
+     fact, so that is what gets recorded.
+     SEVEN PLACES ASSUMED FIVE and every one of them is now asking
+     the hero: the kit reader, skillsOf (which builds the cards),
+     vsMeasures, heroMeasures behind the COMPANY card, the WORTH
+     per-slot table, the Versus skill-by-skill rows, the Overview
+     skill count, and both completeness checks. The Versus rows show
+     a slot if EITHER hero has it, so a four-skill hero against a
+     five-skill one still lines up honestly instead of hiding the
+     difference.
+     An eighth copy of the summon test was hiding in heroMeasures —
+     found only because that function had to be opened for this.
+     ELIA NOW READS her real kit of 12, worth 19, grading D, which
+     is where Sid has her. Nobody else moved: the other 36 are still
+     on five slots. The Overview counts 184 skills and ZERO unread —
+     the first time that has been true.
+     She is marked out of 25 like everyone else, which says a
+     four-skill hero genuinely carries less kit than a five-skill
+     one. That is a judgement, not a fact, and the alternative —
+     marking her out of the 20 she can actually hold — would read
+     15 instead of 12. Sid's call if he wants it the other way.
+
      2026-09-14 — THERE IS NO DISAGREEMENT. Sid's correction, and it
      is a better idea than the one it replaces.
      A MANUAL PLACEMENT IS EXPERIENCE. When he drops a hero into B he
@@ -4610,13 +4647,17 @@ function accessOf(h){
 /* the kit, and how much of it we can actually see */
 function kitRead(h){
   if(!h) return null;
-  const per = ["1","2","3","4","U"].map(sl=>coreSkillValue(h.key, sl));
+  const mine = slotsOf(h);                      // four for a hero who only has four
+  const per = mine.map(sl=>coreSkillValue(h.key, sl));
   const read = per.filter(v=>v !== null);
   if(!read.length) return null;
   const raw = read.reduce((a,v)=>a + v, 0);
-  const projected = read.length >= KIT_FLOOR && read.length < 5;
-  return { per, read:read.length, raw, projected,
-           v: projected ? Math.round(raw / read.length * 5 * 10) / 10 : raw };
+  /* projected only where a slot EXISTS and has not been read. A hero with four
+     slots and four tooltips is fully read and gets her raw total — she really
+     does carry less kit than a five-skill hero, and that is not a gap to fill. */
+  const projected = read.length >= KIT_FLOOR && read.length < mine.length;
+  return { per, slots:mine.length, read:read.length, raw, projected,
+           v: projected ? Math.round(raw / read.length * mine.length * 10) / 10 : raw };
 }
 function kitOf(h){ const k = kitRead(h); return k ? k.v : null; }
 /* ============================================================
@@ -4756,8 +4797,8 @@ function pairAgreement(){
    ============================================================ */
 const MISSING_FIELDS = [
   {id:"slots",  label:"skills",   scores:true,
-   has:h=>{ const k = kitRead(h); return !!(k && k.read === 5); },
-   miss:h=>{ const k = kitRead(h); return `${k ? k.read : 0} of 5 tooltips read`; },
+   has:h=>{ const k = kitRead(h); return !!(k && k.read === k.slots); },
+   miss:h=>{ const k = kitRead(h); return `${k ? k.read : 0} of ${k ? k.slots : 5} tooltips read`; },
    why:"an unread slot is a guess, however good"},
   {id:"skin",   label:"skin",     scores:true,
    has:h=>h.skin === "yes" || h.skin === "no",
@@ -4885,7 +4926,7 @@ function scoreAudit(){
        what:"a real number, so it breaks the ties a 1-5 scale cannot"},
       {id:"seats", label:"seat",          have: has(x=>x.h.seats),
        what:"commander, lieutenant or either — worth more to a roster than the bars can see"},
-      {id:"slots", label:"skill slots read", have: has(x=>{ const k = kitRead(x.h); return k && k.read === 5; }),
+      {id:"slots", label:"skill slots read", have: has(x=>{ const k = kitRead(x.h); return k && k.read === k.slots; }),
        what:"a tooltip never opened is a guess, however good"}
     ]
   };
@@ -5107,6 +5148,29 @@ function skUntouched(key, sk){
 }
 const WARBANDS = {};        // heroKey -> warband name, open vocabulary
 const SLOTS = ["1","2","3","4","U"];
+/* ------------------------------------------------------------------
+   NOT EVERY HERO HAS FIVE SKILLS
+   ------------------------------------------------------------------
+   Sid: "she's blue thus only 4 skills, she does not have 5." Elia's
+   card draws FOUR icons and no awakened slot, and the app was doing
+   two wrong things with that. It drew her an empty ULT card for a
+   skill that does not exist, and — worse — kitRead saw 4 of 5 read
+   and PROJECTED the missing one, lifting her kit from a real 12 to
+   an invented 15. The projection rule was written for a slot nobody
+   had photographed yet. A slot that is not there is a different
+   thing entirely, and pretending otherwise credits a hero for a
+   skill the game never gave her.
+   `slots` on the hero's core record is how many they actually have.
+   Absent means five, which is true of everyone else on the board.
+   NOT DERIVED FROM RARITY, deliberately. Baldur starts blue and
+   progresses to gold, so rarity is a per-account state and Sid has
+   already ruled that it is not a hero fact. What IS a fact is how
+   many icons the card draws, which is what gets recorded. ------- */
+const slotsOf = h => {
+  const n = (coreOf(h && h.key ? h.key : h) || {}).slots;
+  return (n === 4) ? ["1","2","3","4"] : SLOTS;
+};
+
 const SEAT_ORDER = ["C","L","CL"];
 const SEATS_OF = {C:"commander only", L:"lieutenant only", CL:"either seat"};
 /* every effect name anyone has typed, with how often — the pattern you're
@@ -7767,7 +7831,7 @@ function vsMeasures(key){
   /* the same measures the COMPANY card reads, available outside drawSkills */
   const out = {payload:0, defdown:0, dmgup:0, counter:0, mit:0, defup:0,
                heal:0, shield:0, summon:0};
-  ["1","2","3","4","U"].forEach(sl=>{
+  slotsOf(key).forEach(sl=>{
     const k = coreSlot(key, sl); if(!k || !k.name) return;
     const awk = (k.type||"") === "Awakened";
     const blob = ((k.name||"") + " " + (k.notes||"")).toLowerCase();
@@ -7931,7 +7995,8 @@ function drawVs(){
   const by   = Math.abs(wA - wB);
   const sideHTML = vsSideHTML;
 
-  const skillRows = ["1","2","3","4","U"].map(sl=>{
+  const vsSlots = [...new Set([...slotsOf(A.key), ...slotsOf(B.key)])];
+  const skillRows = vsSlots.map(sl=>{
     const ka = coreSlot(A.key, sl), kb = coreSlot(B.key, sl);
     const va = coreSkillValue(A.key, sl) || 0, vb = coreSkillValue(B.key, sl) || 0;
     return row(sl === "U" ? "ULT" : "SLOT " + sl, va, vb, v=>v || "·",
@@ -8005,7 +8070,7 @@ function drawVs(){
    ============================================================ */
 function ovFigures(){
   let skills = 0, unread = 0;
-  HEROES.forEach(h=>["1","2","3","4","U"].forEach(sl=>{
+  HEROES.forEach(h=>slotsOf(h).forEach(sl=>{
     const k = coreSlot(h.key, sl);
     if(k && k.name) skills++; else unread++;
   }));
@@ -9884,7 +9949,10 @@ function focusCellHTML(h){
 let skQuery = "", skFilter = "all", skSort = "tier";
 function skillsOf(h){
   const list = SKILL_FX[h.key] || (SKILL_FX[h.key] = []);
-  SLOTS.forEach(sl=>{ if(!list.some(x=>x.slot===sl)){
+  const mine = slotsOf(h);
+  /* a hero with four slots gets four cards — drawing an empty ULT for a skill
+     the game never gave her invites somebody to fill it in */
+  slotsOf(h).forEach(sl=>{ if(!list.some(x=>x.slot===sl)){
     const c = coreSlot(h.key, sl);
     list.push({slot:sl, seats: sl==="1" ? "CL" : "C",
                name: (c && c.name) || "",
@@ -9893,7 +9961,7 @@ function skillsOf(h){
                    : []});
   }});
   list.sort((a,b)=>SLOTS.indexOf(a.slot)-SLOTS.indexOf(b.slot));
-  return list;
+  return list.filter(x=>mine.indexOf(x.slot) >= 0);
 }
 const fxFilled = f => !!(f && (f.what||"").trim() && !isCoreRow(f));
 function drawSkillModes(){
@@ -10168,11 +10236,11 @@ percentage of what this hero could carry in ${skMode} (skills + talents
   function heroMeasures(key){
     const out = {payload:0, defdown:0, dmgup:0, counter:0, mit:0, defup:0,
                  heal:false, shield:false, summon:false};
-    ["1","2","3","4","U"].forEach(sl=>{
+    slotsOf(key).forEach(sl=>{
       const k = coreSlot(key, sl); if(!k || !k.name) return;
       const awk = (k.type||"") === "Awakened";
       const blob = ((k.name||"") + " " + (k.notes||"")).toLowerCase();
-      if(/\b(summons?|summoning)\s+(a|an|\d+|the)\b|resurrects?/.test(blob)) out.summon = true;
+      if(summonsAUnit(blob)) out.summon = true;      // a FIFTH copy of that test lived here
       (k.effects||[]).forEach(e=>{
         const w = e.what || "";
         if(/before awakening|after awakening/i.test(w) && !awk) return;
@@ -10306,7 +10374,7 @@ percentage of what this hero could carry in ${skMode} (skills + talents
     </div>`;
   };
   const markerCard = (h)=>{
-    const slots = ["1","2","3","4","U"];
+    const slots = slotsOf(h);
     const per   = slots.map(sl=>({sl, v:coreSkillValue(h.key, sl)}));
     if(per.every(x=>x.v === null)) return "";
     const P      = worthParts(h);
@@ -10319,7 +10387,7 @@ percentage of what this hero could carry in ${skMode} (skills + talents
     const tri    = trifectasOf(h.key);
     const adj    = P.adj;
     const total  = worthOf(h);
-    const gaps   = 5 - K.read;
+    const gaps   = K.slots - K.read;     // out of the slots this hero HAS, not always five
     const merit  = Math.round(meritOf(h));
     const accB   = Math.round(accessBonusOf(h));
     const known  = [P.kit, P.skin, P.meta].filter(t=>t.known);
