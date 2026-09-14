@@ -1,5 +1,44 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-14 — "HOW CAN I TEST AS ANOTHER USER". Sid went and
+     did it the right way — a private window — and confirmed Send
+     to project is not there. The recipe worked; the tooling around
+     it did not deserve him.
+     TWO PROBLEMS FIXED SO PREVIEWING IS SAFE AND EASY.
+     FIRST, ?mode= WAS A TRAP. It wrote to localStorage, so checking
+     the locked page once left his own browser locked until he
+     thought to type ?mode=back. A switch you can fall into by
+     accident is a bad switch. It lives in sessionStorage now: it
+     holds while that TAB is open and dies with it. The real setting
+     stays APP_MODE_DEFAULT in this file — one word, changed
+     deliberately, the day the collecting is done.
+     SECOND, A PREVIEW IN HIS OWN BROWSER STILL SHOWED HIS OWN
+     LAYER, which answers "what does the locked UI look like" but
+     not "what does somebody arriving for the first time get".
+     ?fresh=1 ignores the stored layer completely AND REFUSES TO
+     WRITE ONE. That second half is the one that matters: a preview
+     that can overwrite the thing being previewed is worse than no
+     preview. Every write now goes through a single guarded door
+     (writeOverlayRaw) rather than seven scattered setItem calls, so
+     there is no side door to slip through.
+     PREVIEW AS A VISITOR, a button beside Send to project and
+     hidden with it, opens a tab at ?mode=front&fresh=1 — the
+     private-window view without having to remember a private
+     window. It wears a green "visitor preview — nothing here is
+     saved" badge so the tab can never be mistaken for the real one.
+     PROVED IN ONE BROWSER PROFILE, which is the only test that
+     means anything here: Sid edits Helda to VIP, sets a power of
+     777,000, drops Arthur to C and saves. The preview tab, same
+     profile, shows Helda on shift, no power, Arthur back in S+.
+     Changes made inside the preview write nothing at all. Sid
+     reloads: VIP, 777,000, Arthur C, untouched.
+     One bug caught on the first load after the edit: FRESH was
+     declared beside appMode() where it belongs by subject, but the
+     overlay code far above is the first thing that reads it, and a
+     const is in the temporal dead zone until its own line runs. It
+     threw and took the whole page with it. Moved up beside
+     OVERLAY_KEY with a note saying why it lives there.
+
      2026-09-14 — TWO MODES: BACKEND NOW, FRONTEND WHEN THE DATA IS
      IN. Sid's framing and the right one. What has been built so far
      is a DATA-COLLECTION TOOL — every fact about every hero is
@@ -1967,6 +2006,8 @@
   #viewOverview .ovaccn{grid-column:2 / -1;font-size:12.5px;line-height:1.5;color:var(--ov-tx2);margin-top:-4px}
   #viewOverview .ovacc:last-child .ovaccb span{background:var(--ov-amber)}
   #viewOverview .ovacc:last-child .ovaccv{color:var(--ov-amber)}
+  .modenote.preview{color:var(--series-2);border-color:color-mix(in srgb,var(--series-2) 50%,var(--border));
+    background:color-mix(in srgb,var(--series-2) 10%,transparent)}
   .modenote{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
     color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:3px 7px;cursor:help}
   .synch{font-size:14px;margin:18px 0 6px}
@@ -3019,6 +3060,7 @@
     <button class="btn" id="resetBtn">Reset</button>
     <button class="btn" id="connectBtn" title="Opens a file picker — choose the hero-data.js already sitting next to this page. You are picking an existing file, not naming a new one. After that every change is written straight to it.">Auto-save…</button>
     <button class="btn" id="mineBtn" aria-pressed="false" title="Everything you have changed on top of the published data — save it, move it to another browser, or drop it">My changes</button>
+    <button class="btn hidden" id="previewBtn" title="Open a new tab showing exactly what a first-time visitor sees: the published data with none of your saved changes, and the front-end lock on. Nothing in that tab can write to this browser.">Preview as a visitor</button>
     <button class="btn hidden" id="syncBtn" aria-pressed="false" title="Turn the edits in this browser into rows you can paste into core-skills.js and hero-mine.js, so they stop being yours alone and become part of the project">Send to project…</button>
     <span class="savestate" id="saveState"></span>
     <span class="custom-flag" id="customFlag">your arrangement</span>
@@ -5782,6 +5824,28 @@ const radarTiers = h => MODES.map(m=>radarTier(h, m));
    Guarded everywhere: if storage isn't available the app just carries on. */
 const BACKUP_KEY  = "heroHub.session.v1";   // the old whole-snapshot format
 const OVERLAY_KEY = "heroHub.overlay.v2";   // what you changed, on top of hero-data.js
+/* ------------------------------------------------------------------
+   ?fresh=1 — WHAT A STRANGER SEES
+   ------------------------------------------------------------------
+   A preview in Sid's own browser still shows Sid's saved layer, so
+   it answers "what does the locked UI look like" but not "what does
+   somebody arriving for the first time actually get". With fresh=1
+   the page ignores the stored layer completely AND REFUSES TO WRITE
+   ONE, so his saved work is read past and left exactly where it
+   was. That second half is the important one: a preview that could
+   overwrite the thing being previewed is worse than no preview.
+   It is the same view a private window would give, without having
+   to remember to use one.
+   DECLARED HERE, not beside appMode() where it belongs by subject:
+   the overlay code just below is the first thing that reads it, and
+   a const sits in the temporal dead zone until its own line runs —
+   so keeping it with its friends threw "Cannot access FRESH before
+   initialization" and took the whole page down with it. Caught on
+   the first load after the edit. ------------------------------ */
+const FRESH = (()=>{ try{
+  const q = new URLSearchParams(location.search);
+  return q.has("fresh") && q.get("fresh") !== "0";
+}catch(_){ return false; } })();
 const HOSTED = location.protocol === "http:" || location.protocol === "https:";
 function storageOK(){
   try{ const k="__hh"; localStorage.setItem(k,"1"); localStorage.removeItem(k); return true; }
@@ -5945,8 +6009,20 @@ function mergeOverlay(a, b){
 let MEM_OVERLAY = null;         // used when the browser refuses storage
 let LAST_STATE  = null;         // the state as of the last save, to diff against
 function readOverlay(){
+  if(FRESH) return MEM_OVERLAY;          // a preview starts empty and stays in memory
   if(!HAS_STORAGE) return MEM_OVERLAY;
   try{ return JSON.parse(localStorage.getItem(OVERLAY_KEY) || "null"); }catch(_){ return null; }
+}
+/* ONE DOOR TO THE SAVED LAYER, so a preview cannot slip through a side one.
+   Every write goes through here and every write is refused while FRESH — the
+   callers still behave normally, they just write to memory instead of to disk. */
+function writeOverlayRaw(obj){
+  if(FRESH || !HAS_STORAGE) return false;
+  try{
+    if(obj === null) localStorage.removeItem(OVERLAY_KEY);
+    else localStorage.setItem(OVERLAY_KEY, JSON.stringify(obj));
+    return true;
+  }catch(_){ return false; }
 }
 /* Only what actually moved since the last save is added, so the layer stays a
    record of your edits rather than a re-run of the whole published file. */
@@ -5956,6 +6032,8 @@ function currentOverlay(){
   return since ? mergeOverlay(stored, since) : stored;
 }
 function saveOverlay(cur){
+  /* a preview must not be able to overwrite the thing it is previewing */
+  if(FRESH){ LAST_STATE = cur; return true; }
   const base = LAST_STATE || window.__BASE;
   const add  = makeOverlay(cur, base);
   LAST_STATE = cur;
@@ -5964,14 +6042,14 @@ function saveOverlay(cur){
   MEM_OVERLAY = ov;
   if(!HAS_STORAGE) return false;
   try{
-    if(overlayEmpty(ov)){ localStorage.removeItem(OVERLAY_KEY); return true; }
-    localStorage.setItem(OVERLAY_KEY, JSON.stringify(
-      {v:2, baseHash: window.__FILE_HASH, savedAt: Date.now(), ...ov}));
+    if(overlayEmpty(ov)){ writeOverlayRaw(null); return true; }
+    writeOverlayRaw({v:2, baseHash: window.__FILE_HASH, savedAt: Date.now(), ...ov});
     return true;
   }catch(_){ return false; }   // quota — usually a very large portrait set
 }
 function clearBackup(){
-  try{ localStorage.removeItem(OVERLAY_KEY); localStorage.removeItem(BACKUP_KEY); }catch(_){}
+  writeOverlayRaw(null);
+  try{ localStorage.removeItem(BACKUP_KEY); }catch(_){}
 }
 const writeBackup = (data)=> saveOverlay(data);
 
@@ -5997,8 +6075,7 @@ function pullFromPublished(section, key){
     MEM_OVERLAY = st;
     if(HAS_STORAGE){
       try{
-        if(overlayEmpty(st)) localStorage.removeItem(OVERLAY_KEY);
-        else localStorage.setItem(OVERLAY_KEY, JSON.stringify(st));
+        writeOverlayRaw(overlayEmpty(st) ? null : st);
       }catch(_){}
     }
   }
@@ -6024,8 +6101,7 @@ function dropOverlaySection(k){
   if(LAST_STATE) delete LAST_STATE[k];
   if(HAS_STORAGE){
     try{
-      if(overlayEmpty(st)) localStorage.removeItem(OVERLAY_KEY);
-      else localStorage.setItem(OVERLAY_KEY, JSON.stringify(st));
+      writeOverlayRaw(overlayEmpty(st) ? null : st);
     }catch(_){}
   }
   return true;
@@ -6345,8 +6421,8 @@ let SHEET_DATA = null;
   window.__BASE = baseData;                   // what everyone starts from
   let D = baseData;
 
-  let ov = readOverlay();
-  if(!ov){
+  let ov = FRESH ? null : readOverlay();     // a stranger arrives with nothing
+  if(!ov && !FRESH){
     /* one-time lift from the old whole-snapshot backup */
     const old1 = (function(){ try{ return JSON.parse(localStorage.getItem(BACKUP_KEY) || "null"); }catch(_){ return null; } })();
     if(old1 && old1.data && old1.fileHash === window.__FILE_HASH){
@@ -6362,8 +6438,7 @@ let SHEET_DATA = null;
       const took = reclaimFacts(ov, baseData);
       if(took.length){
         window.__RECLAIMED = took;
-        try{ localStorage.setItem(OVERLAY_KEY,
-          JSON.stringify({...ov, baseHash: window.__FILE_HASH, savedAt: Date.now()})); }catch(_){}
+        writeOverlayRaw({...ov, baseHash: window.__FILE_HASH, savedAt: Date.now()});
       }
     }
   }
@@ -14056,7 +14131,7 @@ function drawSync(){
       });
       if(!Object.keys(rows).length) delete ov.set[sec];
     });
-    try{ localStorage.setItem(OVERLAY_KEY, JSON.stringify({...ov, savedAt:Date.now()})); }catch(_){}
+    writeOverlayRaw({...ov, savedAt:Date.now()});
     const m = document.getElementById("syncMsg");
     if(m) m.textContent = `${n} handed back to the file. Reload to see the layer shrink.`;
     drawSync();
@@ -14128,16 +14203,27 @@ function drawSync(){
    ============================================================ */
 const APP_MODE_KEY = "heroHub.mode";
 const APP_MODE_DEFAULT = "back";    // collection phase — flip to "front" when the data is in
+/* ------------------------------------------------------------------
+   PREVIEWING IS ALWAYS TEMPORARY
+   ------------------------------------------------------------------
+   ?mode= used to write to localStorage, which meant checking the
+   locked page once left Sid's own browser locked until he thought
+   to type ?mode=back. A switch you can fall into by accident is a
+   bad switch. It now lives in sessionStorage: it holds while that
+   TAB is open and dies with it, so a preview can never leak into
+   the window he actually works in. The real setting is
+   APP_MODE_DEFAULT in this file — one word, changed deliberately,
+   the day the collecting is done. ------------------------------ */
 function appMode(){
   try{
     const q = new URLSearchParams(location.search);
     const m = q.get("mode");
     if(m === "front" || m === "back"){
-      try{ localStorage.setItem(APP_MODE_KEY, m); }catch(_){}
+      try{ sessionStorage.setItem(APP_MODE_KEY, m); }catch(_){}
       return m;
     }
-    if(maintainerOn()) return "back";                 // the maintainer is always in the workshop
-    const st = localStorage.getItem(APP_MODE_KEY);
+    if(maintainerOn() && !FRESH) return "back";       // the maintainer is always in the workshop
+    const st = sessionStorage.getItem(APP_MODE_KEY);
     if(st === "front" || st === "back") return st;
   }catch(_){}
   return APP_MODE_DEFAULT;
@@ -14214,6 +14300,8 @@ function applyMaintainer(){
   const on = maintainerOn();
   const btn = document.getElementById("syncBtn");
   if(btn) btn.classList.toggle("hidden", !on);
+  const pv = document.getElementById("previewBtn");
+  if(pv) pv.classList.toggle("hidden", !on);
   if(!on){
     const pan = document.getElementById("syncPanel");
     if(pan) pan.classList.add("hidden");
@@ -14232,12 +14320,26 @@ installFrontLock();
   /* say it plainly rather than letting a visitor wonder why a control is inert */
   const bar = document.querySelector(".bar") || document.body;
   const note = document.createElement("span");
-  note.className = "modenote";
-  note.textContent = "reading " + (window.CORE_STAMP || "the published data");
-  note.title = "The hero facts here — troop, talents, skin, obtain, skills, ratings — come from the "
+  note.className = "modenote" + (FRESH ? " preview" : "");
+  note.textContent = FRESH
+    ? "visitor preview — nothing here is saved"
+    : "reading " + (window.CORE_STAMP || "the published data");
+  note.title = (FRESH ? "This tab is showing the published data with none of your saved changes, and it "
+      + "cannot write to this browser — close it and your own work is exactly where you left it.\n\n" : "")
+    + "The hero facts here — troop, talents, skin, obtain, skills, ratings — come from the "
     + "project and are read-only.\nYours to change: which heroes you own, your power figures, where "
     + "you put them on the board, and your own pairings, arena boards and lineups.";
   bar.appendChild(note);
+})();
+(function wirePreview(){
+  const btn = document.getElementById("previewBtn"); if(!btn) return;
+  btn.addEventListener("click", ()=>{
+    const u = new URL(location.href);
+    u.searchParams.delete("me");
+    u.searchParams.set("mode", "front");
+    u.searchParams.set("fresh", "1");
+    window.open(u.toString(), "_blank", "noopener");
+  });
 })();
 document.getElementById("syncBtn").addEventListener("click", e=>{
   const on = e.target.getAttribute("aria-pressed")==="true";
@@ -14697,7 +14799,7 @@ document.getElementById("mineImport").addEventListener("change", e=>{
     const parts = overlayCounts(ov);
     if(!confirm(`Load these changes?\n\n${parts.join("\n") || "(nothing listed)"}\n\n`
               + `They replace whatever you have changed in this browser. The page will reload.`)) return;
-    try{ localStorage.setItem(OVERLAY_KEY, JSON.stringify({...ov, v:2, savedAt:Date.now()})); }
+    try{ writeOverlayRaw({...ov, v:2, savedAt:Date.now()}); }
     catch(_){ mineMsg("this browser wouldn't store them"); return; }
     location.reload();
   };
