@@ -1,5 +1,46 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-14 — TWO MODES: BACKEND NOW, FRONTEND WHEN THE DATA IS
+     IN. Sid's framing and the right one. What has been built so far
+     is a DATA-COLLECTION TOOL — every fact about every hero is
+     editable because the facts are still being gathered. That is
+     not what the published page should be.
+     THE LINE, which is his call and it is a good one:
+       SID defines what a hero IS and how it is SCORED.
+       THE VIEWER defines what they HAVE, where they would PUT them,
+       and what they are PLANNING.
+     So frontend keeps ownership, power figures, the tier board and
+     the whole of pairings, arena, the plan and the meta board live.
+     It locks troop, talents, skin, obtain, seats, warband, skill
+     names and effects, every rating and weight, and adding,
+     renaming, merging or deleting a hero.
+     SWITCHING: ?me=1 implies backend, ?mode=front / ?mode=back
+     force it and are remembered so the locked page can be previewed
+     without clearing anything, and with no flag it follows
+     APP_MODE_DEFAULT — "back" today, one word when he is ready.
+     THE FIRST CUT HAD A HOLE AND THE TEST FOUND IT. It locked whole
+     VIEWS and allowed a short list inside them, and [data-key] was
+     on that list as "navigation" — but [data-key] is the tier CARD,
+     so every troop, skin and obtain select sitting inside a card
+     counted as allowed and the board stayed fully editable in
+     frontend. Rewritten to name CONTROLS rather than containers:
+     longer, but a selector either changes a fact or it does not,
+     and that is a question with an answer.
+     VERIFIED PER SURFACE in three separate browser profiles rather
+     than asserted. Frontend: troop, skin and obtain frozen; alias
+     frozen; rating pips frozen; ownership, power and tier all live;
+     pairings live; the board card still draggable while the troop
+     select inside that same card is locked. Backend: everything
+     editable, exactly as today. Maintainer: backend plus the sync
+     panel.
+     AND IT IS A LOCK ON THE UI, NOT A SECRET — the same honesty as
+     the maintainer switch. One public HTML file; anyone in the
+     console can step around it. It is worth having because it stops
+     a visitor ACCIDENTALLY pinning a fact they never meant to
+     touch, and the reclaim rule below already means the next
+     publish wins even if they do. The lock is for clarity. The
+     authority comes from the files.
+
      2026-09-14 — SID IS THE AUTHORITY ON FACTS. THE VIEWER IS THE
      AUTHORITY ON THEIR OWN BOARD. Demonstrated the problem before
      fixing it: a visitor who decided Farhad was Cavalry kept that
@@ -1926,6 +1967,8 @@
   #viewOverview .ovaccn{grid-column:2 / -1;font-size:12.5px;line-height:1.5;color:var(--ov-tx2);margin-top:-4px}
   #viewOverview .ovacc:last-child .ovaccb span{background:var(--ov-amber)}
   #viewOverview .ovacc:last-child .ovaccv{color:var(--ov-amber)}
+  .modenote{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:3px 7px;cursor:help}
   .synch{font-size:14px;margin:18px 0 6px}
   .synch:first-child{margin-top:4px}
   .synch i{font-style:normal;font-weight:400;font-size:11px;opacity:.7;margin-left:8px}
@@ -14045,6 +14088,115 @@ function drawSync(){
    the clean URL he shares never carries it. ?me=0 turns it back
    off, which is also how the published page is checked.
    ============================================================ */
+/* ============================================================
+   TWO MODES: BACKEND WHILE THE DATA IS BEING COLLECTED,
+   FRONTEND ONCE IT IS IN
+   ============================================================
+   Sid's framing, and it is the right one. What has been built so
+   far is a DATA-COLLECTION TOOL — every fact about every hero is
+   editable because the facts are still being gathered. That is not
+   what the published page should be. Once the collecting is done,
+   only new heroes arrive, and they arrive from him.
+
+   WHO OWNS WHAT, which is the whole design in one line:
+     SID defines what a hero IS and how it is SCORED.
+     THE VIEWER defines what they HAVE, where they would PUT them,
+     and what they are PLANNING.
+
+   So in frontend mode the viewer may still tick which heroes they
+   own, record their power figures, drag their own tier board, and
+   build their own pairings, arena boards and lineups. What they
+   may not do is change troop, talents, skin, obtain, seats,
+   warband, skill names or effects, any rating or weight, or add,
+   rename, merge or delete a hero. Those are the source, and the
+   source has one author.
+
+   IT IS A LOCK ON THE UI, NOT A SECRET. Same honesty as the
+   maintainer switch: this is one public HTML file and the guard
+   can be stepped around by anyone who opens the console. It is
+   worth having anyway, because it stops a visitor ACCIDENTALLY
+   pinning a fact they never meant to touch — and the reclaim rule
+   above already means Sid's next publish wins even if they do.
+   The lock is for clarity; the authority comes from the files.
+
+   HOW IT SWITCHES. ?me=1 (the maintainer switch) implies backend.
+   ?mode=front and ?mode=back force it and are remembered, so the
+   locked page can be previewed without clearing anything. With no
+   flag at all it follows APP_MODE_DEFAULT, which is "back" today
+   because the data is still being collected. One word changes it
+   when Sid is ready.
+   ============================================================ */
+const APP_MODE_KEY = "heroHub.mode";
+const APP_MODE_DEFAULT = "back";    // collection phase — flip to "front" when the data is in
+function appMode(){
+  try{
+    const q = new URLSearchParams(location.search);
+    const m = q.get("mode");
+    if(m === "front" || m === "back"){
+      try{ localStorage.setItem(APP_MODE_KEY, m); }catch(_){}
+      return m;
+    }
+    if(maintainerOn()) return "back";                 // the maintainer is always in the workshop
+    const st = localStorage.getItem(APP_MODE_KEY);
+    if(st === "front" || st === "back") return st;
+  }catch(_){}
+  return APP_MODE_DEFAULT;
+}
+/* WHAT IS LOCKED, NAMED ONE CONTROL AT A TIME.
+   The first cut of this locked whole VIEWS and allowed a short list inside
+   them, and it had a hole big enough to drive through: [data-key] was on the
+   allow list as "navigation", but it is the tier CARD, so every troop, skin
+   and obtain select sitting inside a card counted as allowed. Facts on the
+   board stayed editable in frontend mode and the test caught it.
+   So the lock now names CONTROLS, not containers. Longer, but a selector
+   either changes a fact or it does not, and that is a question with an
+   answer. Two whole panels are listed as well, because everything inside
+   them is maintainer work and nothing in them is navigation. */
+const FRONT_DENY = [
+  /* the facts about a hero */
+  "[data-troopsel]", "[data-skinsel]", "[data-obtainsel]", "[data-troop]", "[data-skin]",
+  "[data-obtain]", "[data-wb]", "[data-rwb]", "[data-seat]", "[data-treset]",
+  "[data-tree]", "[data-nhtree]", "[data-btree]",
+  /* what a skill is and what it is worth */
+  "[data-rate]", "[data-fxedit]", "[data-fxadd]", "[data-fxdel]", "[data-fxw]",
+  "[data-skname]", "[data-skicon]", "[data-skiconclr]", "[data-seqmove]",
+  /* the model: adjustments, tree values, focus weights */
+  "[data-wadj]", "[data-treew]", "[data-fitone]", "#fitTrees", "#repullTrees",
+  "#wVers", "#wOwn", "[data-fw]", "#fwReset",
+  /* the roster itself: naming, adding, merging, deleting, builds */
+  "[data-ra]", "[data-rn]", "[data-rd]", "[data-dup]", "[data-editbuild]", "[data-buildrow]",
+  "[data-mergegroup]", "#mergeFrom", "#mergeInto", "#mergeBtn",
+  "#newHeroName", "#newHeroTier", "#addHeroBtn",
+  /* whole panels that are nothing but maintainer work */
+  "#viewNew", "#focusPanel", "#namesPanel", "#portraitPanel", "#iconPanel", "#syncPanel"
+].join(",");
+/* A short list of things that LOOK like they are inside a locked area but are
+   the viewer's own — ownership, power and where they put a hero. Checked
+   first, so a deny selector never swallows one of these. */
+const FRONT_OPEN = [
+  "[data-hown]", "[data-skown]", ".ownck", "#ownAll", "#ownNone",
+  "[data-pwr]", "[data-rpwr]", "[data-pwrclr]",
+  "[data-rt]", "[data-wsug]"
+].join(",");
+let LOCK_MSG_AT = 0;
+function lockedTarget(el){
+  if(appMode() !== "front" || !el || !el.closest) return false;
+  if(el.closest(FRONT_OPEN)) return false;
+  return !!el.closest(FRONT_DENY);
+}
+function installFrontLock(){
+  const stop = e=>{
+    if(!lockedTarget(e.target)) return;
+    e.preventDefault(); e.stopPropagation();
+    const now = Date.now();
+    if(now - LOCK_MSG_AT > 1500){
+      LOCK_MSG_AT = now;
+      saveStatus("that one is the project's — yours are ownership, power and your own board", "warn");
+    }
+  };
+  ["pointerdown","mousedown","click","keydown","change","input","dragstart","drop"]
+    .forEach(t=>document.addEventListener(t, stop, true));
+}
 const MAINTAINER_KEY = "heroHub.maintainer";
 function maintainerOn(){
   try{
@@ -14070,6 +14222,23 @@ function applyMaintainer(){
   return on;
 }
 applyMaintainer();
+/* the lock goes on once, in capture phase, and asks appMode() each time — so
+   flipping mode never needs a reload to take effect on behaviour */
+installFrontLock();
+(function showMode(){
+  const front = appMode() === "front";
+  document.documentElement.dataset.mode = front ? "front" : "back";
+  if(!front) return;
+  /* say it plainly rather than letting a visitor wonder why a control is inert */
+  const bar = document.querySelector(".bar") || document.body;
+  const note = document.createElement("span");
+  note.className = "modenote";
+  note.textContent = "reading " + (window.CORE_STAMP || "the published data");
+  note.title = "The hero facts here — troop, talents, skin, obtain, skills, ratings — come from the "
+    + "project and are read-only.\nYours to change: which heroes you own, your power figures, where "
+    + "you put them on the board, and your own pairings, arena boards and lineups.";
+  bar.appendChild(note);
+})();
 document.getElementById("syncBtn").addEventListener("click", e=>{
   const on = e.target.getAttribute("aria-pressed")==="true";
   e.target.setAttribute("aria-pressed", String(!on));
