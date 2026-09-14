@@ -1,5 +1,26 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-14 — SEAT COMES OFF THE WORKLIST. Sid's call, and the
+     reasoning is the useful part: a worklist is a list of things
+     worth DOING, and nothing follows from recording a seat. It does
+     not reach the score, does not move a band, does not change a
+     recommendation. Thirty-five amber dots asking for it were
+     thirty-five dots of noise sitting beside the four columns that
+     actually pay.
+     Total gaps drop from 149 to 112 without a single fact changing,
+     which is the point — the list is shorter because it is now
+     honest about what is worth your time rather than about what the
+     app happens to store.
+     THE FIELD IS UNTOUCHED. Seats still loads from the sheet, still
+     shows as its own chip on the Hero Score header, still reads in
+     the flat card's verdict where it explains why Farhad earns his
+     place. It has simply stopped nagging. If it ever starts
+     scoring it belongs back on the list.
+     The footnote under the table named it too and would have gone
+     on naming a column that was no longer there — the same
+     stale-sentence-beside-a-correct-number trap as the admits wall.
+     Checked this time.
+
      2026-09-14 — NOT EVERY HERO HAS FIVE SKILLS. Sid: "she's blue
      thus only 4 skills, she does not have 5." Elia's card draws
      four icons and no awakened slot, and the app was doing two
@@ -4795,6 +4816,15 @@ function pairAgreement(){
    equally urgent is a worse worklist, so the ones that move the
    number say so.
    ============================================================ */
+/* SEAT IS NOT ON THIS LIST, on Sid's call. A worklist is a list of things
+   worth DOING, and nothing follows from filling a seat in: it does not reach
+   the score, it does not move a band, it does not change a recommendation.
+   Thirty-five amber dots asking for it were thirty-five dots of noise sitting
+   next to the four columns that actually pay.
+   The FIELD is untouched — seats still loads from the sheet, still shows as
+   its own chip on the Hero Score header, and still reads in the flat card's
+   verdict where it explains why a hero earns their place. It has simply
+   stopped nagging. If it ever starts scoring it belongs back here. */
 const MISSING_FIELDS = [
   {id:"slots",  label:"skills",   scores:true,
    has:h=>{ const k = kitRead(h); return !!(k && k.read === k.slots); },
@@ -4812,9 +4842,6 @@ const MISSING_FIELDS = [
   {id:"power",  label:"power",    scores:false,
    has:h=>powerOf(h) !== null,
    why:"at level 60 and 6 stars only, or the numbers do not compare"},
-  {id:"seats",  label:"seat",     scores:false,
-   has:h=>!!h.seats,
-   why:"commander, lieutenant or either"},
   {id:"band",   label:"warband",  scores:false,
    has:h=>{ const W = warbandInfo(warbandOf(h.key)); return !!(W && W.n > 1); },
    miss:h=>warbandOf(h.key) ? `"${warbandOf(h.key)}" has no other member` : "no warband recorded",
@@ -8540,9 +8567,11 @@ function drawOverview(){
           <td class="${x.n ? (x.f.scores?"gapsc":"gap") : "ok"}">${x.n}</td>`).join("")}</tr></tfoot>
       </table></div>
       <p class="ovlede" style="margin-top:18px;font-size:13px">A <i class="ovdot">&#9679;</i> on a
-        column means that field reaches the score. Power and seat do not, by your own ruling; warband
-        does not because the four buffs it gives are not captured; talents do not because what a tree
-        gives has never been written down.</p>
+        column means that field reaches the score. Power does not, by your own ruling; warband does
+        not because the four buffs it gives are not captured; talents do not because what a tree gives
+        has never been written down. <b>Seat is not on this list at all</b> &mdash; it does not score,
+        so nothing follows from filling it in, and a worklist should only ask for things worth doing.
+        The field is still there on each hero's card.</p>
     </div></div>`; })()}
 
     <div class="ovsec"><div class="ovwrap">
