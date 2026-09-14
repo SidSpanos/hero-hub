@@ -1,5 +1,31 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-14 — A SUMMON IS A UNIT, NOT WEATHER. Elia's four
+     tooltips arrived and her first skill reads "Summons a blizzard".
+     The summon test was a bare "summons a <something>", so it
+     matched, and Glacial Fall scored a full 5 on a DMG Factor of
+     2,450 — the SMALLEST burst on the board — because of one verb.
+     Kaira's "Summon a Thunderstorm" was doing the same.
+     Weather is not a unit. It takes no seat, soaks nothing, cannot
+     be killed, and the entire reason a summon is worth 5 is that it
+     is another body in the fight. summonsAUnit() now excludes the
+     storms and keeps the creatures, and it is an exclusion list
+     rather than an allow list because the game keeps inventing
+     beasts and only ever reuses the same handful of blizzards.
+     The rule fired in FOUR places and I had only found three: the
+     kit scorer, the trifecta categories, the old marker model, and
+     vsMeasures — which is what the COMPANY card and the S+ profiles
+     read. Missing the fourth would have left the summon badge lit on
+     two heroes who do not summon.
+     Summons now: Freyja, Yi Sun-sin, Roro, Wukon, Sylvan, Ganglot —
+     a resurrection, a warship, a giant, clones, wolves and a bone
+     dragon. Six heroes, six actual units.
+     Kaira keeps her 5 on that slot and should: her DMG Factor is
+     9,500, over the payload line on its own. She was right for the
+     wrong reason and is now right for the right one.
+     Elia lands on kit 15, worth 23, reading D — exactly where Sid
+     has her.
+
      2026-09-14 — BALDUR IS COMPLETE, AND THE HONEST RESULT IS THAT
      HE NOW DISAGREES WITH THE BOARD. Slot 1, Seize the Initiative:
      Rage 1000, DMG Factor 11,500, Shield 2,250 on his own Troop and
@@ -4214,6 +4240,27 @@ const MK_CAT = [
      3  it does something, but it is small.
 
    Your own rating always wins. This only replaces the DEFAULT. */
+/* ------------------------------------------------------------------
+   A SUMMON IS A UNIT, NOT WEATHER
+   ------------------------------------------------------------------
+   The rule has always been "puts an extra unit on the field — a
+   dragon, wolves, clones, a resurrection", and the test was a bare
+   "summons a <something>". That happily matched "Summons a blizzard"
+   and "summons a thunderstorm", handing a 5 to two area effects.
+   Elia's Glacial Fall was scoring a full 5 on a payload of 2,450 —
+   the smallest burst on the board — because of one verb.
+   Weather is not a unit. It takes no seat, it soaks nothing, it
+   cannot be killed, and the whole reason a summon is worth 5 is
+   that it is another body in the fight. Named as an exclusion list
+   rather than an allow list because the game keeps inventing
+   creatures and only ever reuses the same handful of storms. ---- */
+const NOT_A_UNIT = /^(blizzard|thunderstorm|sandstorm|storm|rainstorm|tempest|hurricane|tornado|meteor|meteorite|firestorm|flame|fire|frost|ice|snow|lightning|thunder|wind|gale|fog|mist|cloud|aura|field|zone|area|barrier|wall|shield|light|darkness|shadow)s?$/i;
+function summonsAUnit(blob){
+  if(/resurrects?/.test(blob)) return true;
+  const m = /\b(?:summons?|summoning)\s+(?:a|an|\d+|the)\s+([a-z'-]+)/i.exec(blob);
+  if(!m) return false;
+  return !NOT_A_UNIT.test(m[1]);
+}
 function coreSkillValue(key, slot){
   const k = coreSlot(key, slot);
   if(!k || !k.name) return null;
@@ -4229,7 +4276,7 @@ function coreSkillValue(key, slot){
   if(k.missing) return null;
   const blob = ((k.name||"") + " " + (k.notes||"")).toLowerCase();
   const awk  = (k.type||"") === "Awakened";
-  const summon = /\b(summons?|summoning)\s+(a|an|\d+|the)\b|resurrects?/.test(blob);
+  const summon = summonsAUnit(blob);
   let dmg=0, dUp=0, dd=0, heal=0, ctr=0, mit=0;
   (k.effects||[]).forEach(e=>{
     const w = e.what || "";
@@ -4282,7 +4329,7 @@ function skillCats(k){
   const c = new Set(); if(!k || !k.name) return c;
   const awk = (k.type||"") === "Awakened";
   const blob = ((k.name||"") + " " + (k.notes||"")).toLowerCase();
-  if(/\b(summons?|summoning)\s+(a|an|\d+|the)\b|resurrects?/.test(blob)) c.add("summon");
+  if(summonsAUnit(blob)) c.add("summon");
   (k.effects||[]).forEach(e=>{
     const w = e.what || "";
     /* On the awakened skill every line is labelled "before/after awakening" —
@@ -4851,7 +4898,7 @@ function heroMarkers(h){
     const k = core.skills[slot];
     if(!k || !k.name){ if(k && k.missing){ unread++; gaps.push("slot " + slot); } continue; }
     const blob = (k.name||"") + " " + (k.notes||"");
-    if(/summon|clone|wolves|wolf|bone dragon|resurrect|boulders/i.test(blob)) summons = 1;
+    if(summonsAUnit(blob) || /clone|wolves|wolf|bone dragon|boulders/i.test(blob)) summons = 1;
     if(slot === "1"){
       const tm = blob.match(/up to (\d+) (?:enem|target)/i);
       if(tm) targets = Math.max(targets, parseInt(tm[1]));
@@ -7695,7 +7742,7 @@ function vsMeasures(key){
     const k = coreSlot(key, sl); if(!k || !k.name) return;
     const awk = (k.type||"") === "Awakened";
     const blob = ((k.name||"") + " " + (k.notes||"")).toLowerCase();
-    if(/\b(summons?|summoning)\s+(a|an|\d+|the)\b|resurrects?/.test(blob)) out.summon = 1;
+    if(summonsAUnit(blob)) out.summon = 1;      // weather is not a unit — see summonsAUnit
     (k.effects||[]).forEach(e=>{
       const w = e.what || "";
       if(/before awakening|after awakening/i.test(w) && !awk) return;

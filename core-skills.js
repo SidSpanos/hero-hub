@@ -83,6 +83,26 @@
    The Versatile and Balanced trees are a separate matter and keep their own
    meaning; nothing about them changed.
 
+   2026-09-14 08:10 - ELIA IS AXE, NOT CAVALRY, AND THE GUIDE WAS WRONG ABOUT
+   HER SKILLS. Troop corrected on Sid's word; the talent line on her own card
+   reads Axe Thrower / Hunter / Support, which agrees. Warband recorded:
+   SHADOWREND. Trees were already right.
+   HER WHOLE SKILL BLOCK IS REPLACED. It was a fatewarguide.com scrape and it
+   does not describe the hero in his game:
+     the guide had   Fountain of Light (a heal), Homing Arrow, Penny Pincher,
+                     Field Expertise
+     the game has    Glacial Fall, Frozen Realm, Swift Shot, Penny Pincher
+   Fountain of Light and Field Expertise DO NOT EXIST on her card. Homing
+   Arrow and Swift Shot are the same skill under two names - identical curves,
+   1.2/1.4/1.8/2.6/3.6 and 2.1/2.7/3.3/4.5/6.3 - sitting in different slots.
+   Penny Pincher is right but in slot 4, not slot 3.
+   So the guide is not merely stale on slot ORDER, which was already known and
+   flagged; it is wrong about which skills a hero has. 20 of the 37 heroes are
+   still guide-sourced. That is now a known risk rather than a surprise.
+   ONLY FOUR SKILL ICONS on her card - no awakened slot is drawn at all. Left
+   absent rather than invented, with a note: the kit is projected from four,
+   which assumes a fifth exists, and if it never does that flatters her.
+
    2026-09-14 07:40 - BALDUR IS COMPLETE. Slot 1, SEIZE THE INITIATIVE, the
    Burst that had been a name and nothing else since the day he went in:
    Rage 1000, rage gain limit 160, DMG Factor 11,500, Shield Factor 2,250 on
@@ -227,7 +247,7 @@ Vista        | beast | vers bal supp     | no   | f2p
 # hero         | troop | trees             | skin | obtain | seats | tier | modes
 # ---- D ----
 Elina        | axe   | gath bal supp     | no   | any   # Elena
-Ilia         | cav   | axe hunt supp     | no   | any   # Elia
+Ilia         | axe   | axe hunt supp     | no   | any   # Elia
 Scarnet      | bers  | gath bal supp     | no   | any   # Skerne
 Sigrid       | beast | gath bal supp     | no   | any
 `;
@@ -945,50 +965,60 @@ window.CORE_SKILLS = {
 
   "Ilia": {
     name: "Elia",
+    warband: "Shadowrend",
     basePower: null,
-    sourceKind: "guide",
-    slotOrder: "guide",
-    warbandNote: "the guide page does not carry the warband - it is on the hero's own screen in the game",
-    source: "fatewarguide.com mirror, elia/index.html",
+    sourceKind: "game",
+    slotOrder: "game",
+    power: 166900,
+    soldierLimit: 181200,
+    rarityNote: "the card shows a blue B badge, not gold - like Baldur that is a per-account state, not a hero fact, so it is not asserted as her rarity",
+    note: "her card carries only FOUR skill icons - no awakened slot is drawn at all. Whether a fifth appears at a higher rarity is unknown, so slot U is left absent rather than invented. The kit is projected from four, which assumes a fifth exists; if it never does, that projection flatters her and should be revisited.",
+    source: "game screenshots supplied 2026-09-14 (all four slots)",
+    replaces: "a fatewarguide.com scrape that was WRONG for this account - see the file changelog",
     skills: {
       "1": {
-        name: "Fountain of Light",
+        name: "Glacial Fall",
         type: "Burst",
-        notes: "Heal your Troop and up to 3 nearby lightly-wounded allied Troops (Heal Factor 600 ), and remove debuffs from the healed Troops.",
+        rageCost: 1000,
+        myLevel: 5,
+        notes: "Rage gain limit per round 160. Summons a blizzard in a radius around the target and hits up to 3 enemy Troops in it. The blizzard it leaves behind is what Frozen Realm reads - the two skills are one mechanic in two slots.",
         effects: [
-          { what: "Healing Factor", values: [600, 700, 900, 1200, 1700] }
+          { what: "DMG Factor", values: [750, 1000, 1250, 1750, 2450] },
+          { what: "DMG reduction per additional target hit", unit: "%", values: [15],
+            note: "fixed, not on the upgrade curve - a falloff, not a gain" }
         ]
       },
       "2": {
-        name: "Homing Arrow",
+        name: "Frozen Realm",
         type: "Passive",
-        notes: "If all soldiers in this Hero's unit are Axethrower-type, increase normal attack DMG by 1.2% and increase MOV SPD by2.1%.",
+        myLevel: 5,
+        notes: "only while the blizzard from Glacial Fall is active, and only 3 random targets inside it - conditional on her own burst having landed.",
+        effects: [
+          { what: "Reduce MOV SPD by", unit: "%", values: [2, 3, 4, 5, 7] }
+        ]
+      },
+      "3": {
+        name: "Swift Shot",
+        type: "Passive",
+        myLevel: 5,
+        notes: "always on, her own Troop only",
         effects: [
           { what: "Increase DMG of Normal Attacks by", unit: "%", values: [1.2, 1.4, 1.8, 2.6, 3.6] },
           { what: "Increase MOV SPD by", unit: "%", values: [2.1, 2.7, 3.3, 4.5, 6.3] }
         ]
       },
-      "3": {
+      "4": {
         name: "Penny Pincher",
         type: "Passive",
-        notes: "Gain 10 Rage upon receiving skill DMG. There is also a 4% chance to inflict Silence on the skill caster for 3 seconds. This effect can only trigger once every 6 seconds.",
+        myLevel: 5,
+        notes: "on taking skill damage she recovers Rage immediately, and the unit that dealt it has a chance to be Silenced for 3 seconds. At most once every 6 seconds.",
         effects: [
           { what: "Generate Rage", values: [10, 15, 20, 25, 35] },
-          { what: "Trigger Rate", unit: "%", values: [4, 8, 12, 16, 20] }
-        ]
-      },
-      "4": {
-        name: "Field Expertise",
-        type: "Passive",
-        notes: "While out in the open, increase ATK of your Troop and up to 2 nearby Troops by 1% and increase their DEF by 1%.",
-        effects: [
-          { what: "Increase ATK by", unit: "%", values: [1, 1.2, 1.6, 1.8, 3] },
-          { what: "Increase DEF by", unit: "%", values: [1, 1.2, 1.6, 1.8, 3] }
+          { what: "Silence trigger rate", unit: "%", values: [4, 8, 12, 16, 20] }
         ]
       }
     }
   },
-
   "Irin": {
     name: "Erin",
     basePower: null,
