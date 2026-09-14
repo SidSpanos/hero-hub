@@ -1,5 +1,34 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-14 — THERE IS NO DISAGREEMENT. Sid's correction, and it
+     is a better idea than the one it replaces.
+     A MANUAL PLACEMENT IS EXPERIENCE. When he drops a hero into B he
+     has PLAYED that hero — fielded them, watched them win and lose,
+     and formed a judgment no tooltip contains. A formula reading
+     effect tables does not get a vote against that. So when the
+     score reads A on a hero he has in B, that is not two opinions
+     in tension. It is the model being short of something he already
+     knows, and the only interesting question is WHAT it cannot see.
+     Baldur is the live case: the score climbs to A entirely on a
+     mode-gated skill it reads as always-on. Sid has him in B
+     because he has run him. B is simply correct, and the model has
+     a blind spot with a name.
+     THE LANGUAGE THROUGHOUT SAID OTHERWISE and I had not noticed.
+     "carry the whole disagreement", "the score cannot explain this
+     one", "where it does not, that is the interesting part rather
+     than an error", "it argues back" — all of it framed a formula
+     and a player as equals putting a case. They are not. The board
+     is the answer key.
+     Now: "on these N the score falls short of what you already
+     know... these are not arguments, they are the heroes the model
+     cannot yet see properly, and each one is a question about what
+     it is still missing". The accuracy lede says the marking runs
+     one way and only one way. The flat card says "you have them
+     here from playing them, and the model cannot yet say why"
+     instead of shrugging at the hero.
+     Nothing computed changed. The numbers were already right; what
+     they MEANT was being described backwards.
+
      2026-09-14 — A SUMMON IS A UNIT, NOT WEATHER. Elia's four
      tooltips arrived and her first skill reads "Summons a blizzard".
      The summon test was a bare "summons a <something>", so it
@@ -8130,7 +8159,7 @@ function drawOverview(){
     if(flat)
       verd = off
         ? `<b>Earns it elsewhere.</b> ${kinds} kinds of effect and nothing in the top third — ${off}`
-        : `<b>Nothing stands out.</b> ${kinds} kinds of effect and nothing in the top third — the score cannot explain this one.`;
+        : `<b>Not one the score can read.</b> ${kinds} kinds of effect and nothing in the top third — you have them here from playing them, and the model cannot yet say why.`;
     else if(leads.length)
       verd = `<b>Best on the board</b> for ${leads.join(" and ").toLowerCase()}${
         flagsOn.length ? `, and ${flagsOn.join(" + ")}` : ""}.`;
@@ -8245,7 +8274,7 @@ function drawOverview(){
     else {
       const off = offBoardCase(h, HEROES.filter(y=>y.t === h.t), h.t);
       verdict = off ? `Nothing in the top third of either &mdash; ${off}`
-                    : `Nothing in the top third of either &mdash; the score cannot explain this one.`;
+                    : `Nothing in the top third of either &mdash; they are here on your experience, and the model cannot yet say why.`;
     }
     return `<b>${esc(h.n)}</b> &mdash; ${h.t}, kit ${kitOf(h)||"?"}.
       Payload <span class="au">${fmtNum(x.m.payload)}</span>${pr?` (${ordN(pr.at)} of ${pr.of})`:""},
@@ -8366,9 +8395,11 @@ function drawOverview(){
     <div class="ovsec"><div class="ovwrap">
       <div class="ovkick">Marked against your board</div>
       <h3 class="ovh2">${pc(A.exact)}% exact, ${pc(A.near)}% within a band</h3>
-      <p class="ovlede">Your tier list is the answer sheet and the score is the candidate. Every figure
-        below is worked out the moment this page draws &mdash; an accuracy number typed into a page is
-        a lie with a delay.</p>
+      <p class="ovlede">Your tier list is the answer sheet and the score is the candidate &mdash; never
+        the other way round. You placed these heroes from playing them, and a formula reading tooltips
+        does not get a vote against that. What follows is the model being marked, not the board.
+        Every figure is worked out the moment this page draws &mdash; an accuracy number typed into a
+        page is a lie with a delay.</p>
       <div class="ovaccs">
         ${bar("Exact band", A.exact, A.n, `${A.exact} of ${A.n} read into the tier you put them in`)}
         ${bar("Within one band", A.near, A.n, `${A.n - A.near} miss by two bands or more`)}
@@ -8393,13 +8424,16 @@ function drawOverview(){
                than a fault: the term that would explain it has nothing in it yet. A meta score taken
                off a handful of lineups is noise wearing a number.`}</div>
       </div>
-      ${A.off.length ? `<p class="ovlede" style="margin-top:26px">And these
-        <b>${A.off.length}</b> carry the whole disagreement. Everyone else already reads where you
-        have them, so nothing you record about them can improve the number:</p>
+      ${A.off.length ? `<p class="ovlede" style="margin-top:26px">And on these
+        <b>${A.off.length}</b> the score falls short of what you already know. You placed them by
+        hand, which means you have PLAYED them &mdash; a manual placement is experience, and
+        experience outranks a formula. These are not arguments, they are the heroes the model cannot
+        yet see properly, and each one is a question about what it is still missing:</p>
       <div class="ovoff">${A.off.map(x=>`
         <span class="ovoffc" title="${esc(x.h.n)} scores ${x.s}, which reads ${x.g}. ${
           x.gap > 0 ? `${x.gap} point${x.gap===1?"":"s"} above the top of ${x.t}` : `${-x.gap} point${x.gap===-1?"":"s"} below the floor of ${x.t}`
-        } &mdash; the score rates them ${x.gap > 0 ? "higher" : "lower"} than you do.">
+        } &mdash; you have them in ${x.t} from playing them, and the score is reading them ${
+          x.gap > 0 ? "too high" : "too low"}. The question is what it cannot see.">
           ${esc(x.h.n)} <i>${x.t}&#8594;${x.g}</i> <b>${x.gap > 0 ? "+" + x.gap : x.gap}</b></span>`).join("")}</div>` : ""}
     </div></div>`; })()}
 
@@ -8504,7 +8538,7 @@ function drawOverview(){
       <button class="ovback" data-ovback>&#8592; BACK TO THE TIER BOARD</button>
       <span>${F.heroes} heroes &middot; ${F.skills} skills &middot; one file${
         window.CORE_STAMP ? ` &middot; source ${esc(window.CORE_STAMP)}` : ""}</span>
-      <span>Built for one player's board, and it argues back</span>
+      <span>Built for one player's board, and it knows the board is right</span>
     </div></div></div>`;
 
   /* ---- the rotation ----
@@ -10349,7 +10383,8 @@ percentage of what this hero could carry in ${skMode} (skills + talents
           that decide a fight <b>5</b> — then skin and meta on top. Nothing here is fitted to your
           tier board; it reads <b>core-skills.js</b> and scores what each skill does. It agrees with
           your tier list on <b>${pairAgreement()}%</b> of hero pairs, and where it does not, that is
-          the interesting part rather than an error. It never touches the tally on the left.</p>
+          where the model is short of what you know from playing them, not a dispute. It never touches
+          the tally on the left.</p>
       </div>
     </div>`;
   };
