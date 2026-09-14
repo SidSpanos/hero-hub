@@ -105,6 +105,11 @@
    assumed — so if a column is not named there it is not read at all, however
    many values a row carries. Ganglot sat with no modes for exactly that
    reason: her row had them, the header did not name the column. */
+/* WHICH BUILD OF THE SOURCE THIS IS. Shown on the Overview footer so
+   "am I looking at the latest?" is a question with an answer rather than a
+   feeling. Bump it whenever this file is published. */
+window.CORE_STAMP = "2026-09-14";
+
 window.HERO_SHEET = `
 # troop   axe   bers   cav   beast
 # trees   cav  axe  bers  beast  vers  bal  field  atk  def  supp  garr  siege  hunt  gath  skill

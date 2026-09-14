@@ -1,12 +1,28 @@
-# Cloudflare Pages reads this file; it is never served.
+# Cloudflare Pages — SID IS THE AUTHORITY, SO THE BROWSER MUST NOT SERVE
+# YESTERDAY'S FACTS.
 #
-# Everything here is a hand-edited file that changes when you publish, and the
-# whole site is five files, so there is nothing worth caching hard. no-cache
-# does NOT mean "download every time" — the browser still asks, and gets a
-# cheap 304 back when nothing changed. What it buys you is never again seeing
-# a stale build and wondering whether the publish worked.
+# "no-cache" does NOT mean "do not store". It means "store it, but ask me
+# every time before you use it". The browser keeps the file and sends an
+# ETag; an unchanged file comes back 304 with no body, so this costs one
+# small round trip and guarantees that a correction published five minutes
+# ago is what the next visitor actually reads. Without it a visitor can sit
+# on a week-old core-skills.js with no browser edits involved at all — the
+# quietest way to lose authority over your own data.
+/index.html
+  Cache-Control: no-cache
+/core-skills.js
+  Cache-Control: no-cache
+/hero-data.js
+  Cache-Control: no-cache
+/hero-mine.js
+  Cache-Control: no-cache
+/hero-names.js
+  Cache-Control: no-cache
+/skill-seq.js
+  Cache-Control: no-cache
 
-/*
-  Cache-Control: no-cache, must-revalidate
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
+# Portraits are content, not facts, and they are replaced rarely. An hour of
+# caching is worth having; a stale face is a cosmetic problem, a stale troop
+# is a wrong answer.
+/portraits/*
+  Cache-Control: public, max-age=3600

@@ -1,5 +1,51 @@
 <!DOCTYPE html>
 <!-- ===========================================================
+     2026-09-14 — SID IS THE AUTHORITY ON FACTS. THE VIEWER IS THE
+     AUTHORITY ON THEIR OWN BOARD. Demonstrated the problem before
+     fixing it: a visitor who decided Farhad was Cavalry kept that
+     opinion FOREVER. Sid published the correction, the page loaded
+     it, and the visitor still saw Cavalry — with the status line
+     cheerfully reading "published data updated, your changes kept
+     on top". The layer outranked the source, by design, in the one
+     place it must not.
+     THE SPLIT. TROOPS, TREE_SET, SKINS and OBTAIN are facts about
+     the game and the published files own them. Tiers, ratings,
+     lineups, pairings, arena layouts, power figures, adjustments
+     and which heroes you own are the viewer's and nothing overrules
+     them.
+     HOW IT DECIDES, because "the file always wins" would be too
+     blunt — a viewer who spots something Sid has not got to yet
+     should keep their correction. The overlay now records what the
+     FILE said at the moment a fact was overridden. When the files
+     change: if that fact has not moved, Sid has not spoken and the
+     viewer keeps their disagreement; if it HAS moved, Sid has
+     spoken and he wins. An overlay saved before this existed cannot
+     answer, so the file takes those back once, by name.
+     Two traps found by testing rather than reasoning. `was` has to
+     be read from window.__BASE, never from the diff base — saves
+     diff against the last SAVE, and by the second edit that
+     snapshot already contains the viewer's own opinion, which would
+     make every fact look "moved". And mergeOverlay had to carry
+     `was` with EARLIEST-WINS, or a later save restates the
+     overridden value as though it were the file's.
+     VERIFIED END TO END in a real second browser: visitor overrides
+     Farhad troop and Iris obtain, sets their own tier for Arthur, a
+     power figure, an owned tick and an adjustment. Sid then
+     publishes a Farhad change and nothing about Iris. Result:
+     Farhad returns to the source, Iris stays theirs, and all four
+     preferences survive untouched. Second reload is stable.
+     AND THE QUIETEST WAY TO LOSE AUTHORITY IS THE HTTP CACHE. A
+     visitor can sit on last week's core-skills.js with no browser
+     edits involved at all. There is now a _headers file for
+     Cloudflare Pages putting no-cache on index.html and the five
+     data files — store it, but revalidate every time, so an
+     unchanged file is a 304 with no body and a correction published
+     five minutes ago is what the next visitor actually reads.
+     Portraits keep an hour: a stale face is cosmetic, a stale troop
+     is a wrong answer.
+     core-skills.js now carries CORE_STAMP and the Overview footer
+     prints it, so "am I on the latest?" has an answer.
+
      2026-09-14 — "SEND TO PROJECT" IS MINE, NOT EVERYONE'S.
      Sid is right: a visitor pressing it gets rows describing their
      OWN browser edits, which they cannot commit anywhere. Not a
@@ -5720,18 +5766,78 @@ const WHOLE_SECTIONS = ["ROSTER","OBTAIN_TYPES","PAIRINGS","PHASES","FORMATIONS"
                         "SK_RATE","TR_RATE","TREE_RATE","SHIFTS"];
 const sameVal = (a,b)=> JSON.stringify(a===undefined?null:a) === JSON.stringify(b===undefined?null:b);
 
+/* ------------------------------------------------------------------
+   WHOSE FACT IS IT
+   ------------------------------------------------------------------
+   These sections are FACTS ABOUT THE GAME, and the published files
+   are the authority on them. Everything else in the overlay is the
+   viewer's own: where they have dragged a hero, what they have
+   rated, which heroes they own, their lineups, their power figures.
+   Those are preferences and nobody gets to overrule them.
+   The split matters because of what it fixes. A visitor who once
+   decided Farhad was Cavalry used to keep that opinion FOREVER —
+   the correction Sid published could never reach them, and the page
+   cheerfully said "your changes kept on top" while showing them
+   something he had already fixed. ------------------------------ */
+const FACT_SECTIONS = ["TROOPS", "TREE_SET", "SKINS", "OBTAIN"];
 function makeOverlay(cur, base){
   cur = cur || {}; base = base || {};
-  const set = {}, del = {}, whole = {};
+  const set = {}, del = {}, whole = {}, was = {};
   MAP_SECTIONS.forEach(k=>{
-    const c = cur[k] || {}, b = base[k] || {}, s = {}, d = [];
-    Object.keys(c).forEach(x=>{ if(!sameVal(c[x], b[x])) s[x] = c[x]; });
+    const c = cur[k] || {}, b = base[k] || {}, s = {}, d = [], w = {};
+    Object.keys(c).forEach(x=>{ if(!sameVal(c[x], b[x])){ s[x] = c[x];
+      /* remember what the FILE said at the moment this was overridden. That is
+         the only way to tell later whether the project has since moved — a
+         value that has not moved is still the viewer's to disagree with. */
+      if(FACT_SECTIONS.includes(k)){
+        /* ALWAYS from the published file, never from `base` — saveOverlay diffs
+           against the last SAVE, and by the second edit that snapshot already
+           contains the viewer's own opinion. Recording that would compare Sid's
+           new value against the viewer's old one and call every fact "moved". */
+        const file = ((window.__BASE || {})[k] || {})[x];
+        w[x] = file === undefined ? null : file;
+      } } });
     Object.keys(b).forEach(x=>{ if(!(x in c)) d.push(x); });
     if(Object.keys(s).length) set[k] = s;
+    if(Object.keys(w).length) was[k] = w;
     if(d.length) del[k] = d;
   });
   WHOLE_SECTIONS.forEach(k=>{ if(!sameVal(cur[k], base[k])) whole[k] = cur[k]; });
-  return {set, del, whole};
+  return {set, del, whole, was};
+}
+/* ------------------------------------------------------------------
+   THE PROJECT IS THE AUTHORITY ON FACTS
+   ------------------------------------------------------------------
+   Run when the published files have changed since this overlay was
+   saved. For every fact the viewer overrode, compare the file NOW
+   with what the file said THEN:
+     · the file has not moved  — Sid has not spoken on it, so the
+       viewer keeps their disagreement;
+     · the file has moved      — Sid has spoken, and he wins.
+   An overlay saved before `was` existed cannot answer the question,
+   so under the authority rule the file takes those back too. It
+   happens once, it is reported by name, and it is the honest
+   reading of "no matter what the user changes, the site shows what
+   I have published". ------------------------------------------- */
+function reclaimFacts(ov, base){
+  if(!ov || !ov.set) return [];
+  const took = [];
+  FACT_SECTIONS.forEach(sec=>{
+    const rows = ov.set[sec]; if(!rows) return;
+    const now = (base || {})[sec] || {};
+    const then = (ov.was || {})[sec] || {};
+    Object.keys(rows).forEach(key=>{
+      const hadRecord = key in then;
+      const moved = hadRecord ? !sameVal(now[key], then[key]) : true;   // no record: the file wins
+      if(!moved) return;
+      delete rows[key];
+      if(ov.was && ov.was[sec]) delete ov.was[sec][key];
+      took.push({sec, key, why: hadRecord ? "the project changed it" : "saved before this check existed"});
+    });
+    if(!Object.keys(rows).length) delete ov.set[sec];
+    if(ov.was && ov.was[sec] && !Object.keys(ov.was[sec]).length) delete ov.was[sec];
+  });
+  return took;
 }
 function applyOverlay(base, ov){
   const out = JSON.parse(JSON.stringify(base || {}));
@@ -5762,10 +5868,17 @@ function overlayCounts(ov){
 }
 /* two overlays into one — later wins, and a delete cancels an earlier set */
 function mergeOverlay(a, b){
-  const out = {set:{}, del:{}, whole:{}};
+  const out = {set:{}, del:{}, whole:{}, was:{}};
   [a,b].forEach(o=>{
     Object.entries((o&&o.set)||{}).forEach(([k,v])=>{ out.set[k] = Object.assign({}, out.set[k]||{}, v); });
     Object.entries((o&&o.whole)||{}).forEach(([k,v])=>{ out.whole[k] = v; });
+    /* `was` records what the FILE said the first time a fact was overridden, and
+       the FIRST record is the one that matters — a later save must not quietly
+       restate the overridden value as if it were the file's. Earliest wins. */
+    Object.entries((o&&o.was)||{}).forEach(([k,v])=>{
+      out.was[k] = out.was[k] || {};
+      Object.entries(v).forEach(([x,val])=>{ if(!(x in out.was[k])) out.was[k][x] = val; });
+    });
   });
   [a,b].forEach(o=> Object.entries((o&&o.del)||{}).forEach(([k,d])=>{
     out.del[k] = [...new Set([...(out.del[k]||[]), ...d])];
@@ -5779,6 +5892,11 @@ function mergeOverlay(a, b){
   });
   Object.keys(out.set).forEach(k=>{ if(!Object.keys(out.set[k]).length) delete out.set[k]; });
   Object.keys(out.del).forEach(k=>{ if(!out.del[k].length) delete out.del[k]; });
+  /* a `was` with no `set` beside it is a record of something no longer overridden */
+  Object.keys(out.was).forEach(k=>{
+    Object.keys(out.was[k]).forEach(x=>{ if(!out.set[k] || !(x in out.set[k])) delete out.was[k][x]; });
+    if(!Object.keys(out.was[k]).length) delete out.was[k];
+  });
   return out;
 }
 let MEM_OVERLAY = null;         // used when the browser refuses storage
@@ -6194,7 +6312,17 @@ let SHEET_DATA = null;
     }
   } else if(!overlayEmpty(ov)){
     window.__FROM_BACKUP = ov.savedAt;
-    if(ov.baseHash && ov.baseHash !== window.__FILE_HASH) window.__BASE_UPDATED = true;
+    if(ov.baseHash && ov.baseHash !== window.__FILE_HASH){
+      window.__BASE_UPDATED = true;
+      /* the published files have moved. Facts go back to the project; the
+         viewer's own arrangement, ratings, lineups and account stay theirs. */
+      const took = reclaimFacts(ov, baseData);
+      if(took.length){
+        window.__RECLAIMED = took;
+        try{ localStorage.setItem(OVERLAY_KEY,
+          JSON.stringify({...ov, baseHash: window.__FILE_HASH, savedAt: Date.now()})); }catch(_){}
+      }
+    }
   }
   if(ov && !overlayEmpty(ov)){
     D = applyOverlay(baseData || {}, ov);     // sheet + hero-data.js first, your changes on top
@@ -8149,7 +8277,8 @@ function drawOverview(){
 
     <div class="ovfoot"><div class="ovwrap"><div class="fl">
       <button class="ovback" data-ovback>&#8592; BACK TO THE TIER BOARD</button>
-      <span>${F.heroes} heroes &middot; ${F.skills} skills &middot; one file</span>
+      <span>${F.heroes} heroes &middot; ${F.skills} skills &middot; one file${
+        window.CORE_STAMP ? ` &middot; source ${esc(window.CORE_STAMP)}` : ""}</span>
       <span>Built for one player's board, and it argues back</span>
     </div></div></div>`;
 
@@ -14285,7 +14414,22 @@ LAST_STATE = buildDataObject();   // the published state, as this page renders i
 booted = true;
 (function bootStatus(){
   if(window.__BASE_UPDATED){
-    saveStatus("published data updated — your changes kept on top", "ok");
+    const took = window.__RECLAIMED || [];
+    if(took.length){
+      const SAY = {TROOPS:"troop", TREE_SET:"talents", SKINS:"skin", OBTAIN:"obtain"};
+      const list = took.slice(0, 4).map(t=>{
+        const h = byKey(t.key); return `${h ? h.n : t.key} ${SAY[t.sec] || t.sec}`;
+      }).join(", ");
+      saveStatus(`project updated — ${took.length} fact${took.length===1?"":"s"} back to the source`, "ok");
+      const el = document.getElementById("saveState");
+      if(el) el.title = `The published files changed, and these are facts about the game rather than `
+        + `your own arrangement, so the project's version is now showing: ${list}`
+        + (took.length > 4 ? ` and ${took.length - 4} more` : "")
+        + `.\nYour tiers, ratings, lineups, pairings, power figures and which heroes you own are `
+        + `untouched — those are yours, and nothing overrules them.`;
+    } else {
+      saveStatus("published data updated — your changes kept on top", "ok");
+    }
   } else if(window.__FROM_BACKUP){
     const t = new Date(window.__FROM_BACKUP);
     saveStatus(`your changes restored · ${String(t.getHours()).padStart(2,"0")}:${String(t.getMinutes()).padStart(2,"0")}`, "ok");
