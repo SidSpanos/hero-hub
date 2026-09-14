@@ -83,6 +83,24 @@
    The Versatile and Balanced trees are a separate matter and keep their own
    meaning; nothing about them changed.
 
+   2026-09-14 07:40 - BALDUR IS COMPLETE. Slot 1, SEIZE THE INITIATIVE, the
+   Burst that had been a name and nothing else since the day he went in:
+   Rage 1000, rage gain limit 160, DMG Factor 11,500, Shield Factor 2,250 on
+   his own Troop and one nearby ally for 5s, +5% to both factors per nearby
+   allied Troop.
+   AND IT CLOSED THE LINE THAT HAD BEEN CUT OFF THREE TIMES. The cap on that
+   per-ally bonus is 20%. It was lost to the tooltip edge on every previous
+   shot; this one had it.
+   It also settles what the awakened skill IS. Wargod Slash is not a separate
+   attack - it is the awakening OF Seize the Initiative, which is why the two
+   carry identical numbers and why the slot 1 tooltip wears a green "Awakened"
+   tag and reads 11,500, matching Wargod Slash's After line exactly. Recorded
+   on both so neither is read as a second payload.
+   No Upgrade Preview on the slot 1 tooltip, so the level 1-4 curve is unknown.
+   The app scores at max, so it costs nothing today and is noted rather than
+   guessed.
+   Every slot of every owned hero bar Elia now has a tooltip behind it.
+
    2026-09-14 07:15 - BALDUR'S SLOTS 2, 3 AND 4, off four screenshots.
    GLADIATOR'S BLOODLINE (2) - below 50% Troop, attacks deal extra DMG worth
    64% of what he took the previous round, shields included, once every 8s.
@@ -423,15 +441,23 @@ window.CORE_SKILLS = {
     soldierLimit: 195500,
     stars: "4 of 6",
     myLevels: [5,5,5,5,5],
-    note: "all five slots read 5 in the game, including the awakened slot",
-    incomplete: "slot 1 (Seize the Initiative) still has no tooltip - it is the Burst, the first icon, the one with the flame badge. Everything else is read.",
-    source: "game screenshots IMG_2057-2058 (base screen + awakened); slots 2, 3 and 4 supplied 2026-09-14",
+    note: "all five slots read 5 in the game, including the awakened slot. Every slot now has a tooltip.",
+    source: "game screenshots IMG_2057-2058 (base screen + awakened); slots 2, 3 and 4 supplied 2026-09-14; slot 1 supplied 2026-09-14",
     skills: {
       "1": {
         name: "Seize the Initiative",
         type: "Burst",
+        rageCost: 1000,
         myLevel: 5,
-        missing: "tooltip STILL not captured. The name is read from what Wargod Slash says it buffs, nothing else. Four shots came in on 2026-09-14 and this was not among them - they were the awakened skill again plus slots 2, 3 and 4."
+        awakened: true,
+        notes: "Rage gain limit per round 160. Single target for the DMG; the shield lands on his own Troop AND one nearby allied Troop for 5s. Read AWAKENED - the tooltip carries the green Awakened tag, so 11,500 is the after-awakening figure and matches Wargod Slash's After line exactly.",
+        incomplete: "no Upgrade Preview block on this tooltip - only the level-5 awakened figures are known, not the 1-4 curve. The app scores at max, so this costs nothing today.",
+        effects: [
+          { what: "DMG Factor", values: [11500], note: "after awakening; 10,500 before" },
+          { what: "Shield Factor", values: [2250], note: "same before and after awakening" },
+          { what: "Per-allied-Troop increase to DMG and Shield Factors", unit: "%", values: [5],
+            note: "up to a maximum of 20%" }
+        ]
       },
       "2": {
         name: "Gladiator's Bloodline",
@@ -468,15 +494,13 @@ window.CORE_SKILLS = {
         type: "Awakened",
         buffs: "Seize the Initiative",
         myLevel: 5,
-        notes: "after awakening, for each nearby allied Troop the DMG and Shield Factors of this effect increase by 5%, up to a cap the tooltip cuts off",
-        incomplete: "the cap on the per-allied-Troop bonus needs the tooltip scrolled",
-        toFill: true,
+        notes: "after awakening, for each nearby allied Troop the DMG and Shield Factors of this effect increase by 5%, to a maximum of 20%. This skill IS the awakening of Seize the Initiative rather than a separate attack - the Before/After lines are the same effect either side of awakening, which is why slot 1 and this one carry the same numbers.",
         effects: [
           { what: "DMG Factor before awakening", values: [10500] },
           { what: "DMG Factor after awakening", values: [11500] },
           { what: "Shield Factor before awakening", values: [2250] },
           { what: "Shield Factor after awakening", values: [2250] },
-          { what: "Per-allied-Troop increase to DMG and Shield Factors, after awakening", unit: "%", values: [5], note: "cap not visible" }
+          { what: "Per-allied-Troop increase to DMG and Shield Factors, after awakening", unit: "%", values: [5], note: "to a maximum of 20%" }
         ]
       }
     }
